@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!--favicon-->
-    <link rel="icon" href="{{ URL::asset('build/images/favicon-32x32.png') }}" type="image/png">
-    <title>@yield('title') | Laravel & Bootstrap 5 Admin Dashboard Template</title>
+    <link rel="icon" href="{{ URL::asset('build/images/infinitydevlogo.png') }}" type="image/png">
+    <title>@yield('title') | Minimarket-system</title>
 
     @yield('css')
 

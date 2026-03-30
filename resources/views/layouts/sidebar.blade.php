@@ -347,6 +347,38 @@
               <div class="menu-title">Support</div>
             </a>
           </li>
+
+          <li class="menu-label">Configuraciones</li>
+          <li>
+              <a href="javascript:;" class="has-arrow">
+                  <div class="parent-icon">
+                      <i class="material-icons-outlined">settings</i>
+                  </div>
+                  <div class="menu-title">Configuraciones</div>
+              </a>
+              <ul>
+                  <li>
+                      <a href="{{ route('empresa.index') }}">
+                          <i class="material-icons-outlined">business</i>
+                          Empresa
+                      </a>
+                  </li>
+                  <li>
+                      <a href="#">
+                          <i class="material-icons-outlined">numbers</i>
+                          Series
+                      </a>
+                  </li>
+                  <li>
+                      <a href="#">
+                          <i class="material-icons-outlined">point_of_sale</i>
+                          Cajas
+                      </a>
+                  </li>
+              </ul>
+          </li>
+
+
          </ul>
         <!--end navigation-->
     </div>
