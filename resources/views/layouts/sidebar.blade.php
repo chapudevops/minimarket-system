@@ -348,6 +348,44 @@
             </a>
           </li>
 
+          <!-- Contactos -->
+          <li class="menu-label">Contactos</li>
+          <li>
+              <a href="javascript:;" class="has-arrow">
+                  <div class="parent-icon">
+                      <i class="material-icons-outlined">contacts</i>
+                  </div>
+                  <div class="menu-title">Contactos</div>
+              </a>
+              <ul>
+                  <li>
+                      <a href="{{ route('clientes.index') }}">
+                          <i class="material-icons-outlined">people</i>
+                          Clientes
+                      </a>
+                  </li>
+                  <li>
+                      <a href="{{ route('proveedores.index') }}">
+                          <i class="material-icons-outlined">local_shipping</i>
+                          Proveedores
+                      </a>
+                  </li>
+                  <li>
+                      <a href="#">
+                          <i class="material-icons-outlined">admin_panel_settings</i>
+                          Usuarios
+                      </a>
+                  </li>
+                  <li>
+                      <a href="#">
+                          <i class="material-icons-outlined">security</i>
+                          Roles
+                      </a>
+                  </li>
+              </ul>
+          </li>
+
+          <!-- Configuraciones -->
           <li class="menu-label">Configuraciones</li>
           <li>
               <a href="javascript:;" class="has-arrow">
@@ -370,7 +408,7 @@
                       </a>
                   </li>
                   <li>
-                      <a href="#">
+                      <a href="{{ route('cajas.index') }}">
                           <i class="material-icons-outlined">point_of_sale</i>
                           Cajas
                       </a>

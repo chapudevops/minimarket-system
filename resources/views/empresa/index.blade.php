@@ -18,11 +18,11 @@
             </div>
             <div class="card-body">
                 <!-- Alertas dinámicas con AJAX -->
-                <div id="alert-messages"></div>
+                <!-- <div id="alert-messages"></div> -->
 
-                <!-- IMPORTANTE: Quita el action y el method -->
-                <form id="empresaForm" method="POST" enctype="multipart/form-data" onsubmit="return false;">
+                <form id="empresaForm" method="POST" enctype="multipart/form-data">
                     @csrf
+                    <input type="hidden" id="empresaId" name="id" value="{{ $empresa->id }}">
                     
                     <!-- Datos de la Empresa -->
                     <div class="card mb-4">
@@ -221,7 +221,7 @@
                     
                     <!-- Botón Guardar -->
                     <div class="text-end">
-                        <button type="submit" class="btn btn-primary btn-lg" id="btnGuardar">
+                        <button type="button" class="btn btn-primary btn-lg" id="btnGuardar">
                             <i class="bi bi-save"></i> Guardar Cambios
                         </button>
                         <button type="button" class="btn btn-primary btn-lg" id="btnLoading" style="display: none;" disabled>
@@ -236,153 +236,6 @@
     </div>
 </div>
 
-@push('scripts')
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script>
-// Esperar a que jQuery esté cargado
-$(document).ready(function() {
-    
-    console.log('Script cargado correctamente');
-    
-    // Prevenir el submit normal del formulario
-    $('#empresaForm').on('submit', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        console.log('Formulario interceptado por jQuery');
-        
-        // Mostrar loading
-        $('#btnGuardar').hide();
-        $('#btnLoading').show();
-        
-        // Limpiar errores anteriores
-        $('.is-invalid').removeClass('is-invalid');
-        $('.invalid-feedback').html('');
-        
-        // Crear FormData
-        var formData = new FormData(this);
-        formData.append('_method', 'PUT');
-        
-        // Realizar petición AJAX
-        $.ajax({
-            url: '{{ route("empresa.update", $empresa->id) }}',
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
-            success: function(response) {
-                console.log('Respuesta exitosa:', response);
-                
-                if (response.success) {
-                    // Mostrar mensaje de éxito
-                    $('#alert-messages').html(`
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <i class="bi bi-check-circle"></i> ${response.message}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    `);
-                    
-                    // Actualizar logo si se cambió
-                    if (response.data.logo) {
-                        if ($('#logo-img').length) {
-                            $('#logo-img').attr('src', response.data.logo + '?t=' + new Date().getTime());
-                        }
-                    }
-                    
-                    // Actualizar información del certificado
-                    if (response.data.certificado_pfx) {
-                        $('#certificado-info').html(`
-                            <div class="mb-2">
-                                <span class="badge bg-success" id="certificado-badge">
-                                    <i class="bi bi-file-check"></i> Certificado cargado: ${response.data.certificado_pfx}
-                                </span>
-                            </div>
-                        `);
-                    }
-                    
-                    // Scroll hacia arriba para ver el mensaje
-                    $('html, body').animate({
-                        scrollTop: $('#alert-messages').offset().top - 100
-                    }, 500);
-                    
-                    // Auto-cerrar alerta después de 3 segundos
-                    setTimeout(function() {
-                        $('.alert-success').fadeOut();
-                    }, 3000);
-                }
-            },
-            error: function(xhr) {
-                console.log('Error:', xhr);
-                
-                if (xhr.status === 422) {
-                    var errors = xhr.responseJSON.errors;
-                    
-                    // Mostrar errores en los campos correspondientes
-                    $.each(errors, function(field, messages) {
-                        var input = $('[name="' + field + '"]');
-                        input.addClass('is-invalid');
-                        $('#error-' + field).html(messages[0]);
-                    });
-                    
-                    // Mostrar mensaje de error general
-                    $('#alert-messages').html(`
-                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            <i class="bi bi-exclamation-triangle"></i> Por favor corrige los errores en el formulario
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    `);
-                } else {
-                    $('#alert-messages').html(`
-                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            <i class="bi bi-exclamation-triangle"></i> Error al guardar los datos
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    `);
-                }
-            },
-            complete: function() {
-                // Ocultar loading
-                $('#btnGuardar').show();
-                $('#btnLoading').hide();
-            }
-        });
-        
-        // IMPORTANTE: Retornar false para asegurar que no se envíe el formulario
-        return false;
-    });
-    
-    // Previsualización de logo
-    $('#logo').on('change', function(e) {
-        var reader = new FileReader();
-        reader.onload = function(e) {
-            if ($('#logo-img').length) {
-                $('#logo-img').attr('src', e.target.result);
-            } else {
-                $('#logo-preview').prepend(`
-                    <div class="mb-3" id="logo-actual">
-                        <label class="form-label fw-bold">Vista previa</label>
-                        <div>
-                            <img src="${e.target.result}" 
-                                 alt="Logo Preview" 
-                                 id="logo-img"
-                                 width="150" 
-                                 height="150" 
-                                 class="border rounded p-2"
-                                 style="object-fit: contain;">
-                        </div>
-                    </div>
-                `);
-            }
-        }
-        if (e.target.files[0]) {
-            reader.readAsDataURL(e.target.files[0]);
-        }
-    });
-});
-</script>
-@endpush
 
+<script src="{{ URL::asset('build/js/empresa/config.js') }}"></script>
 @endsection

@@ -3,8 +3,11 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <!--favicon-->
     <link rel="icon" href="{{ URL::asset('build/images/infinitydevlogo.png') }}" type="image/png">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
     <title>@yield('title') | Minimarket-system</title>
 
     @yield('css')
@@ -273,6 +276,39 @@
         }, 1500); // Ajusta este tiempo según necesites
     });
   </script>
+
+  <style>
+    /* Asegurar que el footer se mantenga abajo */
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+    
+    body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+    }
+    
+    .main-wrapper {
+        flex: 1 0 auto;
+    }
+    
+    footer.page-footer {
+        flex-shrink: 0;
+        background: #f8f9fa;
+        padding: 1rem 0;
+        margin-top: 2rem;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    /* Ajustes para el contenido */
+    .page-wrapper {
+        min-height: calc(100vh - 200px);
+    }
+</style>
+
 
 </body>
   
