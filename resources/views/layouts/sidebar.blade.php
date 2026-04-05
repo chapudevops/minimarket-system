@@ -348,6 +348,48 @@
             </a>
           </li>
 
+          <!-- Terminal POS -->
+        <li class="menu-label">Ventas</li>
+        <li>
+            <a href="{{ route('terminal.index') }}" target="_blank">
+                <div class="parent-icon">
+                    <i class="material-icons-outlined">point_of_sale</i>
+                </div>
+                <div class="menu-title">Terminal POS</div>
+            </a>
+        </li>
+
+          <!-- Inventario -->
+          <li class="menu-label">Inventario</li>
+          <li>
+              <a href="javascript:;" class="has-arrow">
+                  <div class="parent-icon">
+                      <i class="material-icons-outlined">inventory_2</i>
+                  </div>
+                  <div class="menu-title">Inventario</div>
+              </a>
+              <ul>
+                  <li>
+                      <a href="{{ route('productos.index') }}">
+                          <i class="material-icons-outlined">shopping_bag</i>
+                          Productos
+                      </a>
+                  </li>
+                  <li>
+                      <a href="{{ route('almacenes.index') }}">
+                          <i class="material-icons-outlined">warehouse</i>
+                          Almacenes
+                      </a>
+                  </li>
+                  <li>
+                      <a href="#">
+                          <i class="material-icons-outlined">swap_horiz</i>
+                          Órdenes de Traslado
+                      </a>
+                  </li>
+              </ul>
+          </li>
+
           <!-- Contactos -->
           <li class="menu-label">Contactos</li>
           <li>

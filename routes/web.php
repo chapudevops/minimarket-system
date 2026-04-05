@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Almacen\AlmacenController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Caja\CajaController;
 use App\Http\Controllers\Cliente\ClienteController;
@@ -7,7 +8,9 @@ use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Empresa\EmpresaController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Producto\ProductoController;
 use App\Http\Controllers\Proveedor\ProveedorController;
+use App\Http\Controllers\Terminal\TerminalController;
 use Illuminate\Support\Facades\Auth;
 
 /*
@@ -56,7 +59,23 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/proveedores', [ProveedorController::class, 'store'])->name('proveedores.store');
     Route::put('/proveedores/{id}', [ProveedorController::class, 'update'])->name('proveedores.update');
     Route::delete('/proveedores/{id}', [ProveedorController::class, 'destroy'])->name('proveedores.destroy');
-
+    // Rutas para Productos
+    Route::get('/productos', [ProductoController::class, 'index'])->name('productos.index');
+    Route::get('/productos/data', [ProductoController::class, 'getData'])->name('productos.data');
+    Route::get('/productos/{id}', [ProductoController::class, 'show'])->name('productos.show');
+    Route::post('/productos', [ProductoController::class, 'store'])->name('productos.store');
+    Route::put('/productos/{id}', [ProductoController::class, 'update'])->name('productos.update');
+    Route::delete('/productos/{id}', [ProductoController::class, 'destroy'])->name('productos.destroy');
+    // Rutas para Almacenes
+    Route::get('/almacenes', [AlmacenController::class, 'index'])->name('almacenes.index');
+    Route::get('/almacenes/data', [AlmacenController::class, 'getData'])->name('almacenes.data');
+    Route::get('/almacenes/{id}', [AlmacenController::class, 'show'])->name('almacenes.show');
+    Route::post('/almacenes', [AlmacenController::class, 'store'])->name('almacenes.store');
+    Route::put('/almacenes/{id}', [AlmacenController::class, 'update'])->name('almacenes.update');
+    Route::delete('/almacenes/{id}', [AlmacenController::class, 'destroy'])->name('almacenes.destroy');
+    // Rutas para Terminal POS
+    Route::get('/terminal', [TerminalController::class, 'index'])->name('terminal.index');
+    Route::get('/terminal/search', [TerminalController::class, 'search'])->name('terminal.search');
     // Tu ruta comodín - DEBE IR AL FINAL
     Route::get('{routeName}/{name?}', [HomeController::class, 'pageView']);
 });
