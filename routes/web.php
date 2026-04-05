@@ -60,12 +60,22 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/proveedores/{id}', [ProveedorController::class, 'update'])->name('proveedores.update');
     Route::delete('/proveedores/{id}', [ProveedorController::class, 'destroy'])->name('proveedores.destroy');
     // Rutas para Productos
-    Route::get('/productos', [ProductoController::class, 'index'])->name('productos.index');
+    
+    
+    // Rutas para Productos (el orden es importante)
+    Route::get('/productos/almacenes', [ProductoController::class, 'getAlmacenes'])->name('productos.almacenes'); // Esta debe ir PRIMERO
     Route::get('/productos/data', [ProductoController::class, 'getData'])->name('productos.data');
-    Route::get('/productos/{id}', [ProductoController::class, 'show'])->name('productos.show');
+    Route::get('/productos/create', [ProductoController::class, 'create'])->name('productos.create');
+    Route::get('/productos', [ProductoController::class, 'index'])->name('productos.index');
     Route::post('/productos', [ProductoController::class, 'store'])->name('productos.store');
+    Route::get('/productos/{id}/edit', [ProductoController::class, 'edit'])->name('productos.edit');
+    Route::get('/productos/{id}', [ProductoController::class, 'show'])->name('productos.show');
     Route::put('/productos/{id}', [ProductoController::class, 'update'])->name('productos.update');
     Route::delete('/productos/{id}', [ProductoController::class, 'destroy'])->name('productos.destroy');
+    
+    
+    
+    
     // Rutas para Almacenes
     Route::get('/almacenes', [AlmacenController::class, 'index'])->name('almacenes.index');
     Route::get('/almacenes/data', [AlmacenController::class, 'getData'])->name('almacenes.data');

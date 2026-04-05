@@ -15,4 +15,11 @@ class Almacen extends Model
         'descripcion',
         'establecimiento'
     ];
+     // Relación con productos
+    public function productos()
+    {
+        return $this->belongsToMany(Producto::class, 'producto_almacen')
+                    ->withPivot('stock')
+                    ->withTimestamps();
+    }
 }

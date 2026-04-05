@@ -24,7 +24,6 @@ class Producto extends Model
         'fecha_vencimiento',
         'tipo_producto',
         'detraccion',
-        'stock',
         'stock_minimo',
         'estado'
     ];
@@ -37,7 +36,33 @@ class Producto extends Model
         'fecha_vencimiento' => 'date'
     ];
 
-    // Accesores
+    // Relación con almacenes (stock por almacén)
+    public function almacenes()
+    {
+        return $this->belongsToMany(Almacen::class, 'producto_almacen')
+                    ->withPivot('stock')
+                    ->withTimestamps();
+    }
+
+    // Relación con producto_almacen
+    public function stocks()
+    {
+        return $this->hasMany(ProductoAlmacen::class);
+    }
+
+    // Calcular stock total (suma de todos los stocks por almacén)
+    public function getStockTotalAttribute()
+    {
+        return $this->stocks()->sum('stock');
+    }
+
+    // Obtener stock de un almacén específico
+    public function getStockByAlmacen($almacenId)
+    {
+        $stock = $this->stocks()->where('almacen_id', $almacenId)->first();
+        return $stock ? $stock->stock : 0;
+    }
+
     public function getOperacionTextoAttribute()
     {
         $operaciones = [

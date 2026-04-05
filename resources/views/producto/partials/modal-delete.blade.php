@@ -1,4 +1,4 @@
-<!-- Modal Eliminar Producto -->
+<!-- Modal Eliminar -->
 <div class="modal fade" id="modalDelete" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-sm">
         <div class="modal-content">
@@ -14,9 +14,7 @@
                 <input type="hidden" id="delete_id">
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle"></i> Cancelar
-                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-danger" id="btnConfirmDelete">
                     <i class="bi bi-trash"></i> Eliminar
                 </button>
