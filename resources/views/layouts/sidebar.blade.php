@@ -348,6 +348,36 @@
             </a>
           </li>
 
+          <!-- Cajas -->
+          <li class="menu-label">Cajas</li>
+          <li>
+              <a href="{{ route('apertura-caja.index') }}">
+                  <div class="parent-icon">
+                      <i class="material-icons-outlined">point_of_sale</i>
+                  </div>
+                  <div class="menu-title">Apertura de Caja</div>
+              </a>
+          </li>
+
+          <!-- Compras -->
+          <li class="menu-label">Compras</li>
+          <li>
+              <a href="{{ route('compras.index') }}">
+                  <div class="parent-icon">
+                      <i class="material-icons-outlined">shopping_cart</i>
+                  </div>
+                  <div class="menu-title">Compras</div>
+              </a>
+          </li>
+          <li>
+            <a href="{{ route('gastos.index') }}">
+                <i class="material-icons-outlined">money_off</i>
+                Gastos
+            </a>
+        </li>
+
+
+
           <!-- Terminal POS -->
         <li class="menu-label">Ventas</li>
         <li>
@@ -382,7 +412,7 @@
                       </a>
                   </li>
                   <li>
-                      <a href="#">
+                      <a href="{{ route('traslados.index') }}">
                           <i class="material-icons-outlined">swap_horiz</i>
                           Órdenes de Traslado
                       </a>
@@ -413,7 +443,7 @@
                       </a>
                   </li>
                   <li>
-                      <a href="#">
+                      <a href="{{ route('usuarios.index') }}">
                           <i class="material-icons-outlined">admin_panel_settings</i>
                           Usuarios
                       </a>
@@ -444,7 +474,7 @@
                       </a>
                   </li>
                   <li>
-                      <a href="#">
+                      <a href="{{ route('series.index') }}">
                           <i class="material-icons-outlined">numbers</i>
                           Series
                       </a>

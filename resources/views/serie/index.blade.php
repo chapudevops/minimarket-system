@@ -1,6 +1,6 @@
 @extends('layouts.master')
 
-@section('title', 'Almacenes')
+@section('title', 'Series')
 @section('css')
     <link href="{{ URL::asset('build/plugins/datatable/css/dataTables.bootstrap5.min.css') }}" rel="stylesheet" />
 @endsection 
@@ -13,13 +13,13 @@
                 <div class="row align-items-center">
                     <div class="col">
                         <h4 class="mb-0">
-                            <i class="bi bi-building"></i> Listado de Almacenes
+                            <i class="bi bi-hash"></i> Gestión de Series
                         </h4>
-                        <p class="mb-0 text-muted small">Administra los almacenes de tu minimarket</p>
+                        <p class="mb-0 text-muted small">Administra las series para tus comprobantes</p>
                     </div>
                     <div class="col text-end">
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCreate">
-                            <i class="bi bi-plus-circle"></i> Nuevo Almacén
+                        <button type="button" class="btn btn-primary" id="btnNuevaSerie">
+                            <i class="bi bi-plus-circle"></i> Nueva Serie
                         </button>
                     </div>
                 </div>
@@ -28,14 +28,15 @@
                 <div id="alert-messages"></div>
 
                 <div class="table-responsive">
-                    <table id="almacenesTable" class="table table-striped table-bordered" style="width:100%">
+                    <table id="seriesTable" class="table table-striped table-bordered" style="width:100%">
                         <thead>
                             <tr>
                                 <th width="5%">#</th>
-                                <th width="60%">Descripción</th>
-                                <th width="15%">Establecimiento</th>
-                                <th width="10%">Fecha Creación</th>
-                                <th width="10%">Acciones</th>
+                                <th width="15%">Serie</th>
+                                <th width="20%">Correlativo</th>
+                                <th width="25%">Comprobante</th>
+                                <th width="20%">Caja</th>
+                                <th width="15%">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -47,17 +48,16 @@
         </div>
     </div>
 </div>
-<!-- Modales -->
-@include('almacen.partials.modal-create')
-@include('almacen.partials.modal-edit')
-@include('almacen.partials.modal-delete')
-@include('almacen.partials.modal-view')
 
+<!-- Modales -->
+@include('serie.partials.modal-create')
+@include('serie.partials.modal-edit')
+@include('serie.partials.modal-delete')
 
 @endsection 
 
 @section('scripts')  
 <script src="{{ URL::asset('build/plugins/datatable/js/jquery.dataTables.min.js') }}"></script>
 <script src="{{ URL::asset('build/plugins/datatable/js/dataTables.bootstrap5.min.js') }}"></script>
-<script src="{{ URL::asset('build/js/almacen/config.js')}}"></script>
+<script src="{{ URL::asset('build/js/serie/config.js')}}"></script>
 @endsection
