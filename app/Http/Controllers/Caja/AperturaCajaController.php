@@ -4,57 +4,78 @@ namespace App\Http\Controllers\Caja;
 
 use App\Http\Controllers\Controller;
 use App\Models\AperturaCaja;
+use App\Models\Venta;
+use App\Models\Gasto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class AperturaCajaController extends Controller
 {
-  public function index()
-{
-    return view('apertura-caja.index');
-}
+    public function index()
+    {
+        return view('apertura-caja.index');
+    }
 
-public function getData(Request $request)
-{
-    $aperturas = AperturaCaja::with('responsable')->orderBy('id', 'desc')->get();
-    
-    $index = 1;
-    
-    return response()->json([
-        'data' => $aperturas->map(function($apertura) use (&$index) {
-            return [
-                'correlativo' => $index++,
-                'id' => $apertura->id,
-                'fecha_apertura' => $apertura->fecha_apertura->format('d/m/Y'),
-                'responsable' => $apertura->responsable->name ?? '-',
-                'monto_inicial' => 'S/ ' . number_format($apertura->monto_inicial, 2),
-                'estado' => $apertura->estado,
-                'estado_badge' => $apertura->estado_badge,
-                'created_at' => $apertura->created_at ? $apertura->created_at->format('d/m/Y H:i') : '-',
-                'acciones' => $this->generateActions($apertura)
-            ];
-        })
-    ]);
-}
+    public function getData(Request $request)
+    {
+        $aperturas = AperturaCaja::with('responsable')->orderBy('id', 'desc')->get();
+        
+        $index = 1;
+        
+        return response()->json([
+            'data' => $aperturas->map(function($apertura) use (&$index) {
+                return [
+                    'correlativo' => $index++,
+                    'id' => $apertura->id,
+                    'fecha_apertura' => $apertura->fecha_apertura->format('d/m/Y'),
+                    'responsable' => $apertura->responsable->name ?? '-',
+                    'monto_inicial' => 'S/ ' . number_format($apertura->monto_inicial, 2),
+                    'estado' => $apertura->estado,
+                    'estado_badge' => $apertura->estado_badge,
+                    'created_at' => $apertura->created_at ? $apertura->created_at->format('d/m/Y H:i') : '-',
+                    'acciones' => $this->generateActions($apertura)
+                ];
+            })
+        ]);
+    }
 
     private function generateActions($apertura)
     {
+        $actions = '
+            <button type="button" class="btn btn-sm btn-info btn-detalle" 
+                    data-id="' . $apertura->id . '"
+                    data-responsable="' . htmlspecialchars($apertura->responsable->name ?? '-') . '"
+                    data-fecha="' . $apertura->fecha_apertura->format('d/m/Y') . '"
+                    data-monto_inicial="' . number_format($apertura->monto_inicial, 2) . '">
+                <i class="bi bi-eye"></i> Detalle
+            </button>
+            <button type="button" class="btn btn-sm btn-success btn-resumen" 
+                    data-id="' . $apertura->id . '"
+                    data-responsable="' . htmlspecialchars($apertura->responsable->name ?? '-') . '"
+                    data-fecha="' . $apertura->fecha_apertura->format('d/m/Y') . '"
+                    data-monto_inicial="' . number_format($apertura->monto_inicial, 2) . '">
+                <i class="bi bi-graph-up"></i> Resumen
+            </button>
+            <button type="button" class="btn btn-sm btn-danger btn-reporte" 
+                    data-id="' . $apertura->id . '">
+                <i class="bi bi-file-pdf"></i> Reporte
+            </button>
+        ';
+        
         if ($apertura->estado == 'ABIERTA') {
-            return '
+            $actions .= '
                 <button type="button" class="btn btn-sm btn-danger btn-cerrar" 
                         data-id="' . $apertura->id . '"
                         data-responsable="' . htmlspecialchars($apertura->responsable->name ?? '-') . '"
-                        data-monto_inicial="' . number_format($apertura->monto_inicial, 2) . '"
-                        data-bs-toggle="modal" 
-                        data-bs-target="#modalCerrar">
-                    <i class="bi bi-x-circle"></i> Cerrar Caja
+                        data-monto_inicial="' . number_format($apertura->monto_inicial, 2) . '">
+                    <i class="bi bi-x-circle"></i> Cerrar
                 </button>
             ';
         }
-        return '
-            <span class="text-muted">Sin acciones</span>
-        ';
+        
+        return $actions;
     }
 
     public function verificarCajaAbierta()
@@ -73,7 +94,6 @@ public function getData(Request $request)
         try {
             DB::beginTransaction();
 
-            // Verificar si ya tiene una caja abierta
             $cajaAbierta = AperturaCaja::where('estado', 'ABIERTA')
                                        ->where('responsable_id', Auth::id())
                                        ->exists();
@@ -166,5 +186,111 @@ public function getData(Request $request)
                 'message' => 'Error al cerrar la caja: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    public function getDetalle($id)
+    {
+        $apertura = AperturaCaja::findOrFail($id);
+        
+        // Obtener ventas desde la fecha de apertura hasta la fecha de cierre o actual
+        $fechaFin = $apertura->fecha_cierre ?? now();
+        $ventas = Venta::where('caja_id', $apertura->id)
+                       ->whereBetween('fecha_emision', [$apertura->fecha_apertura, $fechaFin])
+                       ->with('cliente')
+                       ->orderBy('fecha_emision', 'desc')
+                       ->get();
+        
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $apertura->id,
+                'fecha_apertura' => $apertura->fecha_apertura->format('d/m/Y'),
+                'hora_apertura' => $apertura->hora_apertura ? date('H:i:s', strtotime($apertura->hora_apertura)) : '-',
+                'fecha_cierre' => $apertura->fecha_cierre ? $apertura->fecha_cierre->format('d/m/Y') : '-',
+                'hora_cierre' => $apertura->hora_cierre ? date('H:i:s', strtotime($apertura->hora_cierre)) : '-',
+                'responsable' => $apertura->responsable->name ?? '-',
+                'monto_inicial' => $apertura->monto_inicial,
+                'monto_cierre' => $apertura->monto_cierre,
+                'estado' => $apertura->estado,
+                'ventas' => $ventas->map(function($venta) {
+                    return [
+                        'id' => $venta->id,
+                        'fecha' => $venta->fecha_emision->format('d/m/Y'),
+                        'hora' => $venta->fecha_emision->format('H:i:s'),
+                        'cliente' => $venta->cliente->nombre_razon_social ?? 'CLIENTES VARIOS',
+                        'documento' => $venta->documento,
+                        'numero' => $venta->documento,
+                        'monto' => $venta->total
+                    ];
+                })
+            ]
+        ]);
+    }
+
+    public function getResumen($id)
+    {
+        $apertura = AperturaCaja::findOrFail($id);
+        
+        $fechaFin = $apertura->fecha_cierre ?? now();
+        
+        // Ventas del período
+        $ventas = Venta::where('caja_id', $apertura->id)
+                       ->whereBetween('fecha_emision', [$apertura->fecha_apertura, $fechaFin])
+                       ->get();
+        
+        // Gastos del período
+        $gastos = Gasto::whereBetween('fecha_emision', [$apertura->fecha_apertura, $fechaFin])
+                       ->get();
+        
+        $totalVentas = $ventas->sum('total');
+        $cantidadVentas = $ventas->count();
+        $totalGastos = $gastos->sum('monto');
+        
+        $total = ($totalVentas + $apertura->monto_inicial) - $totalGastos;
+        
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $apertura->id,
+                'fecha_apertura' => $apertura->fecha_apertura->format('d/m/Y'),
+                'responsable' => $apertura->responsable->name ?? '-',
+                'monto_inicial' => $apertura->monto_inicial,
+                'total_ventas' => $totalVentas,
+                'cantidad_ventas' => $cantidadVentas,
+                'gastos' => $gastos->map(function($gasto) {
+                    return [
+                        'motivo' => $gasto->motivo,
+                        'monto' => $gasto->monto
+                    ];
+                }),
+                'total_gastos' => $totalGastos,
+                'total' => $total
+            ]
+        ]);
+    }
+
+    public function generarReporte($id)
+    {
+        $apertura = AperturaCaja::findOrFail($id);
+        $fechaFin = $apertura->fecha_cierre ?? now();
+        
+        $ventas = Venta::where('caja_id', $apertura->id)
+                       ->whereBetween('fecha_emision', [$apertura->fecha_apertura, $fechaFin])
+                       ->with('cliente')
+                       ->orderBy('fecha_emision', 'desc')
+                       ->get();
+        
+        $gastos = Gasto::whereBetween('fecha_emision', [$apertura->fecha_apertura, $fechaFin])
+                       ->get();
+        
+        $totalVentas = $ventas->sum('total');
+        $cantidadVentas = $ventas->count();
+        $totalGastos = $gastos->sum('monto');
+        $total = ($totalVentas + $apertura->monto_inicial) - $totalGastos;
+        
+        $pdf = Pdf::loadView('apertura-caja.reporte', compact('apertura', 'ventas', 'gastos', 'totalVentas', 'cantidadVentas', 'totalGastos', 'total', 'fechaFin'));
+        $pdf->setPaper('a4', 'portrait');
+        
+        return $pdf->download('reporte_caja_' . $apertura->id . '_' . date('Ymd_His') . '.pdf');
     }
 }

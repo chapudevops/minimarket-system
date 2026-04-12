@@ -33,10 +33,10 @@
                             <tr>
                                 <th width="5%">#</th>
                                 <th width="10%">Fecha</th>
-                                <th width="20%">Responsable</th>
+                                <th width="15%">Responsable</th>
                                 <th width="15%">Monto apertura</th>
                                 <th width="10%">Estado</th>
-                                <th width="20%">Acciones</th>
+                                <th width="30%">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -52,6 +52,8 @@
 <!-- Modales -->
 @include('apertura-caja.partials.modal-abrir')
 @include('apertura-caja.partials.modal-cerrar')
+@include('apertura-caja.partials.modal-detalle')
+@include('apertura-caja.partials.modal-resumen')
 
 @endsection 
 

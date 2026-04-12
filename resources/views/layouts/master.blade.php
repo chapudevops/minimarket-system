@@ -202,6 +202,10 @@
 
 <body>
 
+@php
+    $empresa = \App\Models\Empresa::first();
+@endphp
+
 <!-- Preloader de Minimarket - Esto aparece inmediatamente -->
 <div id="preloader">
     <div class="preloader-container">

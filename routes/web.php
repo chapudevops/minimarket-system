@@ -6,17 +6,23 @@ use App\Http\Controllers\Caja\AperturaCajaController;
 use App\Http\Controllers\Caja\CajaController;
 use App\Http\Controllers\Cliente\ClienteController;
 use App\Http\Controllers\Compra\CompraController;
+use App\Http\Controllers\Cotizacion\CotizacionController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Empresa\EmpresaController;
 use App\Http\Controllers\Gasto\GastoController;
+use App\Http\Controllers\GuiaRemision\GuiaRemisionController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\NotaCredito\NotaCreditoController;
+use App\Http\Controllers\NotaDebito\NotaDebitoController;
+use App\Http\Controllers\NotaVenta\NotaVentaController;
 use App\Http\Controllers\OrdenTraslado\OrdenTrasladoController;
 use App\Http\Controllers\Producto\ProductoController;
 use App\Http\Controllers\Proveedor\ProveedorController;
 use App\Http\Controllers\Serie\SerieController;
 use App\Http\Controllers\Terminal\TerminalController;
 use App\Http\Controllers\Usuario\UsuarioController;
+use App\Http\Controllers\Venta\VentaController;
 use Illuminate\Support\Facades\Auth;
 
 /*
@@ -146,7 +152,69 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/apertura-caja/verificar', [AperturaCajaController::class, 'verificarCajaAbierta'])->name('apertura-caja.verificar');
     Route::post('/apertura-caja', [AperturaCajaController::class, 'store'])->name('apertura-caja.store');
     Route::post('/apertura-caja/{id}/cerrar', [AperturaCajaController::class, 'cerrar'])->name('apertura-caja.cerrar');
-    
+    Route::get('/apertura-caja/{id}/detalle', [AperturaCajaController::class, 'getDetalle'])->name('apertura-caja.detalle');
+    Route::get('/apertura-caja/{id}/resumen', [AperturaCajaController::class, 'getResumen'])->name('apertura-caja.resumen');
+    Route::get('/apertura-caja/{id}/reporte', [AperturaCajaController::class, 'generarReporte'])->name('apertura-caja.reporte');
+    // Rutas para Ventas
+    Route::get('/ventas', [VentaController::class, 'index'])->name('ventas.index');
+    Route::get('/ventas/data', [VentaController::class, 'getData'])->name('ventas.data');
+    Route::get('/ventas/{id}', [VentaController::class, 'show'])->name('ventas.show');
+    Route::get('/ventas/{id}/pdf', [VentaController::class, 'generarPdf'])->name('ventas.pdf');
+    Route::get('/ventas/{id}/ticket', [VentaController::class, 'imprimirTicket'])->name('ventas.ticket');
+    Route::post('/ventas/{id}/anular', [VentaController::class, 'anular'])->name('ventas.anular');
+   // Rutas para Notas de Crédito
+    Route::get('/notas-credito', [NotaCreditoController::class, 'index'])->name('notas-credito.index');
+    Route::get('/notas-credito/data', [NotaCreditoController::class, 'getData'])->name('notas-credito.data');
+    Route::get('/notas-credito/create', [NotaCreditoController::class, 'create'])->name('notas-credito.create');
+    Route::get('/notas-credito/serie', [NotaCreditoController::class, 'getSerie'])->name('notas-credito.serie');
+    Route::get('/notas-credito/venta/{id}', [NotaCreditoController::class, 'getVenta'])->name('notas-credito.venta');
+    Route::post('/notas-credito', [NotaCreditoController::class, 'store'])->name('notas-credito.store');
+    Route::get('/notas-credito/{id}', [NotaCreditoController::class, 'show'])->name('notas-credito.show');
+    Route::get('/notas-credito/{id}/pdf', [NotaCreditoController::class, 'generarPdf'])->name('notas-credito.pdf');
+    // Rutas para Notas de Débito
+    Route::get('/notas-debito', [NotaDebitoController::class, 'index'])->name('notas-debito.index');
+    Route::get('/notas-debito/data', [NotaDebitoController::class, 'getData'])->name('notas-debito.data');
+    Route::get('/notas-debito/create', [NotaDebitoController::class, 'create'])->name('notas-debito.create');
+    Route::get('/notas-debito/serie', [NotaDebitoController::class, 'getSerie'])->name('notas-debito.serie');
+    Route::get('/notas-debito/venta/{id}', [NotaDebitoController::class, 'getVenta'])->name('notas-debito.venta');
+    Route::post('/notas-debito', [NotaDebitoController::class, 'store'])->name('notas-debito.store');
+    Route::get('/notas-debito/{id}', [NotaDebitoController::class, 'show'])->name('notas-debito.show');
+    Route::get('/notas-debito/{id}/pdf', [NotaDebitoController::class, 'generarPdf'])->name('notas-debito.pdf');
+    // Rutas para Notas de Venta
+    Route::get('/notas-venta', [NotaVentaController::class, 'index'])->name('notas-venta.index');
+    Route::get('/notas-venta/data', [NotaVentaController::class, 'getData'])->name('notas-venta.data');
+    Route::get('/notas-venta/create', [NotaVentaController::class, 'create'])->name('notas-venta.create');
+    Route::get('/notas-venta/serie', [NotaVentaController::class, 'getSerie'])->name('notas-venta.serie');
+    Route::get('/notas-venta/search/productos', [NotaVentaController::class, 'searchProductos'])->name('notas-venta.search.productos');
+    Route::get('/notas-venta/stock', [NotaVentaController::class, 'getStock'])->name('notas-venta.stock');
+    Route::post('/notas-venta', [NotaVentaController::class, 'store'])->name('notas-venta.store');
+    Route::get('/notas-venta/{id}', [NotaVentaController::class, 'show'])->name('notas-venta.show');
+    Route::get('/notas-venta/{id}/pdf', [NotaVentaController::class, 'generarPdf'])->name('notas-venta.pdf');
+    // Rutas para Cotizaciones
+    Route::get('/cotizaciones', [CotizacionController::class, 'index'])->name('cotizaciones.index');
+    Route::get('/cotizaciones/data', [CotizacionController::class, 'getData'])->name('cotizaciones.data');
+    Route::get('/cotizaciones/create', [CotizacionController::class, 'create'])->name('cotizaciones.create');
+    Route::get('/cotizaciones/serie', [CotizacionController::class, 'getSerie'])->name('cotizaciones.serie');
+    Route::get('/cotizaciones/search/productos', [CotizacionController::class, 'searchProductos'])->name('cotizaciones.search.productos');
+    Route::post('/cotizaciones', [CotizacionController::class, 'store'])->name('cotizaciones.store');
+    Route::get('/cotizaciones/{id}', [CotizacionController::class, 'show'])->name('cotizaciones.show');
+    Route::get('/cotizaciones/{id}/pdf', [CotizacionController::class, 'generarPdf'])->name('cotizaciones.pdf');
+    Route::post('/cotizaciones/{id}/aprobar', [CotizacionController::class, 'aprobar'])->name('cotizaciones.aprobar');
+    Route::post('/cotizaciones/{id}/rechazar', [CotizacionController::class, 'rechazar'])->name('cotizaciones.rechazar');
+    // Rutas para Guías de Remisión
+    Route::get('/guias-remision', [GuiaRemisionController::class, 'index'])->name('guias-remision.index');
+    Route::get('/guias-remision/data', [GuiaRemisionController::class, 'getData'])->name('guias-remision.data');
+    Route::get('/guias-remision/create', [GuiaRemisionController::class, 'create'])->name('guias-remision.create');
+    Route::get('/guias-remision/serie', [GuiaRemisionController::class, 'getSerie'])->name('guias-remision.serie');
+    Route::get('/guias-remision/search/productos', [GuiaRemisionController::class, 'searchProductos'])->name('guias-remision.search.productos');
+    Route::post('/guias-remision', [GuiaRemisionController::class, 'store'])->name('guias-remision.store');
+    Route::get('/guias-remision/{id}', [GuiaRemisionController::class, 'show'])->name('guias-remision.show');
+    Route::get('/guias-remision/{id}/pdf', [GuiaRemisionController::class, 'generarPdf'])->name('guias-remision.pdf');
+    Route::get('/guias-remision/conductores', [GuiaRemisionController::class, 'getConductores'])->name('guias-remision.conductores');
+    Route::post('/guias-remision/conductores', [GuiaRemisionController::class, 'storeConductor'])->name('guias-remision.store.conductor');
+    Route::get('/guias-remision/vehiculos', [GuiaRemisionController::class, 'getVehiculos'])->name('guias-remision.vehiculos');
+    Route::post('/guias-remision/vehiculos', [GuiaRemisionController::class, 'storeVehiculo'])->name('guias-remision.store.vehiculo');
+    Route::get('/guias-remision/ubigeo/search', [GuiaRemisionController::class, 'searchUbigeo'])->name('guias-remision.ubigeo');
     // Tu ruta comodín - DEBE IR AL FINAL
     Route::get('{routeName}/{name?}', [HomeController::class, 'pageView']);
 });

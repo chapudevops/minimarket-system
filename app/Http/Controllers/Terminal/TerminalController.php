@@ -11,6 +11,7 @@ use App\Models\VentaDetalle;
 use App\Models\VentaCuota;
 use App\Models\ProductoAlmacen;
 use App\Models\AperturaCaja;
+use App\Models\Caja;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +24,10 @@ class TerminalController extends Controller
         $cajaAbierta = AperturaCaja::where('responsable_id', Auth::id())
                                    ->where('estado', 'ABIERTA')
                                    ->first();
+        
+        \Log::info('=== INDEX POS ===');
+        \Log::info('Usuario ID: ' . Auth::id());
+        \Log::info('Caja abierta encontrada:', ['caja' => $cajaAbierta]);
         
         if (!$cajaAbierta) {
             return redirect()->route('apertura-caja.index')
@@ -99,228 +104,283 @@ class TerminalController extends Controller
         ]);
     }
 
-   public function getSeries(Request $request)
-{
-    $tipo = $request->get('tipo');
-    
-    // Obtener la caja del usuario autenticado
-    $usuario = Auth::user();
-    
-    // Primero verificar si el usuario tiene una caja asignada
-    $cajaId = $usuario->caja_id;
-    
-    // Si no tiene caja asignada, buscar si tiene una caja abierta
-    if (!$cajaId) {
-        $cajaAbierta = AperturaCaja::where('responsable_id', $usuario->id)
-                                   ->where('estado', 'ABIERTA')
-                                   ->first();
+    public function getSeries(Request $request)
+    {
+        $tipo = $request->get('tipo');
         
-        if ($cajaAbierta) {
-            $cajaId = $cajaAbierta->id;
-        }
-    }
-    
-    // Si aún no hay caja, buscar la primera caja activa
-    if (!$cajaId) {
-        $caja = Caja::where('estado', 1)->first();
-        if ($caja) {
-            $cajaId = $caja->id;
-        }
-    }
-    
-    // Debug - ver qué caja se está usando
-    \Log::info('Buscando serie:', [
-        'tipo' => $tipo, 
-        'caja_id' => $cajaId,
-        'usuario_id' => $usuario->id,
-        'usuario_caja_id' => $usuario->caja_id
-    ]);
-    
-    if (!$cajaId) {
-        return response()->json([
-            'success' => false,
-            'message' => 'No se encontró una caja asignada o abierta para este usuario'
-        ]);
-    }
-    
-    $serie = Serie::where('tipo_comprobante', $tipo)
-                 ->where('caja_id', $cajaId)
-                 ->first();
-    
-    // Debug - ver si encontró algo
-    \Log::info('Serie encontrada:', ['serie' => $serie]);
-    
-    if (!$serie) {
-        return response()->json([
-            'success' => false,
-            'message' => "No hay serie configurada para {$tipo} en la caja ID: {$cajaId}"
-        ]);
-    }
-    
-    $numero = $serie->correlativo + 1;
-    
-    return response()->json([
-        'success' => true,
-        'serie' => $serie->serie,
-        'numero' => $numero,
-        'documento' => $serie->serie . '-' . str_pad($numero, 8, '0', STR_PAD_LEFT)
-    ]);
-}
-
-   public function procesarPago(Request $request)
-{
-    try {
-        DB::beginTransaction();
-
-        // Verificar caja abierta
-        $cajaAbierta = AperturaCaja::where('responsable_id', Auth::id())
-                                   ->where('estado', 'ABIERTA')
-                                   ->first();
+        \Log::info('=== GET SERIES ===');
+        \Log::info('Tipo comprobante solicitado: ' . $tipo);
         
-        if (!$cajaAbierta) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No hay una caja abierta para este usuario'
-            ], 422);
-        }
-
-        // Decodificar productos desde JSON
-        $productos = json_decode($request->productos_json, true);
+        // Obtener la caja del usuario autenticado
+        $usuario = Auth::user();
+        \Log::info('Usuario ID: ' . $usuario->id);
+        \Log::info('Usuario caja_id asignado: ' . ($usuario->caja_id ?? 'NULL'));
         
-        if (!$productos || empty($productos)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No hay productos en la venta'
-            ], 422);
-        }
-
-        $request->validate([
-            'tipo_comprobante' => 'required|in:BOLETA,FACTURA,NOTA',
-            'cliente_id' => 'nullable|exists:clientes,id',
-            'tipo_venta' => 'required|in:CONTADO,CREDITO',
-            'forma_pago' => 'required|in:EFECTIVO,YAPE,TRANSFERENCIA,TARJETA',
-            'total' => 'required|numeric|min:0',
-            'pagado' => 'required|numeric|min:0',
-            'detraccion' => 'nullable|boolean',
-            'observaciones' => 'nullable'
-        ]);
-
-        // Validar stock para cada producto
-        foreach ($productos as $item) {
-            $stock = ProductoAlmacen::where('producto_id', $item['id'])
-                                    ->where('almacen_id', $item['almacen_id'])
-                                    ->first();
+        // Primero verificar si el usuario tiene una caja asignada
+        $cajaId = $usuario->caja_id;
+        
+        // Si no tiene caja asignada, buscar si tiene una caja abierta
+        if (!$cajaId) {
+            \Log::info('Usuario sin caja asignada, buscando caja abierta...');
+            $cajaAbierta = AperturaCaja::where('responsable_id', $usuario->id)
+                                       ->where('estado', 'ABIERTA')
+                                       ->first();
             
-            if (!$stock || $stock->stock < $item['cantidad']) {
-                $producto = Producto::find($item['id']);
-                return response()->json([
-                    'success' => false,
-                    'message' => "Stock insuficiente para: {$producto->descripcion}"
-                ], 422);
+            \Log::info('Caja abierta encontrada:', ['caja' => $cajaAbierta]);
+            
+            if ($cajaAbierta) {
+                $cajaId = $cajaAbierta->id;
+                \Log::info('Usando caja abierta ID: ' . $cajaId);
             }
         }
-
-        // Obtener serie y número
-        $serie = Serie::where('tipo_comprobante', $request->tipo_comprobante)
-                     ->where('caja_id', $cajaAbierta->id)
+        
+        // Si aún no hay caja, buscar la primera caja activa
+        if (!$cajaId) {
+            \Log::info('Buscando primera caja disponible...');
+            $caja = Caja::first();
+            if ($caja) {
+                $cajaId = $caja->id;
+                \Log::info('Usando primera caja ID: ' . $cajaId);
+            }
+        }
+        
+        if (!$cajaId) {
+            \Log::error('No se encontró ninguna caja para el usuario');
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontró una caja asignada o abierta para este usuario'
+            ]);
+        }
+        
+        // Buscar la serie
+        \Log::info('Buscando serie con:', [
+            'tipo_comprobante' => $tipo,
+            'caja_id' => $cajaId
+        ]);
+        
+        $serie = Serie::where('tipo_comprobante', $tipo)
+                     ->where('caja_id', $cajaId)
                      ->first();
         
+        \Log::info('Resultado de búsqueda de serie:', ['serie' => $serie]);
+        
         if (!$serie) {
+            // Listar todas las series disponibles para debug
+            $todasSeries = Serie::all();
+            \Log::info('Todas las series en la BD:', ['series' => $todasSeries->toArray()]);
+            
             return response()->json([
                 'success' => false,
-                'message' => 'No hay serie configurada para este tipo de comprobante'
-            ], 422);
-        }
-
-        $numero = $serie->correlativo + 1;
-        $subtotal = $request->total / 1.18;
-        $igv = $request->total - $subtotal;
-
-        // Crear venta
-        $venta = Venta::create([
-            'tipo_comprobante' => $request->tipo_comprobante,
-            'serie' => $serie->serie,
-            'numero' => $numero,
-            'fecha_emision' => now(),
-            'cliente_id' => $request->cliente_id,
-            'tipo_venta' => $request->tipo_venta,
-            'forma_pago' => $request->forma_pago,
-            'subtotal' => $subtotal,
-            'igv' => $igv,
-            'total' => $request->total,
-            'pagado' => $request->pagado,
-            'cambio' => $request->pagado - $request->total,
-            'detraccion' => $request->has('detraccion'),
-            'observaciones' => $request->observaciones,
-            'caja_id' => $cajaAbierta->id,
-            'usuario_id' => Auth::id(),
-            'estado' => $request->tipo_venta == 'CREDITO' ? 'PENDIENTE' : 'COMPLETADA'
-        ]);
-
-        // Actualizar correlativo de la serie
-        $serie->correlativo = $numero;
-        $serie->save();
-
-        // Crear detalles y actualizar stock
-        foreach ($productos as $item) {
-            VentaDetalle::create([
-                'venta_id' => $venta->id,
-                'producto_id' => $item['id'],
-                'cantidad' => $item['cantidad'],
-                'precio_unitario' => $item['precio'],
-                'total' => $item['cantidad'] * $item['precio'],
-                'almacen_id' => $item['almacen_id']
+                'message' => "No hay serie configurada para {$tipo} en la caja ID: {$cajaId}"
             ]);
-
-            // Descontar stock
-            $stock = ProductoAlmacen::where('producto_id', $item['id'])
-                                    ->where('almacen_id', $item['almacen_id'])
-                                    ->first();
-            $stock->stock -= $item['cantidad'];
-            $stock->save();
         }
-
-        // Si es crédito, generar cuotas
-        if ($request->tipo_venta == 'CREDITO') {
-            $montoCredito = $request->total - ($request->pagado ?? 0);
-            $numeroCuotas = $request->numero_cuotas ?? 1;
-            $montoCuota = $montoCredito / $numeroCuotas;
-            
-            for ($i = 1; $i <= $numeroCuotas; $i++) {
-                VentaCuota::create([
-                    'venta_id' => $venta->id,
-                    'numero_cuota' => $i,
-                    'fecha_vencimiento' => now()->addMonths($i),
-                    'monto' => $montoCuota,
-                    'estado' => 'PENDIENTE'
-                ]);
-            }
-        }
-
-        DB::commit();
-
+        
+        $numero = $serie->correlativo + 1;
+        \Log::info('Serie encontrada - Serie: ' . $serie->serie . ', Nuevo número: ' . $numero);
+        
         return response()->json([
             'success' => true,
-            'message' => 'Venta procesada exitosamente',
-            'data' => [
-                'venta_id' => $venta->id,
-                'documento' => $venta->documento,
-                'total' => $venta->total,
-                'pagado' => $venta->pagado,
-                'cambio' => $venta->cambio,
-                'tipo_venta' => $venta->tipo_venta,
-                'cuotas' => $venta->tipo_venta == 'CREDITO' ? $venta->cuotas : null
-            ]
+            'serie' => $serie->serie,
+            'numero' => $numero,
+            'documento' => $serie->serie . '-' . str_pad($numero, 8, '0', STR_PAD_LEFT)
         ]);
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return response()->json([
-            'success' => false,
-            'message' => 'Error al procesar la venta: ' . $e->getMessage()
-        ], 500);
     }
-}
+
+    public function procesarPago(Request $request)
+    {
+        try {
+            \Log::info('=== PROCESAR PAGO ===');
+            \Log::info('Datos recibidos:', $request->all());
+            
+            DB::beginTransaction();
+
+            // Verificar caja abierta
+            $cajaAbierta = AperturaCaja::where('responsable_id', Auth::id())
+                                       ->where('estado', 'ABIERTA')
+                                       ->first();
+            
+            \Log::info('Caja abierta:', ['caja' => $cajaAbierta]);
+            
+            if (!$cajaAbierta) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No hay una caja abierta para este usuario'
+                ], 422);
+            }
+
+            // Decodificar productos desde JSON
+            $productos = json_decode($request->productos_json, true);
+            
+            \Log::info('Productos decodificados:', ['productos' => $productos]);
+            
+            if (!$productos || empty($productos)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No hay productos en la venta'
+                ], 422);
+            }
+
+            $request->validate([
+                'tipo_comprobante' => 'required|in:BOLETA,FACTURA,NOTA',
+                'cliente_id' => 'nullable|exists:clientes,id',
+                'tipo_venta' => 'required|in:CONTADO,CREDITO',
+                'forma_pago' => 'required|in:EFECTIVO,YAPE,TRANSFERENCIA,TARJETA',
+                'total' => 'required|numeric|min:0',
+                'pagado' => 'required|numeric|min:0',
+                'detraccion' => 'nullable|boolean',
+                'observaciones' => 'nullable'
+            ]);
+
+            // Validar stock para cada producto
+            foreach ($productos as $item) {
+                $stock = ProductoAlmacen::where('producto_id', $item['id'])
+                                        ->where('almacen_id', $item['almacen_id'])
+                                        ->first();
+                
+                \Log::info('Validando stock producto ID: ' . $item['id'], [
+                    'stock_encontrado' => $stock ? $stock->stock : 0,
+                    'cantidad_solicitada' => $item['cantidad']
+                ]);
+                
+                if (!$stock || $stock->stock < $item['cantidad']) {
+                    $producto = Producto::find($item['id']);
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Stock insuficiente para: {$producto->descripcion}"
+                    ], 422);
+                }
+            }
+
+            // Obtener serie y número
+            \Log::info('Buscando serie para:', [
+                'tipo_comprobante' => $request->tipo_comprobante,
+                'caja_id' => $cajaAbierta->id
+            ]);
+            
+            $serie = Serie::where('tipo_comprobante', $request->tipo_comprobante)
+                         ->where('caja_id', $cajaAbierta->id)
+                         ->first();
+            
+            \Log::info('Serie encontrada:', ['serie' => $serie]);
+            
+            if (!$serie) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No hay serie configurada para este tipo de comprobante'
+                ], 422);
+            }
+
+            $numero = $serie->correlativo + 1;
+            $subtotal = $request->total / 1.18;
+            $igv = $request->total - $subtotal;
+            
+            \Log::info('Calculando totales:', [
+                'total' => $request->total,
+                'subtotal' => $subtotal,
+                'igv' => $igv,
+                'serie' => $serie->serie,
+                'numero' => $numero
+            ]);
+
+            // Crear venta
+            $venta = Venta::create([
+                'tipo_comprobante' => $request->tipo_comprobante,
+                'serie' => $serie->serie,
+                'numero' => $numero,
+                'fecha_emision' => now(),
+                'cliente_id' => $request->cliente_id,
+                'tipo_venta' => $request->tipo_venta,
+                'forma_pago' => $request->forma_pago,
+                'subtotal' => $subtotal,
+                'igv' => $igv,
+                'total' => $request->total,
+                'pagado' => $request->pagado,
+                'cambio' => $request->pagado - $request->total,
+                'detraccion' => $request->has('detraccion'),
+                'observaciones' => $request->observaciones,
+                'caja_id' => $cajaAbierta->id,
+                'usuario_id' => Auth::id(),
+                'estado' => $request->tipo_venta == 'CREDITO' ? 'PENDIENTE' : 'COMPLETADA'
+            ]);
+            
+            \Log::info('Venta creada ID: ' . $venta->id);
+
+            // Actualizar correlativo de la serie
+            $serie->correlativo = $numero;
+            $serie->save();
+            \Log::info('Serie actualizada, nuevo correlativo: ' . $numero);
+
+            // Crear detalles y actualizar stock
+            foreach ($productos as $item) {
+                VentaDetalle::create([
+                    'venta_id' => $venta->id,
+                    'producto_id' => $item['id'],
+                    'cantidad' => $item['cantidad'],
+                    'precio_unitario' => $item['precio'],
+                    'total' => $item['cantidad'] * $item['precio'],
+                    'almacen_id' => $item['almacen_id']
+                ]);
+                \Log::info('Detalle creado para producto ID: ' . $item['id']);
+
+                // Descontar stock
+                $stock = ProductoAlmacen::where('producto_id', $item['id'])
+                                        ->where('almacen_id', $item['almacen_id'])
+                                        ->first();
+                $stock->stock -= $item['cantidad'];
+                $stock->save();
+                \Log::info('Stock actualizado para producto ID: ' . $item['id'] . ', nuevo stock: ' . $stock->stock);
+            }
+
+            // Si es crédito, generar cuotas
+            if ($request->tipo_venta == 'CREDITO') {
+                $montoCredito = $request->total - ($request->pagado ?? 0);
+                $numeroCuotas = $request->numero_cuotas ?? 1;
+                $montoCuota = $montoCredito / $numeroCuotas;
+                
+                for ($i = 1; $i <= $numeroCuotas; $i++) {
+                    VentaCuota::create([
+                        'venta_id' => $venta->id,
+                        'numero_cuota' => $i,
+                        'fecha_vencimiento' => now()->addMonths($i),
+                        'monto' => $montoCuota,
+                        'estado' => 'PENDIENTE'
+                    ]);
+                }
+                \Log::info('Cuotas generadas para crédito: ' . $numeroCuotas);
+            }
+
+            DB::commit();
+            \Log::info('=== VENTA COMPLETADA EXITOSAMENTE ===');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Venta procesada exitosamente',
+                'data' => [
+                    'venta_id' => $venta->id,
+                    'documento' => $venta->documento,
+                    'total' => $venta->total,
+                    'pagado' => $venta->pagado,
+                    'cambio' => $venta->cambio,
+                    'tipo_venta' => $venta->tipo_venta,
+                    'cuotas' => $venta->tipo_venta == 'CREDITO' ? $venta->cuotas : null
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('=== ERROR EN PROCESAR PAGO ===');
+            \Log::error('Mensaje: ' . $e->getMessage());
+            \Log::error('Línea: ' . $e->getLine());
+            \Log::error('Archivo: ' . $e->getFile());
+            \Log::error('Traza: ' . $e->getTraceAsString());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al procesar la venta: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
     public function getVenta($id)
     {
         $venta = Venta::with(['cliente', 'detalles.producto', 'cuotas'])->findOrFail($id);
