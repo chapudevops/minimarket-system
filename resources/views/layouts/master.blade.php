@@ -197,6 +197,39 @@
             opacity: 0;
             transition: opacity 0.5s ease;
         }
+
+        /* ========== ESTILOS PARA EL FOOTER FIJO AL FINAL ========== */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-wrapper {
+            flex: 1 0 auto;
+        }
+
+        .main-content {
+            flex: 1;
+        }
+
+        footer.page-footer {
+            flex-shrink: 0;
+            background: #f8f9fa;
+            padding: 1rem 0;
+            border-top: 1px solid #e9ecef;
+            width: 100%;
+        }
+
+        /* Ajustes para el contenido de las páginas */
+        .page-wrapper {
+            min-height: auto;
+        }
     </style>
 </head>
 
@@ -241,28 +274,23 @@
 <!--start main wrapper-->
 <main class="main-wrapper">
     <div class="main-content">
-
         @yield('content')
-
     </div>
 </main>
 <!--end main wrapper-->
 
 <!--start overlay-->
-    <div class="overlay btn-toggle"></div>
+<div class="overlay btn-toggle"></div>
 <!--end overlay-->
 
-  @include('layouts.footer')
+@include('layouts.footer')
+@include('layouts.cart')
+@include('layouts.right-sidebar')
+@include('layouts.vendor-scripts')
 
-  @include('layouts.cart')
+@yield('scripts')
 
-  @include('layouts.right-sidebar')
-
-  @include('layouts.vendor-scripts')
-
-  @yield('scripts')
-
-  <script>
+<script>
     // Forzar que el preloader se muestre inmediatamente
     document.addEventListener("DOMContentLoaded", function() {
         // Asegurar que el preloader sea visible
@@ -277,43 +305,9 @@
         // Pequeño delay para que se vea la animación completa
         setTimeout(function() {
             document.body.classList.add("loaded");
-        }, 1500); // Ajusta este tiempo según necesites
+        }, 1500);
     });
-  </script>
-
-  <style>
-    /* Asegurar que el footer se mantenga abajo */
-    html, body {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-    }
-    
-    body {
-        display: flex;
-        flex-direction: column;
-        min-height: 100vh;
-    }
-    
-    .main-wrapper {
-        flex: 1 0 auto;
-    }
-    
-    footer.page-footer {
-        flex-shrink: 0;
-        background: #f8f9fa;
-        padding: 1rem 0;
-        margin-top: 2rem;
-        border-top: 1px solid #e9ecef;
-    }
-    
-    /* Ajustes para el contenido */
-    .page-wrapper {
-        min-height: calc(100vh - 200px);
-    }
-</style>
-
+</script>
 
 </body>
-  
 </html>

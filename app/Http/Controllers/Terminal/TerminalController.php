@@ -66,7 +66,8 @@ class TerminalController extends Controller
                     'codigo_interno' => $producto->codigo_interno,
                     'descripcion' => $producto->descripcion,
                     'precio_venta' => $producto->precio_venta,
-                    'stock_total' => $producto->stock_total
+                    'stock_total' => $producto->stock_total,
+                    'foto' => $producto->foto_url
                 ];
             })
         ]);
@@ -111,15 +112,12 @@ class TerminalController extends Controller
         \Log::info('=== GET SERIES ===');
         \Log::info('Tipo comprobante solicitado: ' . $tipo);
         
-        // Obtener la caja del usuario autenticado
         $usuario = Auth::user();
         \Log::info('Usuario ID: ' . $usuario->id);
         \Log::info('Usuario caja_id asignado: ' . ($usuario->caja_id ?? 'NULL'));
         
-        // Primero verificar si el usuario tiene una caja asignada
         $cajaId = $usuario->caja_id;
         
-        // Si no tiene caja asignada, buscar si tiene una caja abierta
         if (!$cajaId) {
             \Log::info('Usuario sin caja asignada, buscando caja abierta...');
             $cajaAbierta = AperturaCaja::where('responsable_id', $usuario->id)
@@ -134,7 +132,6 @@ class TerminalController extends Controller
             }
         }
         
-        // Si aún no hay caja, buscar la primera caja activa
         if (!$cajaId) {
             \Log::info('Buscando primera caja disponible...');
             $caja = Caja::first();
@@ -152,7 +149,6 @@ class TerminalController extends Controller
             ]);
         }
         
-        // Buscar la serie
         \Log::info('Buscando serie con:', [
             'tipo_comprobante' => $tipo,
             'caja_id' => $cajaId
@@ -165,7 +161,6 @@ class TerminalController extends Controller
         \Log::info('Resultado de búsqueda de serie:', ['serie' => $serie]);
         
         if (!$serie) {
-            // Listar todas las series disponibles para debug
             $todasSeries = Serie::all();
             \Log::info('Todas las series en la BD:', ['series' => $todasSeries->toArray()]);
             
@@ -194,7 +189,6 @@ class TerminalController extends Controller
             
             DB::beginTransaction();
 
-            // Verificar caja abierta
             $cajaAbierta = AperturaCaja::where('responsable_id', Auth::id())
                                        ->where('estado', 'ABIERTA')
                                        ->first();
@@ -208,7 +202,6 @@ class TerminalController extends Controller
                 ], 422);
             }
 
-            // Decodificar productos desde JSON
             $productos = json_decode($request->productos_json, true);
             
             \Log::info('Productos decodificados:', ['productos' => $productos]);
@@ -231,7 +224,6 @@ class TerminalController extends Controller
                 'observaciones' => 'nullable'
             ]);
 
-            // Validar stock para cada producto
             foreach ($productos as $item) {
                 $stock = ProductoAlmacen::where('producto_id', $item['id'])
                                         ->where('almacen_id', $item['almacen_id'])
@@ -251,7 +243,6 @@ class TerminalController extends Controller
                 }
             }
 
-            // Obtener serie y número
             \Log::info('Buscando serie para:', [
                 'tipo_comprobante' => $request->tipo_comprobante,
                 'caja_id' => $cajaAbierta->id
@@ -282,7 +273,6 @@ class TerminalController extends Controller
                 'numero' => $numero
             ]);
 
-            // Crear venta
             $venta = Venta::create([
                 'tipo_comprobante' => $request->tipo_comprobante,
                 'serie' => $serie->serie,
@@ -305,12 +295,10 @@ class TerminalController extends Controller
             
             \Log::info('Venta creada ID: ' . $venta->id);
 
-            // Actualizar correlativo de la serie
             $serie->correlativo = $numero;
             $serie->save();
             \Log::info('Serie actualizada, nuevo correlativo: ' . $numero);
 
-            // Crear detalles y actualizar stock
             foreach ($productos as $item) {
                 VentaDetalle::create([
                     'venta_id' => $venta->id,
@@ -322,7 +310,6 @@ class TerminalController extends Controller
                 ]);
                 \Log::info('Detalle creado para producto ID: ' . $item['id']);
 
-                // Descontar stock
                 $stock = ProductoAlmacen::where('producto_id', $item['id'])
                                         ->where('almacen_id', $item['almacen_id'])
                                         ->first();
@@ -331,7 +318,6 @@ class TerminalController extends Controller
                 \Log::info('Stock actualizado para producto ID: ' . $item['id'] . ', nuevo stock: ' . $stock->stock);
             }
 
-            // Si es crédito, generar cuotas
             if ($request->tipo_venta == 'CREDITO') {
                 $montoCredito = $request->total - ($request->pagado ?? 0);
                 $numeroCuotas = $request->numero_cuotas ?? 1;

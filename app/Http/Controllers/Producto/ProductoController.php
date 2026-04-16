@@ -7,6 +7,7 @@ use App\Models\Producto;
 use App\Models\Almacen;
 use App\Models\ProductoAlmacen;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ProductoController extends Controller
 {
@@ -32,6 +33,7 @@ class ProductoController extends Controller
                     'precio_venta' => 'S/ ' . number_format($producto->precio_venta, 2),
                     'stock_total' => $producto->stock_total,
                     'estado_texto' => $producto->estado ? 'Activo' : 'Inactivo',
+                    'foto' => $producto->foto_url,
                     'created_at' => $producto->created_at ? $producto->created_at->format('d/m/Y H:i') : '-',
                     'acciones' => $this->generateActions($producto)
                 ];
@@ -66,7 +68,7 @@ class ProductoController extends Controller
 
     public function create()
     {
-        $almacenes = Almacen::where('estado', 1)->orderBy('descripcion', 'asc')->get();
+        $almacenes = Almacen::orderBy('descripcion', 'asc')->get();
         return response()->json([
             'almacenes' => $almacenes
         ]);
@@ -103,6 +105,7 @@ class ProductoController extends Controller
                 'detraccion_texto' => $producto->detraccion_texto,
                 'stock_minimo' => $producto->stock_minimo,
                 'stock_total' => $producto->stock_total,
+                'foto' => $producto->foto_url,
                 'stocks' => $stocksPorAlmacen,
                 'estado_texto' => $producto->estado ? 'Activo' : 'Inactivo',
                 'created_at' => $producto->created_at ? $producto->created_at->format('d/m/Y H:i') : '-',
@@ -129,6 +132,7 @@ class ProductoController extends Controller
                 'detraccion' => 'nullable|boolean',
                 'stock_minimo' => 'nullable|integer|min:0',
                 'estado' => 'nullable|boolean',
+                'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
                 'stocks' => 'nullable|array'
             ], [
                 'codigo_interno.required' => 'El código interno es obligatorio.',
@@ -138,12 +142,23 @@ class ProductoController extends Controller
                 'operacion.required' => 'La operación es obligatoria.',
                 'precio_compra.required' => 'El precio de compra es obligatorio.',
                 'precio_venta.required' => 'El precio de venta es obligatorio.',
-                'tipo_producto.required' => 'El tipo de producto es obligatorio.'
+                'tipo_producto.required' => 'El tipo de producto es obligatorio.',
+                'foto.image' => 'El archivo debe ser una imagen.',
+                'foto.mimes' => 'La imagen debe ser de tipo: jpeg, png, jpg, gif.',
+                'foto.max' => 'La imagen no debe pesar más de 2MB.'
             ]);
 
             $data = $request->all();
             $data['estado'] = $request->has('estado') ? true : false;
             $data['detraccion'] = $request->has('detraccion') ? true : false;
+
+            // Subir foto
+            if ($request->hasFile('foto')) {
+                $foto = $request->file('foto');
+                $fotoName = time() . '_' . uniqid() . '.' . $foto->getClientOriginalExtension();
+                $foto->storeAs('public/productos', $fotoName);
+                $data['foto'] = $fotoName;
+            }
 
             $producto = Producto::create($data);
 
@@ -215,12 +230,25 @@ class ProductoController extends Controller
                 'detraccion' => 'nullable|boolean',
                 'stock_minimo' => 'nullable|integer|min:0',
                 'estado' => 'nullable|boolean',
+                'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
                 'stocks' => 'nullable|array'
             ]);
 
             $data = $request->all();
             $data['estado'] = $request->has('estado') ? true : false;
             $data['detraccion'] = $request->has('detraccion') ? true : false;
+
+            // Subir nueva foto
+            if ($request->hasFile('foto')) {
+                // Eliminar foto anterior
+                if ($producto->foto) {
+                    Storage::delete('public/productos/' . $producto->foto);
+                }
+                $foto = $request->file('foto');
+                $fotoName = time() . '_' . uniqid() . '.' . $foto->getClientOriginalExtension();
+                $foto->storeAs('public/productos', $fotoName);
+                $data['foto'] = $fotoName;
+            }
 
             $producto->update($data);
 
@@ -255,6 +283,12 @@ class ProductoController extends Controller
     public function destroy($id)
     {
         $producto = Producto::findOrFail($id);
+        
+        // Eliminar foto si existe
+        if ($producto->foto) {
+            Storage::delete('public/productos/' . $producto->foto);
+        }
+        
         $producto->delete();
 
         return response()->json([

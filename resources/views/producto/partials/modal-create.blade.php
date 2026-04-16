@@ -101,6 +101,15 @@
                                     <div class="invalid-feedback" id="error-tipo_producto"></div>
                                 </div>
                                 <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Foto del Producto</label>
+                                    <div id="foto-preview" class="mb-2" style="display: none;">
+                                        <img id="foto-preview-img" src="" width="100" height="100" class="border rounded p-1" style="object-fit: cover;">
+                                    </div>
+                                    <input type="file" name="foto" id="foto" class="form-control" accept="image/*">
+                                    <small class="text-muted">JPG, PNG, GIF - Máx. 2MB</small>
+                                    <div class="invalid-feedback" id="error-foto"></div>
+                                </div>
+                                <div class="col-md-6 mb-3">
                                     <div class="form-check mt-4">
                                         <input type="checkbox" name="detraccion" class="form-check-input" id="detraccion" value="1">
                                         <label class="form-check-label fw-bold" for="detraccion">Configuración de Detracción</label>

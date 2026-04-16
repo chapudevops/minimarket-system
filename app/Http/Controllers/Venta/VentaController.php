@@ -147,18 +147,14 @@ class VentaController extends Controller
     }
 
     public function imprimirTicket($id)
-    {
-        $venta = Venta::with(['cliente', 'detalles.producto'])
-                      ->findOrFail($id);
-        
-        $empresa = \App\Models\Empresa::first();
-        
-        $pdf = Pdf::loadView('venta.ticket', compact('venta', 'empresa'));
-        $pdf->setPaper('a4', 'portrait');
-        
-        return $pdf->stream('ticket_' . $venta->documento . '.pdf');
-    }
-
+{
+    $venta = Venta::with(['cliente', 'detalles.producto'])
+                  ->findOrFail($id);
+    
+    $empresa = \App\Models\Empresa::first();
+    
+    return view('venta.ticket', compact('venta', 'empresa'));
+}
     public function anular($id)
     {
         try {

@@ -6,6 +6,7 @@
                 <h5 class="modal-title text-white">
                     <i class="bi bi-graph-up"></i> Resumen de Caja
                 </h5>
+                <input type="hidden" id="resumen_id" value="">
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -76,9 +77,12 @@
                     </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-            </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-success" id="btnExportarExcel">
+                <i class="bi bi-file-excel"></i> Exportar a Excel
+            </button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        </div>
         </div>
     </div>
 </div>

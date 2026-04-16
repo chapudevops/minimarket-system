@@ -90,12 +90,22 @@
                                 <label class="form-check-label fw-bold" for="detraccion_edit">Configuración de Detracción</label>
                             </div>
                         </div>
+
                         <div class="col-md-3 mb-3">
                             <label class="form-label fw-bold">Stock</label>
                             <input type="number" name="stock" id="stock_edit" class="form-control" readonly>
                             <small class="text-muted">El stock se actualiza con movimientos</small>
                             <div class="invalid-feedback" id="error-stock_edit"></div>
                         </div>
+                        <div class="col-md-12 mb-3">
+                        <label class="form-label fw-bold">Foto del Producto</label>
+                        <div id="foto-preview-edit" class="mb-2">
+                            <img id="foto-preview-img-edit" src="" width="100" height="100" class="border rounded p-1" style="object-fit: cover;">
+                        </div>
+                        <input type="file" name="foto" id="foto_edit" class="form-control" accept="image/*">
+                        <small class="text-muted">JPG, PNG, GIF - Máx. 2MB</small>
+                        <div class="invalid-feedback" id="error-foto_edit"></div>
+                    </div>
                         <div class="col-md-3 mb-3">
                             <label class="form-label fw-bold">Stock Mínimo</label>
                             <input type="number" name="stock_minimo" id="stock_minimo_edit" class="form-control">

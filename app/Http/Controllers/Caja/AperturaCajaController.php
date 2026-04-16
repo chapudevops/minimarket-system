@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Caja;
 
+use App\Exports\ReporteCajaExport;
 use App\Http\Controllers\Controller;
 use App\Models\AperturaCaja;
 use App\Models\Venta;
@@ -10,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AperturaCajaController extends Controller
 {
@@ -293,4 +295,27 @@ class AperturaCajaController extends Controller
         
         return $pdf->download('reporte_caja_' . $apertura->id . '_' . date('Ymd_His') . '.pdf');
     }
+    
+public function exportarExcel($id)
+{
+    $apertura = AperturaCaja::findOrFail($id);
+    $fechaFin = $apertura->fecha_cierre ?? now();
+    
+    $ventas = Venta::where('caja_id', $apertura->id)
+                   ->whereBetween('fecha_emision', [$apertura->fecha_apertura, $fechaFin])
+                   ->with('cliente')
+                   ->orderBy('fecha_emision', 'desc')
+                   ->get();
+    
+    $gastos = Gasto::whereBetween('fecha_emision', [$apertura->fecha_apertura, $fechaFin])
+                   ->get();
+    
+    $totalVentas = $ventas->sum('total');
+    $totalGastos = $gastos->sum('monto');
+    $total = ($totalVentas + $apertura->monto_inicial) - $totalGastos;
+    
+    $export = new ReporteCajaExport($apertura, $ventas, $gastos, $totalVentas, $totalGastos, $total);
+    
+    return Excel::download($export, 'reporte_caja_' . $apertura->id . '_' . date('Ymd_His') . '.xlsx');
+}
 }

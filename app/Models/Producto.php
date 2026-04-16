@@ -25,6 +25,7 @@ class Producto extends Model
         'tipo_producto',
         'detraccion',
         'stock_minimo',
+        'foto',
         'estado'
     ];
 
@@ -54,6 +55,15 @@ class Producto extends Model
     public function getStockTotalAttribute()
     {
         return $this->stocks()->sum('stock');
+    }
+
+    // Obtener URL de la foto
+    public function getFotoUrlAttribute()
+    {
+        if ($this->foto) {
+            return asset('storage/productos/' . $this->foto);
+        }
+        return asset('build/images/default-product.png');
     }
 
     // Obtener stock de un almacén específico

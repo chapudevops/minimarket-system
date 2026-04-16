@@ -155,6 +155,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/apertura-caja/{id}/detalle', [AperturaCajaController::class, 'getDetalle'])->name('apertura-caja.detalle');
     Route::get('/apertura-caja/{id}/resumen', [AperturaCajaController::class, 'getResumen'])->name('apertura-caja.resumen');
     Route::get('/apertura-caja/{id}/reporte', [AperturaCajaController::class, 'generarReporte'])->name('apertura-caja.reporte');
+    Route::get('/apertura-caja/{id}/excel', [AperturaCajaController::class, 'exportarExcel'])->name('apertura-caja.excel');
+    
     // Rutas para Ventas
     Route::get('/ventas', [VentaController::class, 'index'])->name('ventas.index');
     Route::get('/ventas/data', [VentaController::class, 'getData'])->name('ventas.data');
