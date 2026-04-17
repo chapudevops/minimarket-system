@@ -231,6 +231,44 @@
     </div>
 </div>
 
+<!-- MAPA DE UBICACIÓN DE LA TIENDA -->
+<div class="row">
+    <div class="col-12 d-flex">
+        <div class="card rounded-4 w-100">
+            <div class="card-body">
+                <div class="d-flex align-items-start justify-content-between mb-3 flex-wrap gap-2">
+                    <div class="">
+                        <h5 class="mb-0 fw-bold">
+                            <i class="bi bi-geo-alt-fill text-danger"></i> 
+                            {{ $empresa->nombre_comercial ?? $empresa->razon_social ?? 'Nuestra Ubicación' }}
+                        </h5>
+                        @if($empresa->link_ubicacion)
+                            <small class="text-success d-block mt-1">
+                                <i class="bi bi-check-circle"></i> Ubicación configurada en Google Maps
+                            </small>
+                        @else
+                            <small class="text-warning d-block mt-1">
+                                <i class="bi bi-exclamation-triangle"></i> No hay ubicación configurada
+                            </small>
+                        @endif
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button class="btn btn-sm btn-outline-primary" onclick="openGoogleMaps()">
+                            <i class="bi bi-map"></i> Ver en Google Maps
+                        </button>
+                    </div>
+                </div>
+                <div id="storeMap" style="height: 450px; width: 100%; border-radius: 10px;"></div>
+                <div class="mt-3 text-center">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle"></i> La ubicación se carga desde el link configurado en la empresa
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row">
     <!-- Últimas Ventas -->
     <div class="col-12 col-xl-6 d-flex">
@@ -428,5 +466,134 @@
 
     var chart = new ApexCharts(document.querySelector("#chartVentas"), options);
     chart.render();
+</script>
+
+<!-- Script del Mapa de Google Maps - VERSION CORREGIDA SIN ERROR DEL & -->
+<script>
+    let map;
+    let marker;
+    let storeLink = null;
+    let storeName = '{{ addslashes($empresa->nombre_comercial ?? $empresa->razon_social ?? "Mi Minimarket") }}';
+    let storeLat = -12.046374;
+    let storeLng = -77.042793;
+
+    // Abrir en Google Maps
+    window.openGoogleMaps = function() {
+        if (storeLink) {
+            window.open(storeLink, '_blank');
+        } else {
+            alert('No hay un link de ubicación configurado. Ve a Configuración de Empresa para agregarlo.');
+        }
+    };
+
+    // Cargar ubicación desde el servidor
+    async function loadStoreLocation() {
+        try {
+            const response = await fetch('{{ route("store.location") }}');
+            const data = await response.json();
+            
+            if (data && !data.error && data.link_ubicacion) {
+                storeLink = data.link_ubicacion;
+                if (data.lat && data.lng) {
+                    storeLat = parseFloat(data.lat);
+                    storeLng = parseFloat(data.lng);
+                }
+                
+                if (map && marker) {
+                    map.setCenter({ lat: storeLat, lng: storeLng });
+                    marker.setPosition({ lat: storeLat, lng: storeLng });
+                }
+            } else {
+                console.warn('No hay link de ubicación configurado');
+                const mapDiv = document.getElementById('storeMap');
+                if (mapDiv && !storeLink) {
+                    mapDiv.innerHTML = '<div class="alert alert-warning text-center p-5">⚠️ No hay una ubicación configurada. Ve a Configuración de Empresa para agregar el link de Google Maps.</div>';
+                }
+            }
+        } catch (error) {
+            console.error('Error cargando ubicación:', error);
+        }
+    }
+
+    // Inicializar mapa
+    function initMap() {
+        const mapDiv = document.getElementById('storeMap');
+        if (!mapDiv) return;
+        
+        const mapOptions = {
+            center: { lat: storeLat, lng: storeLng },
+            zoom: 17,
+            zoomControl: true,
+            streetViewControl: true,
+            fullscreenControl: true,
+            mapTypeControl: true
+        };
+        
+        map = new google.maps.Map(mapDiv, mapOptions);
+        
+        marker = new google.maps.Marker({
+            position: { lat: storeLat, lng: storeLng },
+            map: map,
+            title: storeName,
+            icon: {
+                url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+                scaledSize: new google.maps.Size(50, 50)
+            }
+        });
+        
+        const infoWindow = new google.maps.InfoWindow({
+            content: '<div style="padding: 12px;">' +
+                '<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">' +
+                '<div style="font-size: 24px;">🏪</div>' +
+                '<div><h6 style="margin: 0; font-weight: bold;">' + storeName + '</h6></div>' +
+                '</div>' +
+                '<hr style="margin: 8px 0;">' +
+                '<button onclick="openGoogleMaps()" style="width: 100%; padding: 5px; background: #0d6efd; color: white; border: none; border-radius: 5px; cursor: pointer;">📍 Ver en Google Maps</button>' +
+                '</div>'
+        });
+        
+        marker.addListener('click', function() {
+            infoWindow.open(map, marker);
+        });
+    }
+    
+    // Cargar Google Maps SIN callback en la URL para evitar el error del &
+    function loadGoogleMapsScript() {
+        const existingScript = document.querySelector('script[src*="maps.googleapis.com/maps/api/js"]');
+        if (existingScript) {
+            existingScript.remove();
+        }
+        
+        const script = document.createElement('script');
+        script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyDQKbJK_7JMR45InjGsGuHQcsQ7toEVIf4';
+        script.async = true;
+        script.defer = true;
+        
+        script.onload = function() {
+            console.log('Google Maps cargado correctamente');
+            loadStoreLocation().then(function() {
+                initMap();
+            }).catch(function() {
+                initMap();
+            });
+        };
+        
+        script.onerror = function() {
+            console.error('Error al cargar Google Maps API');
+            const mapDiv = document.getElementById('storeMap');
+            if (mapDiv) {
+                mapDiv.innerHTML = '<div class="alert alert-danger text-center p-5">Error al cargar el mapa. Verifica tu conexión a Internet.</div>';
+            }
+        };
+        
+        document.head.appendChild(script);
+    }
+    
+    // Iniciar
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadGoogleMapsScript);
+    } else {
+        loadGoogleMapsScript();
+    }
 </script>
 @endsection

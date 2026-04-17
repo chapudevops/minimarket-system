@@ -50,6 +50,8 @@ Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 Route::middleware(['auth'])->group(function () {
     // Ruta para el dashboard, solo accesible para usuarios autenticados
     Route::get('/', [DashboardController::class, 'index'])->name('home');
+    Route::get('/store-location', [DashboardController::class, 'getStoreLocation'])->name('store.location');
+
     // Rutas para la configuración de la empresa
     Route::get('/empresa', [EmpresaController::class, 'index'])->name('empresa.index');
     Route::post('/empresa/{id}', [EmpresaController::class, 'update'])->name('empresa.update');

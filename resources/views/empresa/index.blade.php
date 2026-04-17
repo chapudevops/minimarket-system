@@ -18,7 +18,7 @@
             </div>
             <div class="card-body">
                 <!-- Alertas dinámicas con AJAX -->
-                <!-- <div id="alert-messages"></div> -->
+                <div id="alert-messages"></div>
 
                 <form id="empresaForm" method="POST" enctype="multipart/form-data">
                     @csrf
@@ -136,10 +136,10 @@
                         </div>
                     </div>
                     
-                    <!-- Usuario SUNAT -->
+                    <!-- Usuario SUNAT y Ubicación -->
                     <div class="card mb-4">
                         <div class="card-header bg-light">
-                            <h5 class="mb-0"><i class="bi bi-cloud-sun"></i> Usuario SUNAT</h5>
+                            <h5 class="mb-0"><i class="bi bi-cloud-sun"></i> Usuario SUNAT y Ubicación</h5>
                         </div>
                         <div class="card-body">
                             <div class="row">
@@ -147,6 +147,21 @@
                                     <label class="form-label fw-bold">Nombre Comercial</label>
                                     <input type="text" name="nombre_comercial" id="nombre_comercial" class="form-control" 
                                            value="{{ $empresa->nombre_comercial }}">
+                                </div>
+                                
+                                <!-- NUEVO CAMPO: Link de Ubicación en Google Maps -->
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label fw-bold">
+                                        <i class="bi bi-geo-alt-fill text-danger"></i> Link de Ubicación (Google Maps)
+                                    </label>
+                                    <input type="url" name="link_ubicacion" id="link_ubicacion" class="form-control" 
+                                           value="{{ $empresa->link_ubicacion }}" 
+                                           placeholder="https://maps.app.goo.gl/... o https://www.google.com/maps/place/...">
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle"></i> 
+                                        Copia el enlace de compartir de Google Maps. Ejemplo: https://maps.app.goo.gl/xxxxx
+                                    </small>
+                                    <div id="link_ubicacion_preview" class="mt-2"></div>
                                 </div>
                                 
                                 <div class="col-md-6 mb-3">
@@ -235,7 +250,6 @@
         </div>
     </div>
 </div>
-
 
 <script src="{{ URL::asset('build/js/empresa/config.js') }}"></script>
 @endsection

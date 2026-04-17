@@ -11,10 +11,12 @@ use App\Models\VentaDetalle;
 use App\Models\VentaCuota;
 use App\Models\ProductoAlmacen;
 use App\Models\AperturaCaja;
+use App\Models\Almacen;
 use App\Models\Caja;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class TerminalController extends Controller
 {
@@ -22,32 +24,55 @@ class TerminalController extends Controller
     {
         // Verificar si hay caja abierta
         $cajaAbierta = AperturaCaja::where('responsable_id', Auth::id())
-                                   ->where('estado', 'ABIERTA')
-                                   ->first();
-        
-        \Log::info('=== INDEX POS ===');
-        \Log::info('Usuario ID: ' . Auth::id());
-        \Log::info('Caja abierta encontrada:', ['caja' => $cajaAbierta]);
+                                ->where('estado', 'ABIERTA')
+                                ->first();
         
         if (!$cajaAbierta) {
             return redirect()->route('apertura-caja.index')
                 ->with('error', 'Debe abrir una caja antes de usar el POS');
         }
         
-        // Obtener productos con stock
+        // Obtener el almacén del usuario autenticado
+        $usuario = Auth::user();
+        $almacenId = $usuario->almacen_id;
+        
+        // Si el usuario no tiene almacén asignado, obtener el primer almacén
+        if (!$almacenId) {
+            $primerAlmacen = Almacen::first();
+            $almacenId = $primerAlmacen ? $primerAlmacen->id : null;
+        }
+        
+        // Obtener productos con stock del almacén del usuario
         $productos = Producto::where('estado', 1)
                             ->orderBy('descripcion', 'asc')
                             ->get();
         
+        // Para cada producto, calcular el stock en el almacén del usuario
+        foreach ($productos as $producto) {
+            $stock = ProductoAlmacen::where('producto_id', $producto->id)
+                                    ->where('almacen_id', $almacenId)
+                                    ->first();
+            $producto->stock_en_almacen = $stock ? $stock->stock : 0;
+            // También mantener stock_total para compatibilidad
+            $producto->stock_total = $producto->stock_en_almacen;
+        }
+        
         // Obtener información de la empresa
         $empresa = \App\Models\Empresa::first();
         
-        return view('terminal.index', compact('productos', 'cajaAbierta', 'empresa'));
+        return view('terminal.index', compact('productos', 'cajaAbierta', 'empresa', 'almacenId'));
     }
 
     public function search(Request $request)
     {
         $search = $request->get('search');
+        $almacenId = $request->get('almacen_id') ?? Auth::user()->almacen_id;
+        
+        // Si el usuario no tiene almacén asignado, obtener el primer almacén
+        if (!$almacenId) {
+            $primerAlmacen = Almacen::first();
+            $almacenId = $primerAlmacen ? $primerAlmacen->id : null;
+        }
         
         $productos = Producto::where('estado', 1)
             ->where(function($query) use ($search) {
@@ -58,6 +83,14 @@ class TerminalController extends Controller
             ->orderBy('descripcion', 'asc')
             ->get();
         
+        // Calcular stock por almacén para cada producto
+        foreach ($productos as $producto) {
+            $stock = ProductoAlmacen::where('producto_id', $producto->id)
+                                    ->where('almacen_id', $almacenId)
+                                    ->first();
+            $producto->stock_en_almacen = $stock ? $stock->stock : 0;
+        }
+        
         return response()->json([
             'success' => true,
             'data' => $productos->map(function($producto) {
@@ -66,7 +99,7 @@ class TerminalController extends Controller
                     'codigo_interno' => $producto->codigo_interno,
                     'descripcion' => $producto->descripcion,
                     'precio_venta' => $producto->precio_venta,
-                    'stock_total' => $producto->stock_total,
+                    'stock_total' => $producto->stock_en_almacen,
                     'foto' => $producto->foto_url
                 ];
             })
@@ -109,61 +142,39 @@ class TerminalController extends Controller
     {
         $tipo = $request->get('tipo');
         
-        \Log::info('=== GET SERIES ===');
-        \Log::info('Tipo comprobante solicitado: ' . $tipo);
-        
         $usuario = Auth::user();
-        \Log::info('Usuario ID: ' . $usuario->id);
-        \Log::info('Usuario caja_id asignado: ' . ($usuario->caja_id ?? 'NULL'));
         
         $cajaId = $usuario->caja_id;
         
         if (!$cajaId) {
-            \Log::info('Usuario sin caja asignada, buscando caja abierta...');
             $cajaAbierta = AperturaCaja::where('responsable_id', $usuario->id)
                                        ->where('estado', 'ABIERTA')
                                        ->first();
             
-            \Log::info('Caja abierta encontrada:', ['caja' => $cajaAbierta]);
-            
             if ($cajaAbierta) {
                 $cajaId = $cajaAbierta->id;
-                \Log::info('Usando caja abierta ID: ' . $cajaId);
             }
         }
         
         if (!$cajaId) {
-            \Log::info('Buscando primera caja disponible...');
             $caja = Caja::first();
             if ($caja) {
                 $cajaId = $caja->id;
-                \Log::info('Usando primera caja ID: ' . $cajaId);
             }
         }
         
         if (!$cajaId) {
-            \Log::error('No se encontró ninguna caja para el usuario');
             return response()->json([
                 'success' => false,
                 'message' => 'No se encontró una caja asignada o abierta para este usuario'
             ]);
         }
         
-        \Log::info('Buscando serie con:', [
-            'tipo_comprobante' => $tipo,
-            'caja_id' => $cajaId
-        ]);
-        
         $serie = Serie::where('tipo_comprobante', $tipo)
                      ->where('caja_id', $cajaId)
                      ->first();
         
-        \Log::info('Resultado de búsqueda de serie:', ['serie' => $serie]);
-        
         if (!$serie) {
-            $todasSeries = Serie::all();
-            \Log::info('Todas las series en la BD:', ['series' => $todasSeries->toArray()]);
-            
             return response()->json([
                 'success' => false,
                 'message' => "No hay serie configurada para {$tipo} en la caja ID: {$cajaId}"
@@ -171,7 +182,6 @@ class TerminalController extends Controller
         }
         
         $numero = $serie->correlativo + 1;
-        \Log::info('Serie encontrada - Serie: ' . $serie->serie . ', Nuevo número: ' . $numero);
         
         return response()->json([
             'success' => true,
@@ -184,16 +194,11 @@ class TerminalController extends Controller
     public function procesarPago(Request $request)
     {
         try {
-            \Log::info('=== PROCESAR PAGO ===');
-            \Log::info('Datos recibidos:', $request->all());
-            
             DB::beginTransaction();
 
             $cajaAbierta = AperturaCaja::where('responsable_id', Auth::id())
                                        ->where('estado', 'ABIERTA')
                                        ->first();
-            
-            \Log::info('Caja abierta:', ['caja' => $cajaAbierta]);
             
             if (!$cajaAbierta) {
                 return response()->json([
@@ -202,9 +207,22 @@ class TerminalController extends Controller
                 ], 422);
             }
 
-            $productos = json_decode($request->productos_json, true);
+            $usuario = Auth::user();
+            $almacenId = $usuario->almacen_id;
             
-            \Log::info('Productos decodificados:', ['productos' => $productos]);
+            if (!$almacenId) {
+                $primerAlmacen = Almacen::first();
+                $almacenId = $primerAlmacen ? $primerAlmacen->id : null;
+            }
+            
+            if (!$almacenId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No hay un almacén disponible para realizar la venta'
+                ], 422);
+            }
+
+            $productos = json_decode($request->productos_json, true);
             
             if (!$productos || empty($productos)) {
                 return response()->json([
@@ -226,33 +244,22 @@ class TerminalController extends Controller
 
             foreach ($productos as $item) {
                 $stock = ProductoAlmacen::where('producto_id', $item['id'])
-                                        ->where('almacen_id', $item['almacen_id'])
+                                        ->where('almacen_id', $almacenId)
                                         ->first();
-                
-                \Log::info('Validando stock producto ID: ' . $item['id'], [
-                    'stock_encontrado' => $stock ? $stock->stock : 0,
-                    'cantidad_solicitada' => $item['cantidad']
-                ]);
                 
                 if (!$stock || $stock->stock < $item['cantidad']) {
                     $producto = Producto::find($item['id']);
+                    $stockActual = $stock ? $stock->stock : 0;
                     return response()->json([
                         'success' => false,
-                        'message' => "Stock insuficiente para: {$producto->descripcion}"
+                        'message' => "Stock insuficiente para: {$producto->descripcion}. Stock disponible: {$stockActual} unidades"
                     ], 422);
                 }
             }
 
-            \Log::info('Buscando serie para:', [
-                'tipo_comprobante' => $request->tipo_comprobante,
-                'caja_id' => $cajaAbierta->id
-            ]);
-            
             $serie = Serie::where('tipo_comprobante', $request->tipo_comprobante)
                          ->where('caja_id', $cajaAbierta->id)
                          ->first();
-            
-            \Log::info('Serie encontrada:', ['serie' => $serie]);
             
             if (!$serie) {
                 return response()->json([
@@ -264,14 +271,22 @@ class TerminalController extends Controller
             $numero = $serie->correlativo + 1;
             $subtotal = $request->total / 1.18;
             $igv = $request->total - $subtotal;
-            
-            \Log::info('Calculando totales:', [
+
+            // Generar el código QR con la información de la venta
+            $documentoCompleto = $serie->serie . '-' . str_pad($numero, 8, '0', STR_PAD_LEFT);
+            $qrData = json_encode([
+                'documento' => $documentoCompleto,
+                'fecha' => now()->format('Y-m-d H:i:s'),
                 'total' => $request->total,
-                'subtotal' => $subtotal,
-                'igv' => $igv,
+                'tipo' => $request->tipo_comprobante,
                 'serie' => $serie->serie,
-                'numero' => $numero
+                'numero' => $numero,
+                'empresa' => \App\Models\Empresa::first()?->nombre_razon_social ?? 'Mi Empresa',
+                'ruc' => \App\Models\Empresa::first()?->ruc ?? '00000000000'
             ]);
+            
+            // Generar QR en formato base64 para incrustar en HTML
+            $qrCodeBase64 = 'data:image/svg+xml;base64,' . base64_encode(QrCode::format('svg')->size(100)->generate($qrData));
 
             $venta = Venta::create([
                 'tipo_comprobante' => $request->tipo_comprobante,
@@ -283,21 +298,19 @@ class TerminalController extends Controller
                 'forma_pago' => $request->forma_pago,
                 'subtotal' => $subtotal,
                 'igv' => $igv,
-                'total' => $request->total,
-                'pagado' => $request->pagado,
-                'cambio' => $request->pagado - $request->total,
+                'total' => (float)$request->total,
+                'pagado' => (float)$request->pagado,
+                'cambio' => (float)$request->pagado - (float)$request->total,
                 'detraccion' => $request->has('detraccion'),
                 'observaciones' => $request->observaciones,
+                'codigo_qr' => $qrCodeBase64, // <-- AGREGAR EL QR
                 'caja_id' => $cajaAbierta->id,
                 'usuario_id' => Auth::id(),
                 'estado' => $request->tipo_venta == 'CREDITO' ? 'PENDIENTE' : 'COMPLETADA'
             ]);
-            
-            \Log::info('Venta creada ID: ' . $venta->id);
 
             $serie->correlativo = $numero;
             $serie->save();
-            \Log::info('Serie actualizada, nuevo correlativo: ' . $numero);
 
             foreach ($productos as $item) {
                 VentaDetalle::create([
@@ -306,20 +319,21 @@ class TerminalController extends Controller
                     'cantidad' => $item['cantidad'],
                     'precio_unitario' => $item['precio'],
                     'total' => $item['cantidad'] * $item['precio'],
-                    'almacen_id' => $item['almacen_id']
+                    'almacen_id' => $almacenId
                 ]);
-                \Log::info('Detalle creado para producto ID: ' . $item['id']);
 
                 $stock = ProductoAlmacen::where('producto_id', $item['id'])
-                                        ->where('almacen_id', $item['almacen_id'])
+                                        ->where('almacen_id', $almacenId)
                                         ->first();
-                $stock->stock -= $item['cantidad'];
-                $stock->save();
-                \Log::info('Stock actualizado para producto ID: ' . $item['id'] . ', nuevo stock: ' . $stock->stock);
+                
+                if ($stock) {
+                    $stock->stock -= $item['cantidad'];
+                    $stock->save();
+                }
             }
 
             if ($request->tipo_venta == 'CREDITO') {
-                $montoCredito = $request->total - ($request->pagado ?? 0);
+                $montoCredito = (float)$request->total - ((float)$request->pagado ?? 0);
                 $numeroCuotas = $request->numero_cuotas ?? 1;
                 $montoCuota = $montoCredito / $numeroCuotas;
                 
@@ -332,11 +346,9 @@ class TerminalController extends Controller
                         'estado' => 'PENDIENTE'
                     ]);
                 }
-                \Log::info('Cuotas generadas para crédito: ' . $numeroCuotas);
             }
 
             DB::commit();
-            \Log::info('=== VENTA COMPLETADA EXITOSAMENTE ===');
 
             return response()->json([
                 'success' => true,
@@ -344,21 +356,19 @@ class TerminalController extends Controller
                 'data' => [
                     'venta_id' => $venta->id,
                     'documento' => $venta->documento,
-                    'total' => $venta->total,
-                    'pagado' => $venta->pagado,
-                    'cambio' => $venta->cambio,
+                    'subtotal' => (float)$subtotal,
+                    'igv' => (float)$igv,
+                    'total' => (float)$venta->total,
+                    'pagado' => (float)$venta->pagado,
+                    'cambio' => (float)$venta->cambio,
                     'tipo_venta' => $venta->tipo_venta,
+                    'codigo_qr' => $qrCodeBase64, // <-- ENVIAR QR EN LA RESPUESTA
                     'cuotas' => $venta->tipo_venta == 'CREDITO' ? $venta->cuotas : null
                 ]
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('=== ERROR EN PROCESAR PAGO ===');
-            \Log::error('Mensaje: ' . $e->getMessage());
-            \Log::error('Línea: ' . $e->getLine());
-            \Log::error('Archivo: ' . $e->getFile());
-            \Log::error('Traza: ' . $e->getTraceAsString());
             
             return response()->json([
                 'success' => false,
@@ -366,6 +376,7 @@ class TerminalController extends Controller
             ], 500);
         }
     }
+    
     
     public function getVenta($id)
     {

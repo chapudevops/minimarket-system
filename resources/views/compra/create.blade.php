@@ -2,6 +2,8 @@
 
 @section('title', 'Nueva Compra')
 @section('css')
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css">
     <style>
         .product-row {
             background: #f8f9fa;
@@ -9,36 +11,33 @@
             margin-bottom: 15px;
             border-radius: 8px;
             border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        .product-row:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
         .remove-product {
             cursor: pointer;
             color: #dc3545;
+            font-size: 1.2rem;
+            transition: all 0.2s;
         }
-        .search-product-result {
-            max-height: 300px;
-            overflow-y: auto;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            display: none;
-            position: absolute;
-            background: white;
-            z-index: 1000;
-            width: 100%;
+        .remove-product:hover {
+            color: #a71d2a;
+            transform: scale(1.1);
         }
-        .product-result-item {
-            padding: 10px;
-            border-bottom: 1px solid #dee2e6;
-            cursor: pointer;
-            transition: background 0.2s;
+        .select2-container--bootstrap-5 .select2-selection {
+            border-radius: 8px !important;
+            border: 1px solid #ced4da !important;
         }
-        .product-result-item:hover {
-            background: #f8f9fa;
+        .select2-container--bootstrap-5.select2-container--focus .select2-selection,
+        .select2-container--bootstrap-5.select2-container--open .select2-selection {
+            border-color: #86b7fe !important;
+            box-shadow: 0 0 0 0.25rem rgba(13,110,253,0.25) !important;
         }
-        .product-result-item:last-child {
-            border-bottom: none;
-        }
-        .position-relative {
-            position: relative;
+        .producto-seleccionado {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
         }
     </style>
 @endsection
@@ -83,11 +82,11 @@
                         </div>
                         <div class="col-md-2 mb-3">
                             <label class="form-label fw-bold">Serie</label>
-                            <input type="text" name="serie" class="form-control" value="">
+                            <input type="text" name="serie" class="form-control" placeholder="Ej: F001">
                         </div>
                         <div class="col-md-2 mb-3">
                             <label class="form-label fw-bold">Número</label>
-                            <input type="text" name="numero" class="form-control" value="">
+                            <input type="text" name="numero" class="form-control" placeholder="Ej: 0001">
                         </div>
                         <div class="col-md-2 mb-3">
                             <label class="form-label fw-bold">Fecha de emisión</label>
@@ -100,8 +99,8 @@
                         <div class="col-md-5 mb-3">
                             <label class="form-label fw-bold">Proveedor <span class="text-danger">*</span></label>
                             <div class="input-group">
-                                <select name="proveedor_id" id="proveedor_id" class="form-control" required>
-                                    <option value="">Seleccionar proveedor</option>
+                                <select name="proveedor_id" id="proveedorSelect" class="form-control" required style="width: 100%;">
+                                    <option value="">Seleccionar proveedor...</option>
                                     @foreach($proveedores as $proveedor)
                                         <option value="{{ $proveedor->id }}">{{ $proveedor->numero_documento }} - {{ $proveedor->nombre_razon_social }}</option>
                                     @endforeach
@@ -130,19 +129,19 @@
                                 <div class="col-md-3">
                                     <div class="form-check">
                                         <input type="radio" name="tipo_pago" class="form-check-input" value="EFECTIVO" checked>
-                                        <label class="form-check-label">Efectivo</label>
+                                        <label class="form-check-label">💵 Efectivo</label>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="form-check">
                                         <input type="radio" name="tipo_pago" class="form-check-input" value="TRANSFERENCIA">
-                                        <label class="form-check-label">Transferencia</label>
+                                        <label class="form-check-label">🏦 Transferencia</label>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="form-check">
                                         <input type="radio" name="tipo_pago" class="form-check-input" value="CREDITO">
-                                        <label class="form-check-label">Crédito</label>
+                                        <label class="form-check-label">📆 Crédito</label>
                                     </div>
                                 </div>
                             </div>
@@ -155,22 +154,23 @@
                         <i class="bi bi-box-seam"></i> Productos
                     </h6>
 
-                    <!-- Agregar Producto -->
+                    <!-- Agregar Producto con Select2 -->
                     <div class="card mb-3">
                         <div class="card-header bg-light">
                             <h6 class="mb-0">Agregar Producto</h6>
                         </div>
                         <div class="card-body">
                             <div class="row">
-                                <div class="col-md-12 mb-3 position-relative">
-                                    <label class="form-label fw-bold">Producto</label>
-                                    <div class="input-group">
-                                        <input type="text" id="searchProducto" class="form-control" placeholder="Buscar por nombre o código...">
-                                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevoProducto">
-                                            <i class="bi bi-plus-circle"></i> Nuevo
-                                        </button>
-                                    </div>
-                                    <div id="searchResults" class="search-product-result"></div>
+                                <div class="col-md-10 mb-3">
+                                    <label class="form-label fw-bold">Buscar Producto</label>
+                                    <select id="productoSelect" class="form-control" style="width: 100%;">
+                                        <option value="">Buscar producto por nombre o código...</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2 mb-3 d-flex align-items-end">
+                                    <button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#modalNuevoProducto">
+                                        <i class="bi bi-plus-circle"></i> Nuevo Producto
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -183,24 +183,28 @@
                     <div class="row">
                         <div class="col-md-8"></div>
                         <div class="col-md-4">
-                            <table class="table table-bordered">
-                                <tr>
-                                    <td class="fw-bold">OP. Gravadas:</td>
-                                    <td class="text-end" id="subtotal">S/ 0.00</td>
-                                </tr>
-                                <tr>
-                                    <td class="fw-bold">IGV (18%):</td>
-                                    <td class="text-end" id="igv">S/ 0.00</td>
-                                </tr>
-                                <tr class="table-primary">
-                                    <td class="fw-bold">Total:</td>
-                                    <td class="text-end fw-bold" id="total">S/ 0.00</td>
-                                </tr>
-                            </table>
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <table class="table table-borderless mb-0">
+                                        <tr>
+                                            <td class="fw-bold">OP. Gravadas:</td>
+                                            <td class="text-end" id="subtotal">S/ 0.00</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold">IGV (18%):</td>
+                                            <td class="text-end" id="igv">S/ 0.00</td>
+                                        </tr>
+                                        <tr class="table-primary">
+                                            <td class="fw-bold fs-5">Total:</td>
+                                            <td class="text-end fw-bold fs-5" id="total">S/ 0.00</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="mb-3">
+                    <div class="mb-3 mt-3">
                         <label class="form-label fw-bold">Observaciones</label>
                         <textarea name="observaciones" class="form-control" rows="2" placeholder="Observaciones adicionales..."></textarea>
                     </div>
@@ -225,7 +229,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Nuevo Proveedor</h5>
+                <h5 class="modal-title"><i class="bi bi-truck"></i> Nuevo Proveedor</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="formProveedor">
@@ -269,7 +273,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Nuevo Producto</h5>
+                <h5 class="modal-title"><i class="bi bi-box"></i> Nuevo Producto</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="formProductoRapido">
@@ -312,11 +316,107 @@
 @endsection
 
 @section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 $(document).ready(function() {
     let productosAgregados = [];
-    let currentIndex = 0;
     let searchTimeout;
+
+    // ========== SELECT2 PARA PROVEEDOR ==========
+    $('#proveedorSelect').select2({
+        theme: 'bootstrap-5',
+        width: '100%',
+        placeholder: 'Seleccionar proveedor...',
+        allowClear: true,
+        language: {
+            noResults: function() {
+                return "No se encontraron proveedores";
+            }
+        }
+    });
+
+    // ========== SELECT2 PARA PRODUCTO CON AJAX ==========
+    $('#productoSelect').select2({
+        theme: 'bootstrap-5',
+        width: '100%',
+        placeholder: 'Buscar producto por nombre o código...',
+        minimumInputLength: 2,
+        allowClear: true,
+        ajax: {
+            url: '{{ route("compras.search.productos") }}',
+            dataType: 'json',
+            delay: 300,
+            data: function(params) {
+                return {
+                    q: params.term || ''
+                };
+            },
+            processResults: function(data) {
+                if (data.success && data.productos) {
+                    return {
+                        results: data.productos.map(function(producto) {
+                            return {
+                                id: producto.id,
+                                text: producto.codigo_interno + ' - ' + producto.descripcion,
+                                data: producto
+                            };
+                        })
+                    };
+                }
+                return { results: [] };
+            },
+            cache: true
+        },
+        language: {
+            inputTooShort: function() {
+                return "Ingrese al menos 2 caracteres para buscar";
+            },
+            noResults: function() {
+                return "No se encontraron productos";
+            }
+        }
+    });
+
+    // Evento cuando se selecciona un producto
+    $('#productoSelect').on('select2:select', function(e) {
+        const producto = e.params.data.data;
+        
+        // Verificar si ya está agregado
+        if (productosAgregados.some(p => p.id === producto.id)) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Producto duplicado',
+                text: 'Este producto ya está agregado a la compra',
+                confirmButtonColor: '#3085d6'
+            });
+            $('#productoSelect').val(null).trigger('change');
+            return;
+        }
+        
+        // Agregar producto a la lista
+        productosAgregados.push({
+            id: producto.id,
+            codigo: producto.codigo_interno,
+            descripcion: producto.descripcion,
+            cantidad: 1,
+            precio_unitario: parseFloat(producto.precio_compra) || 0,
+            unidad: producto.unidad || 'UNIDAD'
+        });
+        
+        renderProductos();
+        $('#productoSelect').val(null).trigger('change');
+        
+        // Mostrar notificación de éxito
+        Swal.fire({
+            icon: 'success',
+            title: 'Producto agregado',
+            text: producto.descripcion,
+            timer: 1500,
+            showConfirmButton: false,
+            toast: true,
+            position: 'top-end'
+        });
+    });
 
     // Función para actualizar totales
     function actualizarTotales() {
@@ -330,55 +430,66 @@ $(document).ready(function() {
         $('#subtotal').text('S/ ' + subtotal.toFixed(2));
         $('#igv').text('S/ ' + igv.toFixed(2));
         $('#total').text('S/ ' + total.toFixed(2));
-        
-        // Actualizar campos ocultos
-        $('<input>').attr('type', 'hidden').attr('name', 'subtotal').val(subtotal).appendTo('#formCompra');
-        $('<input>').attr('type', 'hidden').attr('name', 'igv').val(igv).appendTo('#formCompra');
-        $('<input>').attr('type', 'hidden').attr('name', 'total').val(total).appendTo('#formCompra');
     }
 
     // Función para renderizar productos
     function renderProductos() {
         let html = '';
         productosAgregados.forEach((item, idx) => {
+            const totalItem = item.cantidad * item.precio_unitario;
             html += `
                 <div class="product-row" data-index="${idx}">
                     <input type="hidden" name="productos[${idx}][producto_id]" value="${item.id}">
-                    <div class="row">
-                        <div class="col-md-5">
-                            <label class="form-label fw-bold">Producto</label>
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-muted">Producto</label>
                             <p class="mb-0"><strong>${item.codigo}</strong> - ${item.descripcion}</p>
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label fw-bold">Und.</label>
+                            <label class="form-label fw-bold small text-muted">Und.</label>
                             <p class="mb-0">${item.unidad}</p>
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label fw-bold">Cantidad</label>
+                            <label class="form-label fw-bold small text-muted">Cantidad</label>
                             <input type="number" name="productos[${idx}][cantidad]" class="form-control cantidad-input" value="${item.cantidad}" min="1" required>
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label fw-bold">Precio Unitario</label>
-                            <input type="number" step="0.01" name="productos[${idx}][precio_unitario]" class="form-control precio-input" value="${item.precio_unitario}" required>
+                            <label class="form-label fw-bold small text-muted">Precio Unitario</label>
+                            <div class="input-group">
+                                <span class="input-group-text">S/</span>
+                                <input type="number" step="0.01" name="productos[${idx}][precio_unitario]" class="form-control precio-input" value="${item.precio_unitario.toFixed(2)}" required>
+                            </div>
                         </div>
                         <div class="col-md-1">
-                            <label class="form-label">&nbsp;</label>
-                            <div>
-                                <i class="bi bi-trash3 remove-product fs-5"></i>
-                            </div>
+                            <label class="form-label fw-bold small text-muted">Total</label>
+                            <p class="mb-0 fw-bold text-success">S/ ${totalItem.toFixed(2)}</p>
+                        </div>
+                        <div class="col-md-1 text-end">
+                            <i class="bi bi-trash3 remove-product fs-4" title="Eliminar producto"></i>
                         </div>
                     </div>
                 </div>
             `;
         });
+        
+        if (productosAgregados.length === 0) {
+            html = '<div class="alert alert-info text-center">No hay productos agregados. Busque y seleccione productos para agregar.</div>';
+        }
+        
         $('#productosList').html(html);
         
         // Eventos para cambios en cantidad/precio
-        $('.cantidad-input, .precio-input').on('change', function() {
+        $('.cantidad-input').off('change').on('change', function() {
             const index = $(this).closest('.product-row').data('index');
-            const row = productosAgregados[index];
-            row.cantidad = parseInt($(this).closest('.product-row').find('.cantidad-input').val());
-            row.precio_unitario = parseFloat($(this).closest('.product-row').find('.precio-input').val());
+            productosAgregados[index].cantidad = parseInt($(this).val()) || 1;
+            renderProductos();
+            actualizarTotales();
+        });
+        
+        $('.precio-input').off('change').on('change', function() {
+            const index = $(this).closest('.product-row').data('index');
+            productosAgregados[index].precio_unitario = parseFloat($(this).val()) || 0;
+            renderProductos();
             actualizarTotales();
         });
         
@@ -392,83 +503,13 @@ $(document).ready(function() {
         actualizarTotales();
     }
 
-    // Buscar productos
-    $('#searchProducto').on('keyup', function() {
-        clearTimeout(searchTimeout);
-        const search = $(this).val();
-        
-        if (search.length < 2) {
-            $('#searchResults').hide();
-            return;
-        }
-        
-        searchTimeout = setTimeout(function() {
-            $.ajax({
-                url: '{{ route("compras.search.productos") }}',
-                type: 'GET',
-                data: { q: search },
-                success: function(response) {
-                    if (response.success && response.productos.length > 0) {
-                        let html = '';
-                        response.productos.forEach(producto => {
-                            html += `
-                                <div class="product-result-item" 
-                                     data-id="${producto.id}" 
-                                     data-codigo="${producto.codigo_interno}" 
-                                     data-descripcion="${producto.descripcion}" 
-                                     data-precio="${producto.precio_compra}"
-                                     data-unidad="${producto.unidad}">
-                                    <strong>${producto.codigo_interno}</strong> - ${producto.descripcion}<br>
-                                    <small>Precio compra: S/ ${parseFloat(producto.precio_compra).toFixed(2)} | Unidad: ${producto.unidad}</small>
-                                </div>
-                            `;
-                        });
-                        $('#searchResults').html(html).show();
-                        
-                        $('.product-result-item').off('click').on('click', function() {
-                            const id = $(this).data('id');
-                            const codigo = $(this).data('codigo');
-                            const descripcion = $(this).data('descripcion');
-                            const precio = parseFloat($(this).data('precio'));
-                            const unidad = $(this).data('unidad');
-                            
-                            // Verificar si ya está agregado
-                            if (productosAgregados.some(p => p.id === id)) {
-                                alert('Este producto ya está agregado');
-                                return;
-                            }
-                            
-                            productosAgregados.push({
-                                id: id,
-                                codigo: codigo,
-                                descripcion: descripcion,
-                                cantidad: 1,
-                                precio_unitario: precio,
-                                unidad: unidad
-                            });
-                            
-                            renderProductos();
-                            $('#searchProducto').val('');
-                            $('#searchResults').hide();
-                        });
-                    } else {
-                        $('#searchResults').html('<div class="p-3 text-center text-muted">No se encontraron productos</div>').show();
-                    }
-                }
-            });
-        }, 300);
-    });
-    
-    // Ocultar resultados
-    $(document).on('click', function(e) {
-        if (!$(e.target).closest('#searchProducto, #searchResults').length) {
-            $('#searchResults').hide();
-        }
-    });
-    
     // Guardar nuevo proveedor
     $('#formProveedor').on('submit', function(e) {
         e.preventDefault();
+        const btn = $(this).find('button[type="submit"]');
+        const originalText = btn.html();
+        btn.html('<span class="spinner-border spinner-border-sm me-2"></span> Guardando...').prop('disabled', true);
+        
         $.ajax({
             url: '{{ route("proveedores.store") }}',
             type: 'POST',
@@ -476,8 +517,41 @@ $(document).ready(function() {
             success: function(response) {
                 if (response.success) {
                     $('#modalNuevoProveedor').modal('hide');
-                    location.reload();
+                    // Recargar select2 de proveedores
+                    $.ajax({
+                        url: '{{ route("proveedores.data") }}',
+                        type: 'GET',
+                        success: function(data) {
+                            const select = $('#proveedorSelect');
+                            select.empty().append('<option value="">Seleccionar proveedor...</option>');
+                            if (data.data) {
+                                data.data.forEach(proveedor => {
+                                    select.append(`<option value="${proveedor.id}">${proveedor.numero_documento} - ${proveedor.nombre_razon_social}</option>`);
+                                });
+                            }
+                            select.val(response.data.id).trigger('change');
+                        }
+                    });
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Proveedor registrado',
+                        text: response.message,
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
                 }
+                $('#formProveedor')[0].reset();
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: xhr.responseJSON?.message || 'Error al guardar proveedor'
+                });
+            },
+            complete: function() {
+                btn.html(originalText).prop('disabled', false);
             }
         });
     });
@@ -485,6 +559,10 @@ $(document).ready(function() {
     // Guardar nuevo producto rápido
     $('#formProductoRapido').on('submit', function(e) {
         e.preventDefault();
+        const btn = $(this).find('button[type="submit"]');
+        const originalText = btn.html();
+        btn.html('<span class="spinner-border spinner-border-sm me-2"></span> Guardando...').prop('disabled', true);
+        
         $.ajax({
             url: '{{ route("productos.store") }}',
             type: 'POST',
@@ -492,8 +570,27 @@ $(document).ready(function() {
             success: function(response) {
                 if (response.success) {
                     $('#modalNuevoProducto').modal('hide');
-                    location.reload();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Producto registrado',
+                        text: 'El producto ha sido creado exitosamente',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    // Limpiar el select2 para que pueda buscar el nuevo producto
+                    $('#productoSelect').val(null).trigger('change');
                 }
+                $('#formProductoRapido')[0].reset();
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: xhr.responseJSON?.message || 'Error al guardar producto'
+                });
+            },
+            complete: function() {
+                btn.html(originalText).prop('disabled', false);
             }
         });
     });
@@ -502,7 +599,12 @@ $(document).ready(function() {
     $('#formCompra').on('submit', function(e) {
         if (productosAgregados.length === 0) {
             e.preventDefault();
-            alert('Debe agregar al menos un producto');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Carrito vacío',
+                text: 'Debe agregar al menos un producto a la compra',
+                confirmButtonColor: '#3085d6'
+            });
             return false;
         }
         

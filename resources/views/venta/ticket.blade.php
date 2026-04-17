@@ -81,189 +81,456 @@ if (!function_exists('convertirBloque')) {
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ticket - {{ $venta->documento }}</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         
         body {
-            font-family: Arial, Helvetica, sans-serif;
-            font-size: 12px;
+            font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            font-size: 11px;
             width: 80mm;
             margin: 0 auto;
-            padding: 5mm;
-            background: white;
-            color: #000;
+            padding: 0;
+            background: #e9ecef;
         }
         
-        .ticket { width: 100%; }
+        .ticket {
+            width: 100%;
+            max-width: 80mm;
+            background: white;
+            margin: 8px auto;
+            padding: 12px 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
         
-        .header { text-align: center; margin-bottom: 10px; }
-        .logo-img { max-width: 100px; height: auto; margin-bottom: 5px; }
-        .empresa-nombre { font-weight: bold; font-size: 14px; text-transform: uppercase; }
-        .empresa-info { font-size: 9px; margin-bottom: 1px; text-transform: uppercase; }
-
-        .comprobante-box {
-            background: #000;
-            color: #fff;
+        /* HEADER */
+        .header {
             text-align: center;
-            padding: 8px;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #2c3e50;
+        }
+        
+        .logo-img {
+            max-width: 70px;
+            height: auto;
+            margin-bottom: 6px;
+        }
+        
+        .empresa-nombre {
+            font-weight: 800;
+            font-size: 14px;
+            text-transform: uppercase;
+            color: #1a2a3a;
+            letter-spacing: 0.5px;
+        }
+        
+        .empresa-ruc, .empresa-direccion {
+            font-size: 8px;
+            color: #6c757d;
+            margin-top: 2px;
+        }
+        
+        /* COMPROBANTE */
+        .comprobante-box {
+            background: linear-gradient(135deg, #1a2a3a 0%, #2c3e50 100%);
+            color: white;
+            text-align: center;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 12px;
+        }
+        
+        .comprobante-tipo {
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 1px;
+            display: block;
+        }
+        
+        .comprobante-numero {
+            background: white;
+            color: #1a2a3a;
+            display: inline-block;
+            padding: 5px 15px;
+            margin-top: 6px;
+            font-size: 14px;
+            font-weight: 800;
+            border-radius: 20px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        /* INFO CLIENTE */
+        .info-section {
+            background: #f8f9fa;
+            padding: 8px 10px;
+            margin: 10px 0;
+            border-radius: 10px;
+        }
+        
+        .info-row {
+            display: flex;
+            margin-bottom: 4px;
+            font-size: 9px;
+        }
+        
+        .info-label {
+            font-weight: 700;
+            width: 70px;
+            color: #495057;
+        }
+        
+        .info-value {
+            flex: 1;
+            color: #212529;
+        }
+        
+        /* TABLA DE PRODUCTOS */
+        .productos-table {
+            width: 100%;
+            border-collapse: collapse;
             margin: 10px 0;
         }
-        .comprobante-tipo { font-weight: bold; font-size: 14px; display: block; }
-        .comprobante-numero {
-            background: #fff;
-            color: #000;
-            display: inline-block;
-            padding: 3px 12px;
-            margin-top: 5px;
-            font-size: 15px;
-            font-weight: bold;
-            border: 1px solid #000;
+        
+        .productos-table th {
+            text-align: left;
+            font-size: 9px;
+            padding: 6px 2px;
+            background: #e9ecef;
+            color: #495057;
+            border-bottom: 1.5px solid #dee2e6;
         }
         
-        .seccion { margin-bottom: 10px; font-size: 11px; }
-        .linea { display: flex; margin-bottom: 2px; }
-        .label { font-weight: bold; width: 95px; }
-
-        .separador-grueso { border-top: 2px solid #000; margin: 8px 0; }
-        .separador-punteado { border-top: 1px dashed #000; margin: 8px 0; }
+        .productos-table td {
+            padding: 6px 2px;
+            font-size: 9px;
+            border-bottom: 1px solid #f1f3f5;
+            vertical-align: top;
+        }
         
-        .tabla { width: 100%; border-collapse: collapse; }
-        .tabla th { text-align: left; font-size: 10px; padding-bottom: 5px; border-bottom: 1px solid #000; }
-        .item-row td { padding: 5px 0; vertical-align: top; font-size: 11px; }
-
-        .total-linea { display: flex; justify-content: flex-end; margin-bottom: 2px; font-size: 11px; }
-        .total-label { width: 100px; text-align: right; font-weight: bold; padding-right: 10px; }
-        .total-monto { width: 70px; text-align: right; }
-
-        .total-final {
-            border-top: 1px solid #000;
-            border-bottom: 1px solid #000;
-            padding: 5px 0;
-            margin: 8px 0;
+        .productos-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        /* TOTALES */
+        .totales-container {
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px dashed #dee2e6;
+        }
+        
+        .total-line {
             display: flex;
-            justify-content: space-between;
-            font-weight: bold;
+            justify-content: flex-end;
+            margin-bottom: 4px;
+            font-size: 10px;
+        }
+        
+        .total-label {
+            width: 85px;
+            text-align: right;
+            font-weight: 600;
+            color: #495057;
+            padding-right: 12px;
+        }
+        
+        .total-amount {
+            width: 70px;
+            text-align: right;
+            font-weight: 600;
+        }
+        
+        .total-final {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 2px solid #2c3e50;
+            font-weight: 800;
+            font-size: 12px;
+        }
+        
+        .total-final .total-label {
+            color: #1a2a3a;
+        }
+        
+        .total-final .total-amount {
+            color: #2c3e50;
             font-size: 13px;
         }
-
+        
+        /* MONTO EN LETRAS */
         .monto-letras {
-            background: #f0f0f0;
-            padding: 6px;
+            background: linear-gradient(135deg, #e8f4f0 0%, #d4e8e0 100%);
+            padding: 8px 12px;
             text-align: center;
-            font-size: 10px;
-            font-weight: bold;
+            font-size: 8px;
+            font-weight: 600;
             text-transform: uppercase;
-            margin: 10px 0;
-            border: 1px solid #ccc;
+            margin: 12px 0;
+            border-radius: 10px;
+            color: #1a5d3c;
+            letter-spacing: 0.3px;
         }
-
-        .qr-container { text-align: center; margin-top: 15px; font-size: 9px; }
-
+        
+        /* MÉTODO DE PAGO */
+        .payment-method {
+            text-align: center;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+        
+        .payment-method span {
+            font-weight: 800;
+            color: #2c3e50;
+        }
+        
+        /* CÓDIGO QR */
+        .qr-container {
+            text-align: center;
+            margin: 12px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+        
+        .qr-code-img {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 6px;
+        }
+        
+        .qr-text {
+            font-size: 7px;
+            color: #6c757d;
+        }
+        
+        /* FOOTER */
+        .footer {
+            text-align: center;
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px dashed #dee2e6;
+        }
+        
+        .footer-gracias {
+            font-weight: 800;
+            font-size: 11px;
+            color: #1a5d3c;
+            margin-bottom: 6px;
+        }
+        
+        .footer-legal {
+            font-size: 7px;
+            color: #adb5bd;
+        }
+        
+        /* SEPARADORES */
+        .separator-dashed {
+            border-top: 1px dashed #dee2e6;
+            margin: 8px 0;
+        }
+        
+        /* BOTÓN IMPRESIÓN */
+        .no-print {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+        }
+        
+        .print-btn {
+            background: linear-gradient(135deg, #2c3e50 0%, #1a2a3a 100%);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .print-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        
         @media print {
-            .no-print { display: none; }
-            body { padding: 0; margin: 0; }
+            .no-print {
+                display: none;
+            }
+            body {
+                background: white;
+                padding: 0;
+                margin: 0;
+            }
+            .ticket {
+                margin: 0;
+                padding: 8px;
+                box-shadow: none;
+                border-radius: 0;
+            }
         }
     </style>
 </head>
 <body>
     <div class="ticket">
+        <!-- HEADER - EMPRESA -->
         <div class="header">
-    @if($empresa && $empresa->logo)
-        @php
-            $path = public_path('storage/empresa/' . $empresa->logo);
-            if (file_exists($path)) {
-                $type = pathinfo($path, PATHINFO_EXTENSION);
-                $data = file_get_contents($path);
-                $base64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
-            }
-        @endphp
-        
-        @isset($base64)
-            <img src="{{ $base64 }}" class="logo-img">
-        @else
-            <img src="{{ asset('storage/empresa/' . $empresa->logo) }}" class="logo-img">
-        @endisset
-    @endif
-    
-    <div class="empresa-nombre">{{ $empresa->razon_social ?? 'DISTRIBUIDORA BEJAR E.I.R.L.' }}</div>
-    </div>
+            @if($empresa && $empresa->logo)
+                @php
+                    $path = public_path('storage/empresa/' . $empresa->logo);
+                    if (file_exists($path)) {
+                        $type = pathinfo($path, PATHINFO_EXTENSION);
+                        $data = file_get_contents($path);
+                        $base64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
+                    }
+                @endphp
+                @isset($base64)
+                    <img src="{{ $base64 }}" class="logo-img" alt="Logo">
+                @else
+                    <img src="{{ asset('storage/empresa/' . $empresa->logo) }}" class="logo-img" alt="Logo">
+                @endisset
+            @endif
+            <div class="empresa-nombre">{{ $empresa->razon_social ?? 'DISTRIBUIDORA BEJAR E.I.R.L.' }}</div>
+            <div class="empresa-ruc">RUC: {{ $empresa->ruc ?? '20100066603' }}</div>
+            <div class="empresa-direccion">{{ $empresa->direccion ?? 'Av. Principal N° 123 - Lima' }}</div>
+        </div>
 
+        <!-- COMPROBANTE -->
         <div class="comprobante-box">
-            <span class="comprobante-tipo">{{ $venta->tipo_comprobante == 'BOLETA' ? 'BOLETA DE VENTA' : 'FACTURA' }} ELECTRÓNICA</span>
+            <span class="comprobante-tipo">{{ $venta->tipo_comprobante == 'BOLETA' ? 'BOLETA DE VENTA' : ($venta->tipo_comprobante == 'FACTURA' ? 'FACTURA ELECTRÓNICA' : 'NOTA') }}</span>
             <div class="comprobante-numero">{{ $venta->documento }}</div>
         </div>
 
-        <div class="seccion">
-            <div class="linea"><span class="label">N° DOCUMENTO:</span> <span>{{ $venta->cliente->numero_documento ?? '00000000' }}</span></div>
-            <div class="linea"><span class="label">NOMBRE:</span> <span>{{ $venta->cliente->nombre_razon_social ?? 'CLIENTES VARIOS' }}</span></div>
-            <div class="linea"><span class="label">DIRECCIÓN:</span> <span>{{ $venta->cliente->direccion ?? '-' }}</span></div>
-            <div class="linea"><span class="label">FECHA/HORA:</span> <span>{{ $venta->fecha_emision->format('d/m/Y H:i:s') }}</span></div>
-            <div class="linea"><span class="label">MONEDA/PAGO:</span> <span>SOLES / {{ strtoupper($venta->forma_pago) }}</span></div>
-            <div class="linea"><span class="label">VENDEDOR:</span> <span>{{ $venta->usuario->name ?? 'ADMIN' }}</span></div>
+        <!-- INFORMACIÓN DEL CLIENTE -->
+        <div class="info-section">
+            <div class="info-row">
+                <span class="info-label">CLIENTE:</span>
+                <span class="info-value">{{ $venta->cliente->nombre_razon_social ?? 'CLIENTES VARIOS' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">DOCUMENTO:</span>
+                <span class="info-value">{{ $venta->cliente->numero_documento ?? '00000000' }}</span>
+            </div>
+            @if($venta->cliente && $venta->cliente->direccion)
+            <div class="info-row">
+                <span class="info-label">DIRECCIÓN:</span>
+                <span class="info-value">{{ $venta->cliente->direccion }}</span>
+            </div>
+            @endif
+            <div class="info-row">
+                <span class="info-label">FECHA:</span>
+                <span class="info-value">{{ $venta->fecha_emision->format('d/m/Y H:i:s') }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">VENDEDOR:</span>
+                <span class="info-value">{{ $venta->usuario->name ?? 'ADMINISTRADOR' }}</span>
+            </div>
         </div>
 
-        <div class="separador-grueso"></div>
-
-        <table class="tabla">
+        <!-- TABLA DE PRODUCTOS -->
+        <table class="productos-table">
             <thead>
                 <tr>
-                    <th width="15%">CANT</th>
-                    <th width="45%">DESCRIPCIÓN</th>
+                    <th width="12%">CANT</th>
+                    <th width="48%">DESCRIPCIÓN</th>
                     <th width="20%" style="text-align: right;">P/U</th>
                     <th width="20%" style="text-align: right;">TOTAL</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($venta->detalles as $detalle)
-                <tr class="item-row">
+                <tr>
                     <td style="text-align: center;">{{ number_format($detalle->cantidad, 0) }}</td>
                     <td>{{ $detalle->producto->descripcion ?? '-' }}</td>
-                    <td style="text-align: right;">{{ number_format($detalle->precio_unitario, 2) }}</td>
-                    <td style="text-align: right;"><strong>{{ number_format($detalle->total, 2) }}</strong></td>
+                    <td style="text-align: right;">S/ {{ number_format($detalle->precio_unitario, 2) }}</td>
+                    <td style="text-align: right;"><strong>S/ {{ number_format($detalle->total, 2) }}</strong></td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
 
-        <div class="separador-punteado"></div>
-
+        <!-- TOTALES -->
         <div class="totales-container">
-            <div class="total-linea">
-                <span class="total-label">Gravada:</span>
-                <span class="total-monto">S/ {{ number_format($venta->subtotal, 2) }}</span>
+            <div class="total-line">
+                <span class="total-label">OP. GRAVADAS:</span>
+                <span class="total-amount">S/ {{ number_format($venta->subtotal, 2) }}</span>
             </div>
-            <div class="total-linea">
+            <div class="total-line">
                 <span class="total-label">IGV (18%):</span>
-                <span class="total-monto">S/ {{ number_format($venta->igv, 2) }}</span>
+                <span class="total-amount">S/ {{ number_format($venta->igv, 2) }}</span>
             </div>
             <div class="total-final">
-                <span>TOTAL A PAGAR:</span>
-                <span>S/ {{ number_format($venta->total, 2) }}</span>
+                <span class="total-label">TOTAL:</span>
+                <span class="total-amount">S/ {{ number_format($venta->total, 2) }}</span>
             </div>
         </div>
 
+        <!-- MONTO EN LETRAS -->
         <div class="monto-letras">
             SON: {{ convertirNumeroLetras($venta->total) }}
         </div>
 
-        <div class="separador-punteado"></div>
-        <div style="text-align: center; font-weight: bold; font-size: 11px; margin-bottom: 5px;">MÉTODOS DE PAGO</div>
-        <div class="linea" style="justify-content: center; font-size: 11px;">
-            <span>{{ strtoupper($venta->forma_pago) }}: <strong>S/ {{ number_format($venta->total, 2) }}</strong></span>
+        <!-- MÉTODO DE PAGO -->
+        <div class="payment-method">
+            🏦 PAGADO CON: <span>{{ strtoupper($venta->forma_pago) }}</span> - S/ {{ number_format($venta->total, 2) }}
+            @if($venta->tipo_venta == 'CONTADO' && $venta->cambio > 0)
+            <br>💵 CAMBIO: S/ {{ number_format($venta->cambio, 2) }}
+            @endif
         </div>
 
+        <!-- CÓDIGO QR (si existe) -->
+        @if(isset($qrCode) && $qrCode)
         <div class="qr-container">
-            <p>Representación impresa de la {{ $venta->tipo_comprobante }} ELECTRÓNICA</p>
-            <p style="margin-top: 8px; font-weight: bold; font-size: 11px;">¡GRACIAS POR SU COMPRA!</p>
-            <p>InfinityDev - Sistema de Gestión</p>
+            <img src="{{ $qrCode }}" class="qr-code-img" alt="Código QR">
+            <div class="qr-text">Escanea para verificar tu comprobante</div>
         </div>
+        @else
+        <div class="qr-container">
+            <svg width="80" height="80" viewBox="0 0 100 100" style="margin-bottom: 6px;">
+                <rect width="100" height="100" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1" rx="5"/>
+                <text x="50" y="50" text-anchor="middle" dominant-baseline="middle" fill="#adb5bd" font-size="8" font-family="Arial">CÓDIGO QR</text>
+                <text x="50" y="62" text-anchor="middle" dominant-baseline="middle" fill="#adb5bd" font-size="6">{{ $venta->documento }}</text>
+            </svg>
+            <div class="qr-text">{{ $venta->documento }}</div>
+        </div>
+        @endif
 
-        <div class="no-print" style="text-align: center; margin-top: 20px;">
-            <button onclick="window.print()" style="padding: 10px 20px; background: #28a745; color: #fff; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
-                🖨️ IMPRIMIR TICKET
-            </button>
+        <!-- FOOTER -->
+        <div class="footer">
+            <div class="footer-gracias">✨ ¡GRACIAS POR SU COMPRA! ✨</div>
+            <div class="footer-legal">Representación impresa de {{ $venta->tipo_comprobante }} ELECTRÓNICA</div>
+            <div class="footer-legal">Válido como comprobante de pago</div>
+            <div class="separator-dashed"></div>
+            <div class="footer-legal">InfinityDev - Sistema de Gestión POS</div>
         </div>
     </div>
+
+    <!-- BOTÓN PARA IMPRIMIR -->
+    <div class="no-print">
+        <button onclick="window.print()" class="print-btn">
+            🖨️ IMPRIMIR TICKET
+        </button>
+        <button onclick="window.close()" class="print-btn" style="background: linear-gradient(135deg, #6c757d 0%, #495057 100%); margin-left: 10px;">
+            ❌ CERRAR
+        </button>
+    </div>
+
+    <script>
+        // Auto-imprimir al cargar la página (opcional)
+        setTimeout(function() {
+            window.print();
+        }, 300);
+    </script>
 </body>
 </html>

@@ -76,31 +76,36 @@ class NotaCreditoController extends Controller
     }
 
     public function getVenta($id)
-    {
-        $venta = Venta::with(['cliente', 'detalles.producto'])
-                      ->findOrFail($id);
-        
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'venta' => $venta,
-                'cliente' => $venta->cliente,
-                'detalles' => $venta->detalles->map(function($detalle) {
-                    return [
-                        'id' => $detalle->id,
-                        'producto_id' => $detalle->producto_id,
-                        'producto' => $detalle->producto->descripcion,
-                        'codigo' => $detalle->producto->codigo_interno,
-                        'cantidad' => $detalle->cantidad,
-                        'cantidad_original' => $detalle->cantidad,
-                        'precio_unitario' => $detalle->precio_unitario,
-                        'total' => $detalle->total,
-                        'almacen_id' => $detalle->almacen_id
-                    ];
-                })
-            ]
-        ]);
+{
+    $venta = Venta::with(['cliente', 'detalles.producto'])->findOrFail($id);
+    
+    $detalles = [];
+    foreach ($venta->detalles as $detalle) {
+        $detalles[] = [
+            'producto_id' => $detalle->producto_id,
+            'producto_descripcion' => $detalle->producto->descripcion ?? 'Producto',
+            'codigo_interno' => $detalle->producto->codigo_interno ?? '-',
+            'cantidad' => $detalle->cantidad,
+            'precio_unitario' => $detalle->precio_unitario,
+            'almacen_id' => $detalle->almacen_id ?? 1
+        ];
     }
+    
+    return response()->json([
+        'success' => true,
+        'data' => [
+            'venta' => [
+                'id' => $venta->id,
+                'documento' => $venta->documento,
+                'cliente_id' => $venta->cliente_id,
+                'cliente_nombre' => $venta->cliente->nombre_razon_social ?? 'CLIENTES VARIOS',
+                'total' => $venta->total,
+                'fecha_emision' => $venta->fecha_emision->format('Y-m-d')
+            ],
+            'detalles' => $detalles
+        ]
+    ]);
+}
 
     public function getSerie(Request $request)
     {

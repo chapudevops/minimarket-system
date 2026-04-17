@@ -26,6 +26,7 @@ class EmpresaController extends Controller
                 'email_contabilidad' => '',
                 'cuenta_bancaria_detracciones' => '',
                 'nombre_comercial' => '',
+                'link_ubicacion' => '', // NUEVO CAMPO
                 'usuario_secundario' => '',
                 'clave' => '',
                 'clave_certificado' => '',
@@ -64,6 +65,7 @@ class EmpresaController extends Controller
                 'certificado_pfx' => 'nullable|file|mimes:pfx|max:5120',
                 'email_contabilidad' => 'nullable|email',
                 'url_api' => 'nullable|url',
+                'link_ubicacion' => 'nullable|url', // NUEVA VALIDACIÓN
             ];
 
             // Mensajes personalizados en español
@@ -86,6 +88,7 @@ class EmpresaController extends Controller
                 'certificado_pfx.max' => 'El certificado no debe pesar más de 5MB',
                 'email_contabilidad.email' => 'El correo de contabilidad debe ser una dirección de email válida',
                 'url_api.url' => 'La URL API debe ser una URL válida',
+                'link_ubicacion.url' => 'El link de ubicación debe ser una URL válida de Google Maps',
             ];
 
             $request->validate($rules, $messages);
@@ -123,6 +126,7 @@ class EmpresaController extends Controller
                     'id' => $empresa->id,
                     'logo' => $empresa->logo ? asset('storage/empresa/' . $empresa->logo) : null,
                     'certificado_pfx' => $empresa->certificado_pfx,
+                    'link_ubicacion' => $empresa->link_ubicacion, // NUEVO
                 ]
             ]);
 
