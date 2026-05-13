@@ -35,17 +35,11 @@ use Illuminate\Support\Facades\Auth;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
-
-
 Auth::routes();
-
 // Rutas de autenticación explícitas (sin usar Auth::routes())
 Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('login', [LoginController::class, 'login']);
 Route::post('logout', [LoginController::class, 'logout'])->name('logout');
-
-
-
 // Rutas protegidas con middleware auth
 Route::middleware(['auth'])->group(function () {
     // Ruta para el dashboard, solo accesible para usuarios autenticados
@@ -87,9 +81,6 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/productos/{id}', [ProductoController::class, 'update'])->name('productos.update');
     Route::delete('/productos/{id}', [ProductoController::class, 'destroy'])->name('productos.destroy');
     
-    
-    
-    
     // Rutas para Almacenes
     Route::get('/almacenes', [AlmacenController::class, 'index'])->name('almacenes.index');
     Route::get('/almacenes/data', [AlmacenController::class, 'getData'])->name('almacenes.data');
@@ -105,6 +96,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/terminal/series', [TerminalController::class, 'getSeries'])->name('terminal.series');
     Route::post('/terminal/procesar-pago', [TerminalController::class, 'procesarPago'])->name('terminal.procesar.pago');
     Route::get('/terminal/venta/{id}', [TerminalController::class, 'getVenta'])->name('terminal.venta');
+    Route::get('/terminal/productos', [TerminalController::class, 'getProductos'])->name('terminal.productos');
     
     // Rutas para Órdenes de Traslado
     Route::get('/traslados', [OrdenTrasladoController::class, 'index'])->name('traslados.index');

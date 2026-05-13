@@ -19,7 +19,7 @@
         ::-webkit-scrollbar-thumb:hover { background: #2c6e49; }
         .pos-container { display: flex; height: 100vh; gap: 0; background: #f4f7f9; }
         .products-panel { flex: 2.5; padding: 24px 28px; overflow-y: auto; background: #ffffff; border-radius: 32px 0 0 32px; margin: 16px 0 16px 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-        .search-box { margin-bottom: 28px; }
+        .search-box { margin-bottom: 28px; position: sticky; top: 0; background: white; z-index: 10; padding-bottom: 10px; }
         .search-box input { width: 100%; padding: 14px 24px; border: 1.5px solid #e2e8f0; border-radius: 60px; font-size: 15px; font-weight: 500; background: #f8fafc; transition: all 0.25s ease; }
         .search-box input:focus { outline: none; border-color: #10b981; background: white; box-shadow: 0 4px 12px rgba(16,185,129,0.15); }
         .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; }
@@ -72,6 +72,9 @@
         @media (max-width: 900px) { .products-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); } }
         .toast-notification { position: fixed; bottom: 20px; right: 20px; z-index: 9999; background: #1e293b; color: white; padding: 12px 24px; border-radius: 50px; font-weight: 500; box-shadow: 0 10px 25px rgba(0,0,0,0.2); animation: slideIn 0.3s ease; }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .loader-container { text-align: center; padding: 40px; color: #94a3b8; }
+        .skeleton-card { background: #f1f5f9; border-radius: 24px; padding: 16px 12px; height: 220px; animation: pulse 1.5s ease-in-out infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     </style>
 </head>
 <body>
@@ -81,16 +84,11 @@
                 <input type="text" id="searchInput" placeholder="🔍 Buscar producto por nombre, código o barras..." autofocus>
             </div>
             <div class="products-grid" id="productsGrid">
-                @foreach($productos as $producto)
-                <div class="product-card" data-id="{{ $producto->id }}" data-nombre="{{ $producto->descripcion }}" data-precio="{{ $producto->precio_venta }}" data-foto="{{ $producto->foto_url }}" data-stock="{{ $producto->stock_en_almacen }}">
-                    <div class="product-img">
-                        <img src="{{ $producto->foto_url }}" alt="{{ $producto->descripcion }}" class="product-image" onerror="this.src='{{ URL::asset('build/images/default-product.png') }}'">
-                    </div>
-                    <div class="product-name">{{ $producto->descripcion }}</div>
-                    <div class="product-price">S/ {{ number_format($producto->precio_venta, 2) }}</div>
-                    <div class="product-stock {{ $producto->stock_en_almacen <= 0 ? 'sin-stock' : '' }}">📦 Stock: {{ $producto->stock_en_almacen }}</div>
+                <!-- Los productos se cargarán vía AJAX -->
+                <div class="loader-container">
+                    <div class="spinner-border text-success" role="status"></div>
+                    <p class="mt-2">Cargando productos...</p>
                 </div>
-                @endforeach
             </div>
         </div>
         
@@ -114,9 +112,7 @@
         </div>
     </div>
 
-    <!-- ========== MODALES DE NOTIFICACIÓN ========== -->
-    
-    <!-- Modal de Advertencia (Carrito Vacío) -->
+    <!-- ========== MODALES (igual que antes) ========== -->
     <div class="modal fade" id="modalAdvertencia" tabindex="-1">
         <div class="modal-dialog modal-sm modal-dialog-centered">
             <div class="modal-content">
@@ -135,7 +131,6 @@
         </div>
     </div>
 
-    <!-- Modal de Error General -->
     <div class="modal fade" id="modalError" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -154,7 +149,6 @@
         </div>
     </div>
 
-    <!-- Modal de Éxito -->
     <div class="modal fade" id="modalExito" tabindex="-1">
         <div class="modal-dialog modal-sm modal-dialog-centered">
             <div class="modal-content">
@@ -173,7 +167,6 @@
         </div>
     </div>
 
-    <!-- Modal de Confirmación General -->
     <div class="modal fade" id="modalConfirmacion" tabindex="-1">
         <div class="modal-dialog modal-sm modal-dialog-centered">
             <div class="modal-content">
@@ -193,7 +186,6 @@
         </div>
     </div>
 
-    <!-- Modal Confirmar Cancelar -->
     <div class="modal fade" id="modalConfirmarCancelar" tabindex="-1">
         <div class="modal-dialog modal-sm modal-dialog-centered">
             <div class="modal-content">
@@ -213,7 +205,6 @@
         </div>
     </div>
 
-    <!-- Modal Stock Insuficiente -->
     <div class="modal fade" id="modalStockInsuficiente" tabindex="-1">
         <div class="modal-dialog modal-sm modal-dialog-centered">
             <div class="modal-content">
@@ -232,7 +223,6 @@
         </div>
     </div>
 
-    <!-- Modal Pago -->
     <div class="modal fade" id="modalPago" tabindex="-1">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
@@ -287,7 +277,6 @@
         </div>
     </div>
 
-    <!-- Modal Nuevo Cliente -->
     <div class="modal fade" id="modalNuevoCliente" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -309,7 +298,6 @@
         </div>
     </div>
 
-    <!-- Modal Resultado Venta -->
     <div class="modal fade" id="modalResultado" tabindex="-1">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
@@ -327,37 +315,189 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    
     <script>
         let cart = [];
         let ultimaVentaId = null;
         let confirmacionCallback = null;
         let productosStock = new Map();
-
+        
+        // Variables para scroll infinito
+        let currentPage = 1;
+        let lastPage = 1;
+        let isLoading = false;
+        let currentSearch = '';
+        let searchTimeout;
+        
+        // ========== FUNCIÓN PARA ESCAPAR HTML ==========
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+        
+        // ========== FUNCIONES DE PRODUCTOS (SCROLL INFINITO) ==========
+        function loadProducts(reset = true) {
+            if (isLoading) return;
+            isLoading = true;
+            
+            if (reset) {
+                $('#productsGrid').html('<div class="loader-container" id="loaderProducts"><div class="spinner-border text-success" role="status"></div><p class="mt-2">Cargando productos...</p></div>');
+                currentPage = 1;
+            } else {
+                $('#productsGrid').append('<div class="loader-container" id="loaderProducts"><div class="spinner-border spinner-border-sm text-success" role="status"></div><p class="mt-2 small">Cargando más productos...</p></div>');
+            }
+            
+            $.ajax({
+                url: '{{ route("terminal.productos") }}',
+                type: 'GET',
+                data: {
+                    search: currentSearch,
+                    page: currentPage,
+                    almacen_id: {{ $almacenId ?? 1 }}
+                },
+                success: function(response) {
+                    if (response.success) {
+                        if (reset) {
+                            $('#productsGrid').empty();
+                            productosStock.clear();
+                        } else {
+                            $('#loaderProducts').remove();
+                        }
+                        
+                        lastPage = response.pagination.last_page;
+                        
+                        response.data.forEach(producto => {
+                            const stockClass = producto.stock <= 0 ? 'disabled' : '';
+                            const stockTextClass = producto.stock <= 0 ? 'sin-stock' : '';
+                            
+                            const html = `<div class="product-card ${stockClass}" 
+                                                data-id="${producto.id}" 
+                                                data-nombre="${escapeHtml(producto.descripcion)}" 
+                                                data-precio="${producto.precio_venta}" 
+                                                data-foto="${producto.foto_url}" 
+                                                data-stock="${producto.stock}">
+                                            <div class="product-img">
+                                                <img src="${producto.foto_url}" 
+                                                     alt="${escapeHtml(producto.descripcion)}" 
+                                                     class="product-image" 
+                                                     loading="lazy"
+                                                     onerror="this.src='{{ URL::asset('build/images/default-product.png') }}'">
+                                            </div>
+                                            <div class="product-name">${escapeHtml(producto.descripcion)}</div>
+                                            <div class="product-price">S/ ${producto.precio_venta.toFixed(2)}</div>
+                                            <div class="product-stock ${stockTextClass}">📦 Stock: ${producto.stock}</div>
+                                        </div>`;
+                            $('#productsGrid').append(html);
+                            productosStock.set(producto.id, producto.stock);
+                        });
+                        
+                        // Reasignar eventos a los nuevos productos
+                        $('.product-card').off('click').on('click', function() {
+                            if ($(this).hasClass('disabled')) return;
+                            const producto = {
+                                id: $(this).data('id'),
+                                nombre: $(this).data('nombre'),
+                                precio: parseFloat($(this).data('precio')),
+                                almacen_id: 1
+                            };
+                            addToCart(producto);
+                        });
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error al cargar productos:', xhr);
+                    if (reset) {
+                        $('#productsGrid').html('<div class="loader-container text-danger"><i class="bi bi-exclamation-triangle-fill" style="font-size: 48px;"></i><p class="mt-2">Error al cargar productos. Recarga la página.</p></div>');
+                    }
+                },
+                complete: function() {
+                    isLoading = false;
+                    $('#loaderProducts').remove();
+                }
+            });
+        }
+        
+        function loadMoreProducts() {
+            if (currentPage < lastPage && !isLoading) {
+                currentPage++;
+                loadProducts(false);
+            }
+        }
+        
+        // ========== BÚSQUEDA ==========
+        $('#searchInput').on('keyup', function() {
+            clearTimeout(searchTimeout);
+            currentSearch = $(this).val();
+            
+            searchTimeout = setTimeout(function() {
+                currentPage = 1;
+                loadProducts(true);
+            }, 400);
+        });
+        
+        // ========== SCROLL INFINITO ==========
+        let scrollTimeout;
+        $('.products-panel').on('scroll', function() {
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(function() {
+                const $panel = $('.products-panel');
+                const scrollTop = $panel.scrollTop();
+                const scrollHeight = $panel[0].scrollHeight;
+                const clientHeight = $panel.innerHeight();
+                
+                if (scrollTop + clientHeight >= scrollHeight - 100) {
+                    loadMoreProducts();
+                }
+            }, 100);
+        });
+        
+        // ========== SISTEMA DE SONIDOS ==========
+        class POSBeep {
+            constructor() { this.audioContext = null; this.init(); }
+            init() { try { this.audioContext = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { console.log('Web Audio API no soportada'); } }
+            playAddBeep() { if (!this.audioContext) return; if (this.audioContext.state === 'suspended') this.audioContext.resume(); const now = this.audioContext.currentTime; const oscillator = this.audioContext.createOscillator(); const gainNode = this.audioContext.createGain(); oscillator.connect(gainNode); gainNode.connect(this.audioContext.destination); oscillator.type = 'sine'; oscillator.frequency.value = 880; gainNode.gain.setValueAtTime(0.3, now); gainNode.gain.exponentialRampToValueAtTime(0.00001, now + 0.2); oscillator.start(now); oscillator.stop(now + 0.2); }
+            playRemoveBeep() { if (!this.audioContext) return; if (this.audioContext.state === 'suspended') this.audioContext.resume(); const now = this.audioContext.currentTime; const oscillator = this.audioContext.createOscillator(); const gainNode = this.audioContext.createGain(); oscillator.connect(gainNode); gainNode.connect(this.audioContext.destination); oscillator.type = 'sine'; oscillator.frequency.value = 440; gainNode.gain.setValueAtTime(0.3, now); gainNode.gain.exponentialRampToValueAtTime(0.00001, now + 0.15); oscillator.start(now); oscillator.stop(now + 0.15); }
+            playSuccessBeep() { if (!this.audioContext) return; if (this.audioContext.state === 'suspended') this.audioContext.resume(); const now = this.audioContext.currentTime; const osc1 = this.audioContext.createOscillator(); const gain1 = this.audioContext.createGain(); osc1.connect(gain1); gain1.connect(this.audioContext.destination); osc1.type = 'sine'; osc1.frequency.value = 523.25; gain1.gain.setValueAtTime(0.2, now); gain1.gain.exponentialRampToValueAtTime(0.00001, now + 0.15); osc1.start(now); osc1.stop(now + 0.15); const osc2 = this.audioContext.createOscillator(); const gain2 = this.audioContext.createGain(); osc2.connect(gain2); gain2.connect(this.audioContext.destination); osc2.type = 'sine'; osc2.frequency.value = 659.25; gain2.gain.setValueAtTime(0.2, now + 0.1); gain2.gain.exponentialRampToValueAtTime(0.00001, now + 0.25); osc2.start(now + 0.1); osc2.stop(now + 0.25); }
+            playErrorBeep() { if (!this.audioContext) return; if (this.audioContext.state === 'suspended') this.audioContext.resume(); const now = this.audioContext.currentTime; const oscillator = this.audioContext.createOscillator(); const gainNode = this.audioContext.createGain(); oscillator.connect(gainNode); gainNode.connect(this.audioContext.destination); oscillator.type = 'square'; oscillator.frequency.value = 440; gainNode.gain.setValueAtTime(0.3, now); gainNode.gain.exponentialRampToValueAtTime(0.00001, now + 0.5); oscillator.start(now); oscillator.stop(now + 0.5); }
+            playCancelBeep() { if (!this.audioContext) return; if (this.audioContext.state === 'suspended') this.audioContext.resume(); const now = this.audioContext.currentTime; const oscillator = this.audioContext.createOscillator(); const gainNode = this.audioContext.createGain(); oscillator.connect(gainNode); gainNode.connect(this.audioContext.destination); oscillator.type = 'sawtooth'; oscillator.frequency.value = 330; gainNode.gain.setValueAtTime(0.3, now); gainNode.gain.exponentialRampToValueAtTime(0.00001, now + 0.4); oscillator.start(now); oscillator.stop(now + 0.4); }
+        }
+        const posBeep = new POSBeep();
+        function playAddBeep() { posBeep.playAddBeep(); }
+        function playRemoveBeep() { posBeep.playRemoveBeep(); }
+        function playSuccessBeep() { posBeep.playSuccessBeep(); }
+        function playErrorBeep() { posBeep.playErrorBeep(); }
+        function playCancelBeep() { posBeep.playCancelBeep(); }
+        
         // ========== FUNCIONES DE MODALES ==========
         function mostrarAdvertencia(mensaje) {
             $('#advertenciaMensaje').text(mensaje);
             $('#modalAdvertencia').modal('show');
             playErrorBeep();
         }
-
+        
         function mostrarError(mensaje) {
             $('#errorMensaje').text(mensaje);
             $('#modalError').modal('show');
             playErrorBeep();
         }
-
+        
         function mostrarExito(mensaje) {
             $('#exitoMensaje').text(mensaje);
             $('#modalExito').modal('show');
             playSuccessBeep();
         }
-
+        
         function mostrarConfirmacion(mensaje, callback) {
             $('#confirmacionMensaje').text(mensaje);
             confirmacionCallback = callback;
             $('#modalConfirmacion').modal('show');
         }
-
+        
         $('#btnConfirmarAccion').click(function() {
             $('#modalConfirmacion').modal('hide');
             if (confirmacionCallback) {
@@ -365,16 +505,20 @@
                 confirmacionCallback = null;
             }
         });
-
-        // Inicializar mapa de stocks
-        function inicializarMapaStocks() {
-            $('.product-card').each(function() {
-                const id = $(this).data('id');
-                const stock = parseInt($(this).data('stock'));
-                productosStock.set(id, stock);
-            });
+        
+        function mostrarModalStock(mensaje) {
+            $('#stockMensaje').text(mensaje);
+            $('#modalStockInsuficiente').modal('show');
+            playErrorBeep();
         }
-
+        
+        function mostrarToast(mensaje) {
+            const toast = $(`<div class="toast-notification">${mensaje}</div>`);
+            $('body').append(toast);
+            setTimeout(() => toast.fadeOut(300, function() { $(this).remove(); }), 2500);
+        }
+        
+        // ========== FUNCIONES DEL CARRITO ==========
         function actualizarStockProducto(productoId, cantidadVendida) {
             const stockActual = productosStock.get(productoId) || 0;
             const nuevoStock = Math.max(0, stockActual - cantidadVendida);
@@ -392,56 +536,27 @@
                     $productCard.removeClass('disabled');
                 }
             }
-            
-            mostrarToast(`Stock actualizado: ${nuevoStock} unidades restantes`);
         }
-
-        function mostrarToast(mensaje) {
-            const toast = $(`<div class="toast-notification">${mensaje}</div>`);
-            $('body').append(toast);
-            setTimeout(() => toast.fadeOut(300, function() { $(this).remove(); }), 2500);
-        }
-
-        // Sistema de sonidos
-        class POSBeep {
-            constructor() { this.audioContext = null; this.init(); }
-            init() { try { this.audioContext = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { console.log('Web Audio API no soportada'); } }
-            playAddBeep() { if (!this.audioContext) return; if (this.audioContext.state === 'suspended') this.audioContext.resume(); const now = this.audioContext.currentTime; const oscillator = this.audioContext.createOscillator(); const gainNode = this.audioContext.createGain(); oscillator.connect(gainNode); gainNode.connect(this.audioContext.destination); oscillator.type = 'sine'; oscillator.frequency.value = 880; gainNode.gain.setValueAtTime(0.3, now); gainNode.gain.exponentialRampToValueAtTime(0.00001, now + 0.2); oscillator.start(now); oscillator.stop(now + 0.2); }
-            playRemoveBeep() { if (!this.audioContext) return; if (this.audioContext.state === 'suspended') this.audioContext.resume(); const now = this.audioContext.currentTime; const oscillator = this.audioContext.createOscillator(); const gainNode = this.audioContext.createGain(); oscillator.connect(gainNode); gainNode.connect(this.audioContext.destination); oscillator.type = 'sine'; oscillator.frequency.value = 440; gainNode.gain.setValueAtTime(0.3, now); gainNode.gain.exponentialRampToValueAtTime(0.00001, now + 0.15); oscillator.start(now); oscillator.stop(now + 0.15); }
-            playSuccessBeep() { if (!this.audioContext) return; if (this.audioContext.state === 'suspended') this.audioContext.resume(); const now = this.audioContext.currentTime; const osc1 = this.audioContext.createOscillator(); const gain1 = this.audioContext.createGain(); osc1.connect(gain1); gain1.connect(this.audioContext.destination); osc1.type = 'sine'; osc1.frequency.value = 523.25; gain1.gain.setValueAtTime(0.2, now); gain1.gain.exponentialRampToValueAtTime(0.00001, now + 0.15); osc1.start(now); osc1.stop(now + 0.15); const osc2 = this.audioContext.createOscillator(); const gain2 = this.audioContext.createGain(); osc2.connect(gain2); gain2.connect(this.audioContext.destination); osc2.type = 'sine'; osc2.frequency.value = 659.25; gain2.gain.setValueAtTime(0.2, now + 0.1); gain2.gain.exponentialRampToValueAtTime(0.00001, now + 0.25); osc2.start(now + 0.1); osc2.stop(now + 0.25); }
-            playErrorBeep() { if (!this.audioContext) return; if (this.audioContext.state === 'suspended') this.audioContext.resume(); const now = this.audioContext.currentTime; const oscillator = this.audioContext.createOscillator(); const gainNode = this.audioContext.createGain(); oscillator.connect(gainNode); gainNode.connect(this.audioContext.destination); oscillator.type = 'square'; oscillator.frequency.value = 440; gainNode.gain.setValueAtTime(0.3, now); gainNode.gain.exponentialRampToValueAtTime(0.00001, now + 0.5); oscillator.start(now); oscillator.stop(now + 0.5); }
-            playCancelBeep() { if (!this.audioContext) return; if (this.audioContext.state === 'suspended') this.audioContext.resume(); const now = this.audioContext.currentTime; const oscillator = this.audioContext.createOscillator(); const gainNode = this.audioContext.createGain(); oscillator.connect(gainNode); gainNode.connect(this.audioContext.destination); oscillator.type = 'sawtooth'; oscillator.frequency.value = 330; gainNode.gain.setValueAtTime(0.3, now); gainNode.gain.exponentialRampToValueAtTime(0.00001, now + 0.4); oscillator.start(now); oscillator.stop(now + 0.4); }
-        }
-        const posBeep = new POSBeep();
-        function playAddBeep() { posBeep.playAddBeep(); }
-        function playRemoveBeep() { posBeep.playRemoveBeep(); }
-        function playSuccessBeep() { posBeep.playSuccessBeep(); }
-        function playErrorBeep() { posBeep.playErrorBeep(); }
-        function playCancelBeep() { posBeep.playCancelBeep(); }
-
-        function mostrarModalStock(mensaje) {
-            $('#stockMensaje').text(mensaje);
-            $('#modalStockInsuficiente').modal('show');
-            playErrorBeep();
-        }
-
+        
         function updateCartUI() {
             const cartContainer = $('#cartItems');
             const subtotalSpan = $('#subtotal');
             const igvSpan = $('#igv');
             const totalSpan = $('#total');
+            
             if (cart.length === 0) {
                 cartContainer.html(`<div class="empty-cart"><i class="bi bi-cart-x" style="font-size: 52px;"></i><p class="mt-2">Agrega productos al carrito</p></div>`);
                 subtotalSpan.text('S/ 0.00'); igvSpan.text('S/ 0.00'); totalSpan.text('S/ 0.00');
                 return;
             }
+            
             let html = '', subtotal = 0;
             cart.forEach((item, idx) => {
                 const itemTotal = item.precio * item.cantidad;
                 subtotal += itemTotal;
                 html += `<div class="cart-item" data-index="${idx}">
                             <div class="cart-item-info">
-                                <div class="cart-item-name">${item.nombre}</div>
+                                <div class="cart-item-name">${escapeHtml(item.nombre)}</div>
                                 <div class="cart-item-price">S/ ${item.precio.toFixed(2)}</div>
                             </div>
                             <div class="cart-item-qty">
@@ -454,12 +569,13 @@
                         </div>`;
             });
             cartContainer.html(html);
+            
             const igv = subtotal * 0.18;
             const total = subtotal + igv;
             subtotalSpan.text(`S/ ${subtotal.toFixed(2)}`);
             igvSpan.text(`S/ ${igv.toFixed(2)}`);
             totalSpan.text(`S/ ${total.toFixed(2)}`);
-
+            
             $('.qty-minus').off('click').on('click', function() {
                 const idx = $(this).data('index');
                 if (cart[idx].cantidad > 1) {
@@ -472,6 +588,7 @@
                     playRemoveBeep();
                 }
             });
+            
             $('.qty-plus').off('click').on('click', function() {
                 const idx = $(this).data('index');
                 const stockDisponible = productosStock.get(cart[idx].id) || 0;
@@ -483,6 +600,7 @@
                 updateCartUI();
                 playAddBeep();
             });
+            
             $('.cart-item-remove').off('click').on('click', function() {
                 const idx = $(this).data('index');
                 cart.splice(idx, 1);
@@ -490,7 +608,7 @@
                 playRemoveBeep();
             });
         }
-
+        
         function addToCart(producto) {
             const stockDisponible = productosStock.get(producto.id) || 0;
             const existing = cart.find(item => item.id === producto.id);
@@ -510,102 +628,8 @@
             playAddBeep();
             return true;
         }
-
-        // Evento para agregar productos
-        $('.product-card').click(function() {
-            if ($(this).hasClass('disabled')) return;
-            const producto = {
-                id: $(this).data('id'),
-                nombre: $(this).data('nombre'),
-                precio: parseFloat($(this).data('precio')),
-                almacen_id: 1
-            };
-            addToCart(producto);
-        });
-
-        // Búsqueda de productos
-        let searchTimeout;
-        $('#searchInput').on('keyup', function() {
-            clearTimeout(searchTimeout);
-            const search = $(this).val();
-            searchTimeout = setTimeout(function() {
-                if (search.length > 0) {
-                    $.ajax({
-                        url: '/terminal/search',
-                        type: 'GET',
-                        data: { search: search },
-                        success: function(response) {
-                            if (response.success) {
-                                let html = '';
-                                response.data.forEach(producto => {
-                                    const stockActual = productosStock.get(producto.id) ?? producto.stock_total;
-                                    const stockClass = stockActual <= 0 ? 'disabled' : '';
-                                    const precio = typeof producto.precio_venta === 'number' ? producto.precio_venta : parseFloat(producto.precio_venta);
-                                    html += `<div class="product-card ${stockClass}" data-id="${producto.id}" data-nombre="${producto.descripcion}" data-precio="${precio}" data-foto="${producto.foto}" data-stock="${stockActual}">
-                                                <div class="product-img"><img src="${producto.foto}" alt="${producto.descripcion}" class="product-image" onerror="this.src='{{ URL::asset('build/images/default-product.png') }}'"></div>
-                                                <div class="product-name">${producto.descripcion}</div>
-                                                <div class="product-price">S/ ${precio.toFixed(2)}</div>
-                                                <div class="product-stock ${stockActual <= 0 ? 'sin-stock' : ''}">Stock: ${stockActual}</div>
-                                            </div>`;
-                                    productosStock.set(producto.id, stockActual);
-                                });
-                                $('#productsGrid').html(html);
-                                $('.product-card').off('click').on('click', function() {
-                                    if ($(this).hasClass('disabled')) return;
-                                    const producto = {
-                                        id: $(this).data('id'),
-                                        nombre: $(this).data('nombre'),
-                                        precio: parseFloat($(this).data('precio')),
-                                        almacen_id: 1
-                                    };
-                                    addToCart(producto);
-                                });
-                            }
-                        }
-                    });
-                } else {
-                    location.reload();
-                }
-            }, 300);
-        });
-
-        // Cancelar venta
-        $('#btnCancelar').click(function() {
-            if (cart.length === 0) {
-                mostrarAdvertencia('No hay productos en el carrito para cancelar');
-                return;
-            }
-            $('#modalConfirmarCancelar').modal('show');
-        });
-        $('#btnConfirmarCancelar').click(function() {
-            cart = [];
-            updateCartUI();
-            playCancelBeep();
-            $('#modalConfirmarCancelar').modal('hide');
-        });
-
-        // Abrir modal de pago
-        $('#btnPagar').click(function() {
-            if (cart.length === 0) {
-                mostrarAdvertencia('No hay productos en el carrito para procesar el pago');
-                return;
-            }
-            const total = parseFloat($('#total').text().replace('S/ ', ''));
-            $('#total_pagar').val(total.toFixed(2));
-            $('#total_hidden').val(total);
-            $('#subtotal_hidden').val(parseFloat($('#subtotal').text().replace('S/ ', '')));
-            $('#igv_hidden').val(parseFloat($('#igv').text().replace('S/ ', '')));
-            $('#pagado').val(total.toFixed(2));
-            $('#diferencia').val('0.00');
-            $('#total_credito').val(total.toFixed(2));
-            $('#seccionContado').show();
-            $('#seccionCredito').hide();
-            $('#tipo_venta').val('CONTADO');
-            cargarSerie();
-            cargarClientesSelect2();
-            $('#modalPago').modal('show');
-        });
-
+        
+        // ========== FUNCIONES DE PAGO ==========
         function cargarSerie() {
             $.ajax({
                 url: '/terminal/series',
@@ -624,7 +648,7 @@
                 }
             });
         }
-
+        
         function cargarClientesSelect2() {
             $('#clienteSelect').select2({
                 dropdownParent: $('#modalPago'),
@@ -647,8 +671,65 @@
             $('#clienteSelect').on('select2:select', function(e) { $('#cliente_id').val(e.params.data.id); });
             $('#clienteSelect').on('select2:clear', function() { $('#cliente_id').val(''); });
         }
-
+        
+        function calcularDiferencia() {
+            const total = parseFloat($('#total_pagar').val());
+            const pagado = parseFloat($('#pagado').val()) || 0;
+            $('#diferencia').val((pagado - total).toFixed(2));
+        }
+        
+        function generarCuotas() {
+            const total = parseFloat($('#total_credito').val()) || 0;
+            const cuotas = parseInt($('#numero_cuotas').val()) || 1;
+            const montoCuota = total / cuotas;
+            let html = '';
+            for (let i = 1; i <= cuotas; i++) {
+                const fecha = new Date();
+                fecha.setMonth(fecha.getMonth() + i);
+                html += `<tr><td class="text-center">${i}</td><td>${fecha.toISOString().split('T')[0]}</td><td class="text-end">S/ ${montoCuota.toFixed(2)}</td></tr>`;
+            }
+            $('#cuotasBody').html(html);
+        }
+        
+        // ========== EVENTOS ==========
+        $('#btnCancelar').click(function() {
+            if (cart.length === 0) {
+                mostrarAdvertencia('No hay productos en el carrito para cancelar');
+                return;
+            }
+            $('#modalConfirmarCancelar').modal('show');
+        });
+        
+        $('#btnConfirmarCancelar').click(function() {
+            cart = [];
+            updateCartUI();
+            playCancelBeep();
+            $('#modalConfirmarCancelar').modal('hide');
+        });
+        
+        $('#btnPagar').click(function() {
+            if (cart.length === 0) {
+                mostrarAdvertencia('No hay productos en el carrito para procesar el pago');
+                return;
+            }
+            const total = parseFloat($('#total').text().replace('S/ ', ''));
+            $('#total_pagar').val(total.toFixed(2));
+            $('#total_hidden').val(total);
+            $('#subtotal_hidden').val(parseFloat($('#subtotal').text().replace('S/ ', '')));
+            $('#igv_hidden').val(parseFloat($('#igv').text().replace('S/ ', '')));
+            $('#pagado').val(total.toFixed(2));
+            $('#diferencia').val('0.00');
+            $('#total_credito').val(total.toFixed(2));
+            $('#seccionContado').show();
+            $('#seccionCredito').hide();
+            $('#tipo_venta').val('CONTADO');
+            cargarSerie();
+            cargarClientesSelect2();
+            $('#modalPago').modal('show');
+        });
+        
         $('#tipo_comprobante').change(cargarSerie);
+        
         $('#tipo_venta').change(function() {
             const total = parseFloat($('#total_pagar').val());
             if ($(this).val() === 'CREDITO') {
@@ -663,29 +744,12 @@
                 calcularDiferencia();
             }
         });
-
-        function calcularDiferencia() {
-            const total = parseFloat($('#total_pagar').val());
-            const pagado = parseFloat($('#pagado').val()) || 0;
-            $('#diferencia').val((pagado - total).toFixed(2));
-        }
+        
         $('#pagado').on('keyup change', calcularDiferencia);
-
-        function generarCuotas() {
-            const total = parseFloat($('#total_credito').val()) || 0;
-            const cuotas = parseInt($('#numero_cuotas').val()) || 1;
-            const montoCuota = total / cuotas;
-            let html = '';
-            for (let i = 1; i <= cuotas; i++) {
-                const fecha = new Date();
-                fecha.setMonth(fecha.getMonth() + i);
-                html += `<tr><td class="text-center">${i}</td><td>${fecha.toISOString().split('T')[0]}</td><td class="text-end">S/ ${montoCuota.toFixed(2)}</td></tr>`;
-            }
-            $('#cuotasBody').html(html);
-        }
         $('#numero_cuotas').change(generarCuotas);
-
+        
         $('#btnNuevoCliente').click(() => $('#modalNuevoCliente').modal('show'));
+        
         $('#formNuevoCliente').submit(function(e) {
             e.preventDefault();
             $.ajax({
@@ -709,8 +773,7 @@
                 }
             });
         });
-
-        // Confirmar pago
+        
         $('#btnConfirmarPago').click(function() {
             if (cart.length === 0) {
                 mostrarAdvertencia('No hay productos en el carrito');
@@ -746,19 +809,21 @@
             formData.append('igv', $('#igv_hidden').val());
             formData.append('total', $('#total_hidden').val());
             formData.append('productos_json', JSON.stringify(productos));
+            
             if ($('#tipo_venta').val() === 'CREDITO') {
                 formData.append('numero_cuotas', $('#numero_cuotas').val());
             }
+            
             productos.forEach((producto, index) => {
                 formData.append(`productos[${index}][id]`, producto.id);
                 formData.append(`productos[${index}][cantidad]`, producto.cantidad);
                 formData.append(`productos[${index}][precio]`, producto.precio);
                 formData.append(`productos[${index}][almacen_id]`, producto.almacen_id);
             });
-
+            
             $('#btnConfirmarPago').hide();
             $('#btnLoadingPago').show();
-
+            
             $.ajax({
                 url: '/terminal/procesar-pago',
                 type: 'POST',
@@ -798,7 +863,7 @@
                 }
             });
         });
-
+        
         $('#btnImprimirTicket').click(function() {
             if (ultimaVentaId) {
                 window.open('/ventas/' + ultimaVentaId + '/ticket', '_blank', 'width=400,height=600');
@@ -814,8 +879,11 @@
                 mostrarAdvertencia('No hay una venta reciente para descargar');
             }
         });
-
-        inicializarMapaStocks();
+        
+        // ========== INICIALIZACIÓN ==========
+        $(document).ready(function() {
+            loadProducts(true);
+        });
     </script>
 </body>
 </html>

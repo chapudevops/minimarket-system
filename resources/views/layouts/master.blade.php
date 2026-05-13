@@ -4,8 +4,16 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <!--favicon - Logo de la empresa -->
+    @php
+        $empresa = \App\Models\Empresa::first();
+        $favicon = $empresa && $empresa->logo 
+            ? asset('storage/empresa/' . $empresa->logo) 
+            : URL::asset('build/images/infinitydevlogo.png');
+    @endphp
     <!--favicon-->
-    <link rel="icon" href="{{ URL::asset('build/images/infinitydevlogo.png') }}" type="image/png">
+    <link rel="icon" href="{{ $favicon }}" type="image/png">
+    <link rel="shortcut icon" href="{{ $favicon }}" type="image/png">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <title>@yield('title') | Minimarket-system</title>
@@ -267,6 +275,8 @@
         </div>
     </div>
 </div>
+
+
 
 @include('layouts.topbar')
 @include('layouts.sidebar')

@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Http\Controllers\Terminal;
-
 use App\Http\Controllers\Controller;
 use App\Models\Producto;
 use App\Models\Cliente;
@@ -22,7 +21,6 @@ class TerminalController extends Controller
 {
     public function index()
     {
-        // Verificar si hay caja abierta
         $cajaAbierta = AperturaCaja::where('responsable_id', Auth::id())
                                 ->where('estado', 'ABIERTA')
                                 ->first();
@@ -32,58 +30,57 @@ class TerminalController extends Controller
                 ->with('error', 'Debe abrir una caja antes de usar el POS');
         }
         
-        // Obtener el almacén del usuario autenticado
         $usuario = Auth::user();
         $almacenId = $usuario->almacen_id;
         
-        // Si el usuario no tiene almacén asignado, obtener el primer almacén
         if (!$almacenId) {
             $primerAlmacen = Almacen::first();
             $almacenId = $primerAlmacen ? $primerAlmacen->id : null;
         }
         
-        // Obtener productos con stock del almacén del usuario
+        // ✅ SOLO TRAER LOS PRIMEROS 20 PRODUCTOS
         $productos = Producto::where('estado', 1)
                             ->orderBy('descripcion', 'asc')
-                            ->get();
+                            ->paginate(20);
         
-        // Para cada producto, calcular el stock en el almacén del usuario
         foreach ($productos as $producto) {
             $stock = ProductoAlmacen::where('producto_id', $producto->id)
                                     ->where('almacen_id', $almacenId)
                                     ->first();
             $producto->stock_en_almacen = $stock ? $stock->stock : 0;
-            // También mantener stock_total para compatibilidad
             $producto->stock_total = $producto->stock_en_almacen;
         }
         
-        // Obtener información de la empresa
         $empresa = \App\Models\Empresa::first();
         
         return view('terminal.index', compact('productos', 'cajaAbierta', 'empresa', 'almacenId'));
     }
 
-    public function search(Request $request)
+    // ✅ NUEVO MÉTODO PARA PAGINACIÓN INFINITA
+    public function getProductos(Request $request)
     {
-        $search = $request->get('search');
+        $search = $request->get('search', '');
+        $page = $request->get('page', 1);
         $almacenId = $request->get('almacen_id') ?? Auth::user()->almacen_id;
         
-        // Si el usuario no tiene almacén asignado, obtener el primer almacén
         if (!$almacenId) {
             $primerAlmacen = Almacen::first();
             $almacenId = $primerAlmacen ? $primerAlmacen->id : null;
         }
         
-        $productos = Producto::where('estado', 1)
-            ->where(function($query) use ($search) {
-                $query->where('descripcion', 'LIKE', "%{$search}%")
+        $query = Producto::where('estado', 1);
+        
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('descripcion', 'LIKE', "%{$search}%")
                     ->orWhere('codigo_interno', 'LIKE', "%{$search}%")
                     ->orWhere('codigo_barras', 'LIKE', "%{$search}%");
-            })
-            ->orderBy('descripcion', 'asc')
-            ->get();
+            });
+        }
         
-        // Calcular stock por almacén para cada producto
+        $query->orderBy('descripcion', 'asc');
+        $productos = $query->paginate(20, ['*'], 'page', $page);
+        
         foreach ($productos as $producto) {
             $stock = ProductoAlmacen::where('producto_id', $producto->id)
                                     ->where('almacen_id', $almacenId)
@@ -98,13 +95,66 @@ class TerminalController extends Controller
                     'id' => $producto->id,
                     'codigo_interno' => $producto->codigo_interno,
                     'descripcion' => $producto->descripcion,
-                    'precio_venta' => $producto->precio_venta,
-                    'stock_total' => $producto->stock_en_almacen,
-                    'foto' => $producto->foto_url
+                    'precio_venta' => (float)$producto->precio_venta,
+                    'stock' => $producto->stock_en_almacen,
+                    'foto_url' => $producto->foto_url ?? asset('build/images/default-product.png')
                 ];
-            })
+            }),
+            'pagination' => [
+                'current_page' => $productos->currentPage(),
+                'last_page' => $productos->lastPage(),
+                'total' => $productos->total()
+            ]
         ]);
     }
+
+    public function search(Request $request)
+    {
+        $search = $request->get('search');
+        $page = $request->get('page', 1);
+        $almacenId = $request->get('almacen_id') ?? Auth::user()->almacen_id;
+        
+        if (!$almacenId) {
+            $primerAlmacen = Almacen::first();
+            $almacenId = $primerAlmacen ? $primerAlmacen->id : null;
+        }
+        
+        $query = Producto::where('estado', 1)
+            ->where(function($query) use ($search) {
+                $query->where('descripcion', 'LIKE', "%{$search}%")
+                    ->orWhere('codigo_interno', 'LIKE', "%{$search}%")
+                    ->orWhere('codigo_barras', 'LIKE', "%{$search}%");
+            });
+        
+        $productos = $query->orderBy('descripcion', 'asc')->paginate(20, ['*'], 'page', $page);
+        
+        foreach ($productos as $producto) {
+            $stock = ProductoAlmacen::where('producto_id', $producto->id)
+                                    ->where('almacen_id', $almacenId)
+                                    ->first();
+            $producto->stock_en_almacen = $stock ? $stock->stock : 0;
+        }
+        
+        return response()->json([
+            'success' => true,
+            'data' => $productos->map(function($producto) {
+                return [
+                    'id' => $producto->id,
+                    'codigo_interno' => $producto->codigo_interno,
+                    'descripcion' => $producto->descripcion,
+                    'precio_venta' => (float)$producto->precio_venta,
+                    'stock' => $producto->stock_en_almacen,
+                    'foto_url' => $producto->foto_url ?? asset('build/images/default-product.png')
+                ];
+            }),
+            'pagination' => [
+                'current_page' => $productos->currentPage(),
+                'last_page' => $productos->lastPage(),
+                'total' => $productos->total()
+            ]
+        ]);
+    }
+
 
     public function getStock(Request $request)
     {
