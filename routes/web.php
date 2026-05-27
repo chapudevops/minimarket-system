@@ -12,7 +12,8 @@ use App\Http\Controllers\Empresa\EmpresaController;
 use App\Http\Controllers\Gasto\GastoController;
 use App\Http\Controllers\GuiaRemision\GuiaRemisionController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\HomeController;
+use App\Http\Controllers\SearchController;
+use App\Http\Controllers\StoreController;
 use App\Http\Controllers\NotaCredito\NotaCreditoController;
 use App\Http\Controllers\NotaDebito\NotaDebitoController;
 use App\Http\Controllers\NotaVenta\NotaVentaController;
@@ -22,6 +23,7 @@ use App\Http\Controllers\Proveedor\ProveedorController;
 use App\Http\Controllers\Serie\SerieController;
 use App\Http\Controllers\Terminal\TerminalController;
 use App\Http\Controllers\Usuario\UsuarioController;
+use App\Http\Controllers\Combo\ComboController;
 use App\Http\Controllers\Venta\VentaController;
 use Illuminate\Support\Facades\Auth;
 
@@ -42,10 +44,10 @@ Route::post('login', [LoginController::class, 'login']);
 Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 // Rutas protegidas con middleware auth
 Route::middleware(['auth'])->group(function () {
+    Route::get('/search', [SearchController::class, 'index'])->name('search');
     // Ruta para el dashboard, solo accesible para usuarios autenticados
     Route::get('/', [DashboardController::class, 'index'])->name('home');
     Route::get('/store-location', [DashboardController::class, 'getStoreLocation'])->name('store.location');
-
     // Rutas para la configuración de la empresa
     Route::get('/empresa', [EmpresaController::class, 'index'])->name('empresa.index');
     Route::post('/empresa/{id}', [EmpresaController::class, 'update'])->name('empresa.update');
@@ -68,9 +70,6 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/proveedores/{id}', [ProveedorController::class, 'update'])->name('proveedores.update');
     Route::delete('/proveedores/{id}', [ProveedorController::class, 'destroy'])->name('proveedores.destroy');
     // Rutas para Productos
-    
-    
-    // Rutas para Productos (el orden es importante)
     Route::get('/productos/almacenes', [ProductoController::class, 'getAlmacenes'])->name('productos.almacenes'); // Esta debe ir PRIMERO
     Route::get('/productos/data', [ProductoController::class, 'getData'])->name('productos.data');
     Route::get('/productos/create', [ProductoController::class, 'create'])->name('productos.create');
@@ -80,7 +79,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/productos/{id}', [ProductoController::class, 'show'])->name('productos.show');
     Route::put('/productos/{id}', [ProductoController::class, 'update'])->name('productos.update');
     Route::delete('/productos/{id}', [ProductoController::class, 'destroy'])->name('productos.destroy');
-    
     // Rutas para Almacenes
     Route::get('/almacenes', [AlmacenController::class, 'index'])->name('almacenes.index');
     Route::get('/almacenes/data', [AlmacenController::class, 'getData'])->name('almacenes.data');
@@ -88,6 +86,21 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/almacenes', [AlmacenController::class, 'store'])->name('almacenes.store');
     Route::put('/almacenes/{id}', [AlmacenController::class, 'update'])->name('almacenes.update');
     Route::delete('/almacenes/{id}', [AlmacenController::class, 'destroy'])->name('almacenes.destroy');
+   // Rutas para Combos
+    Route::get('/combos', [ComboController::class, 'index'])->name('combos.index');
+    Route::get('/combos/create', [ComboController::class, 'create'])->name('combos.create');
+    Route::get('/combos/data', [ComboController::class, 'getData'])->name('combos.data');
+    Route::get('/combos/search-productos', [ComboController::class, 'searchProductos'])->name('combos.search.productos');
+    Route::post('/combos', [ComboController::class, 'store'])->name('combos.store');
+    Route::get('/combos/{id}', [ComboController::class, 'show'])->name('combos.show');
+    Route::get('/combos/{id}/edit', [ComboController::class, 'edit'])->name('combos.edit');
+    Route::put('/combos/{id}', [ComboController::class, 'update'])->name('combos.update');
+    Route::delete('/combos/{id}', [ComboController::class, 'destroy'])->name('combos.destroy');
+    Route::get('/combos-terminal', [ComboController::class, 'getCombosTerminal'])->name('combos.terminal');
+    Route::get('/store', [StoreController::class, 'index'])->name('store.index');
+    Route::post('/store/cart/add', [StoreController::class, 'addToCart'])->name('store.cart.add');
+    Route::get('/store/cart', [StoreController::class, 'cart'])->name('store.cart');
+    Route::post('/store/checkout', [StoreController::class, 'checkout'])->name('store.checkout');
    // Rutas para Terminal POS
     Route::get('/terminal', [TerminalController::class, 'index'])->name('terminal.index');
     Route::get('/terminal/search', [TerminalController::class, 'search'])->name('terminal.search');
@@ -97,7 +110,6 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/terminal/procesar-pago', [TerminalController::class, 'procesarPago'])->name('terminal.procesar.pago');
     Route::get('/terminal/venta/{id}', [TerminalController::class, 'getVenta'])->name('terminal.venta');
     Route::get('/terminal/productos', [TerminalController::class, 'getProductos'])->name('terminal.productos');
-    
     // Rutas para Órdenes de Traslado
     Route::get('/traslados', [OrdenTrasladoController::class, 'index'])->name('traslados.index');
     Route::get('/traslados/create', [OrdenTrasladoController::class, 'create'])->name('traslados.create');
@@ -117,8 +129,6 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/usuarios/{id}', [UsuarioController::class, 'update'])->name('usuarios.update');
     Route::delete('/usuarios/{id}', [UsuarioController::class, 'destroy'])->name('usuarios.destroy');
     Route::post('/usuarios/{id}/toggle-status', [UsuarioController::class, 'toggleStatus'])->name('usuarios.toggle-status');
-    
-    
     // Rutas para Compras 
     Route::get('/compras', [CompraController::class, 'index'])->name('compras.index');
     Route::get('/compras/create', [CompraController::class, 'create'])->name('compras.create');
@@ -149,8 +159,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/apertura-caja/{id}/detalle', [AperturaCajaController::class, 'getDetalle'])->name('apertura-caja.detalle');
     Route::get('/apertura-caja/{id}/resumen', [AperturaCajaController::class, 'getResumen'])->name('apertura-caja.resumen');
     Route::get('/apertura-caja/{id}/reporte', [AperturaCajaController::class, 'generarReporte'])->name('apertura-caja.reporte');
-    Route::get('/apertura-caja/{id}/excel', [AperturaCajaController::class, 'exportarExcel'])->name('apertura-caja.excel');
-    
+    Route::get('/apertura-caja/{id}/excel', [AperturaCajaController::class, 'exportarExcel'])->name('apertura-caja.excel');   
     // Rutas para Ventas
     Route::get('/ventas', [VentaController::class, 'index'])->name('ventas.index');
     Route::get('/ventas/data', [VentaController::class, 'getData'])->name('ventas.data');

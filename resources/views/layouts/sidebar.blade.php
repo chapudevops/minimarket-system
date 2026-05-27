@@ -459,6 +459,12 @@
                       </a>
                   </li>
                   <li>
+                      <a href="{{ route('combos.index') }}">
+                          <i class="material-icons-outlined">inventory</i>
+                          Combos
+                      </a>
+                  </li>
+                  <li>
                       <a href="{{ route('almacenes.index') }}">
                           <i class="material-icons-outlined">warehouse</i>
                           Almacenes

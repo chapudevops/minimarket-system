@@ -75,6 +75,15 @@
         .loader-container { text-align: center; padding: 40px; color: #94a3b8; }
         .skeleton-card { background: #f1f5f9; border-radius: 24px; padding: 16px 12px; height: 220px; animation: pulse 1.5s ease-in-out infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .combo-card { background: linear-gradient(135deg, #fefce8, #fef9c3); border: 2px solid #fbbf24; }
+        .combo-card:hover { border-color: #f59e0b; box-shadow: 0 20px 25px -12px rgba(245,158,11,0.25); }
+        .combo-badge-pos { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 2px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; display: inline-block; margin-bottom: 6px; letter-spacing: 0.5px; }
+        .combo-ahorro { background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; }
+        .combo-precio-regular { text-decoration: line-through; color: #94a3b8; font-size: 12px; }
+        .tab-switch { display: flex; gap: 8px; margin-bottom: 16px; }
+        .tab-switch button { padding: 8px 20px; border: 2px solid #e2e8f0; border-radius: 40px; background: white; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; color: #64748b; }
+        .tab-switch button.active { background: linear-gradient(95deg, #059669, #10b981); color: white; border-color: transparent; box-shadow: 0 4px 10px rgba(5,150,105,0.3); }
+        .tab-switch button:hover:not(.active) { border-color: #10b981; color: #059669; }
     </style>
 </head>
 <body>
@@ -82,12 +91,22 @@
         <div class="products-panel">
             <div class="search-box">
                 <input type="text" id="searchInput" placeholder="🔍 Buscar producto por nombre, código o barras..." autofocus>
+                <div class="tab-switch mt-2">
+                    <button class="active" id="tabProductos" onclick="switchTab('productos')">🛒 Productos</button>
+                    <button id="tabCombos" onclick="switchTab('combos')">🎁 Combos</button>
+                </div>
             </div>
             <div class="products-grid" id="productsGrid">
                 <!-- Los productos se cargarán vía AJAX -->
                 <div class="loader-container">
                     <div class="spinner-border text-success" role="status"></div>
                     <p class="mt-2">Cargando productos...</p>
+                </div>
+            </div>
+            <div class="products-grid" id="combosGrid" style="display:none;">
+                <div class="loader-container">
+                    <div class="spinner-border text-warning" role="status"></div>
+                    <p class="mt-2">Cargando combos...</p>
                 </div>
             </div>
         </div>
@@ -780,20 +799,49 @@
                 return;
             }
             
+            // Validar stock solo para productos individuales (no combos)
             for (const item of cart) {
-                const stockActual = productosStock.get(item.id) || 0;
-                if (item.cantidad > stockActual) {
-                    mostrarModalStock(`Stock insuficiente para "${item.nombre}". Disponible: ${stockActual}`);
-                    return;
+                if (!item.es_combo) {
+                    const stockActual = productosStock.get(item.id) || 0;
+                    if (item.cantidad > stockActual) {
+                        mostrarModalStock(`Stock insuficiente para "${item.nombre}". Disponible: ${stockActual}`);
+                        return;
+                    }
                 }
             }
             
-            const productos = cart.map(item => ({
-                id: item.id,
-                cantidad: item.cantidad,
-                precio: item.precio,
-                almacen_id: item.almacen_id || 1
-            }));
+            // Expandir combos en productos individuales para el backend
+            const productos = [];
+            cart.forEach(item => {
+                if (item.es_combo && item.combo_productos) {
+                    // Expandir cada producto del combo
+                    item.combo_productos.forEach(cp => {
+                        const existente = productos.find(p => p.id === cp.producto_id);
+                        if (existente) {
+                            existente.cantidad += cp.cantidad * item.cantidad;
+                        } else {
+                            productos.push({
+                                id: cp.producto_id,
+                                cantidad: cp.cantidad * item.cantidad,
+                                precio: item.precio / item.combo_productos.reduce((sum, p) => sum + p.cantidad, 0) * cp.cantidad,
+                                almacen_id: item.almacen_id || {{ $almacenId ?? 1 }}
+                            });
+                        }
+                    });
+                } else {
+                    const existente = productos.find(p => p.id === item.id);
+                    if (existente) {
+                        existente.cantidad += item.cantidad;
+                    } else {
+                        productos.push({
+                            id: item.id,
+                            cantidad: item.cantidad,
+                            precio: item.precio,
+                            almacen_id: item.almacen_id || 1
+                        });
+                    }
+                }
+            });
             
             const formData = new FormData();
             formData.append('tipo_comprobante', $('#tipo_comprobante').val());
@@ -879,6 +927,112 @@
                 mostrarAdvertencia('No hay una venta reciente para descargar');
             }
         });
+        
+        // ========== COMBOS EN TERMINAL ==========
+        let combosData = [];
+        let currentTab = 'productos';
+        
+        function switchTab(tab) {
+            currentTab = tab;
+            if (tab === 'productos') {
+                $('#tabProductos').addClass('active');
+                $('#tabCombos').removeClass('active');
+                $('#productsGrid').show();
+                $('#combosGrid').hide();
+            } else {
+                $('#tabProductos').removeClass('active');
+                $('#tabCombos').addClass('active');
+                $('#productsGrid').hide();
+                $('#combosGrid').show();
+                loadCombos();
+            }
+        }
+        
+        function loadCombos() {
+            $('#combosGrid').html('<div class="loader-container"><div class="spinner-border text-warning" role="status"></div><p class="mt-2">Cargando combos...</p></div>');
+            
+            $.ajax({
+                url: '{{ route("combos.terminal") }}',
+                type: 'GET',
+                data: { almacen_id: {{ $almacenId ?? 1 }} },
+                success: function(response) {
+                    if (response.success) {
+                        $('#combosGrid').empty();
+                        
+                        if (response.data.length === 0) {
+                            $('#combosGrid').html('<div class="loader-container"><i class="bi bi-gift" style="font-size:48px;color:#fbbf24;"></i><p class="mt-2">No hay combos disponibles</p></div>');
+                            return;
+                        }
+                        
+                        response.data.forEach(combo => {
+                            const stockClass = combo.stock <= 0 ? 'disabled' : '';
+                            const productosTexto = combo.productos.map(p => `${p.cantidad}x ${p.descripcion}`).join(', ');
+                            
+                            const html = `<div class="product-card combo-card ${stockClass}" 
+                                                data-combo-id="${combo.id}" 
+                                                data-nombre="${escapeHtml(combo.nombre)}" 
+                                                data-precio="${combo.precio_combo}" 
+                                                data-precio-regular="${combo.precio_regular}" 
+                                                data-stock="${combo.stock}"
+                                                data-productos='${JSON.stringify(combo.productos)}'
+                                                data-es-combo="true">
+                                            <div class="product-img">
+                                                <i class="bi bi-gift-fill" style="font-size:42px;color:#f59e0b;"></i>
+                                            </div>
+                                            <div class="combo-badge-pos">🎁 COMBO</div>
+                                            <div class="product-name">${escapeHtml(combo.nombre)}</div>
+                                            <div class="combo-precio-regular">S/ ${combo.precio_regular.toFixed(2)}</div>
+                                            <div class="product-price">S/ ${combo.precio_combo.toFixed(2)}</div>
+                                            <div class="combo-ahorro">Ahorro: S/ ${combo.ahorro.toFixed(2)} (-${combo.descuento_porcentaje}%)</div>
+                                            <div class="product-stock" style="margin-top:6px;">📦 Disponible: ${combo.stock}</div>
+                                        </div>`;
+                            $('#combosGrid').append(html);
+                        });
+                        
+                        // Evento click en combo
+                        $('.combo-card').off('click').on('click', function() {
+                            if ($(this).hasClass('disabled')) return;
+                            const comboId = $(this).data('combo-id');
+                            const comboNombre = $(this).data('nombre');
+                            const comboPrecio = parseFloat($(this).data('precio'));
+                            const comboStock = parseInt($(this).data('stock'));
+                            const comboProductos = $(this).data('productos');
+                            
+                            // Agregar como un item de combo al carrito
+                            const existing = cart.find(item => item.id === 'combo_' + comboId);
+                            const nuevaCantidad = existing ? existing.cantidad + 1 : 1;
+                            
+                            if (nuevaCantidad > comboStock) {
+                                mostrarModalStock(`No hay suficiente stock para el combo "${comboNombre}". Disponible: ${comboStock}`);
+                                return;
+                            }
+                            
+                            if (existing) {
+                                existing.cantidad++;
+                            } else {
+                                cart.push({
+                                    id: 'combo_' + comboId,
+                                    nombre: '🎁 ' + comboNombre,
+                                    precio: comboPrecio,
+                                    cantidad: 1,
+                                    almacen_id: {{ $almacenId ?? 1 }},
+                                    es_combo: true,
+                                    combo_id: comboId,
+                                    combo_productos: comboProductos
+                                });
+                            }
+                            
+                            updateCartUI();
+                            playAddBeep();
+                            mostrarToast('🎁 Combo agregado al carrito');
+                        });
+                    }
+                },
+                error: function() {
+                    $('#combosGrid').html('<div class="loader-container text-danger"><i class="bi bi-exclamation-triangle-fill" style="font-size:48px;"></i><p class="mt-2">Error al cargar combos</p></div>');
+                }
+            });
+        }
         
         // ========== INICIALIZACIÓN ==========
         $(document).ready(function() {
