@@ -14,4 +14,6 @@
   <link href="{{ URL::asset('build/sass/semi-dark.css') }}" rel="stylesheet">
   <link href="{{ URL::asset('build/sass/bordered-theme.css') }}" rel="stylesheet">
   <link href="{{ URL::asset('build/sass/responsive.css') }}" rel="stylesheet">
+  <!--SweetAlert2-->
+  <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
   

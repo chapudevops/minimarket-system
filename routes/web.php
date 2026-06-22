@@ -25,6 +25,7 @@ use App\Http\Controllers\Terminal\TerminalController;
 use App\Http\Controllers\Usuario\UsuarioController;
 use App\Http\Controllers\Combo\ComboController;
 use App\Http\Controllers\Venta\VentaController;
+use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Auth;
 
 /*
@@ -37,8 +38,8 @@ use Illuminate\Support\Facades\Auth;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
-Auth::routes();
-// Rutas de autenticación explícitas (sin usar Auth::routes())
+Auth::routes(['register' => false]);
+// Rutas de autenticación explícitas
 Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('login', [LoginController::class, 'login']);
 Route::post('logout', [LoginController::class, 'logout'])->name('logout');

@@ -40,7 +40,7 @@
                 @endif
 
                 <div class="table-responsive">
-                    <table class="table table-bordered table-hover table-striped">
+                    <table id="ordenesTable" class="table table-bordered table-hover table-striped">
                         <thead class="table-light">
                             <tr>
                                 <th width="5%">#</th>
@@ -101,7 +101,6 @@
                         </tbody>
                     </table>
                 </div>
-                {{ $ordenes->links() }}
             </div>
         </div>
     </div>
@@ -171,8 +170,20 @@
 @endsection 
 
 @section('scripts')
+<script src="{{ URL::asset('build/plugins/datatable/js/jquery.dataTables.min.js') }}"></script>
+<script src="{{ URL::asset('build/plugins/datatable/js/dataTables.bootstrap5.min.js') }}"></script>
 <script>
 $(document).ready(function() {
+    $('#ordenesTable').DataTable({
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
+        },
+        pageLength: 10,
+        order: [[0, 'desc']],
+        columnDefs: [
+            { orderable: false, targets: [7] }
+        ]
+    });
     // Aprobar orden
     $('.btn-aprobar').on('click', function() {
         var id = $(this).data('id');

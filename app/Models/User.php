@@ -18,7 +18,10 @@ class User extends Authenticatable
         'password',
         'caja_id',
         'almacen_id',
-        'estado'
+        'estado',
+        'ultimo_acceso',
+        'ultimo_ip',
+        'avatar'
     ];
 
     protected $hidden = [
@@ -29,7 +32,8 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
-        'estado' => 'boolean'
+        'estado' => 'boolean',
+        'ultimo_acceso' => 'datetime'
     ];
 
     // Relaciones
