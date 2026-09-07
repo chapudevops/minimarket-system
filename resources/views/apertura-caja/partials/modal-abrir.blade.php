@@ -17,6 +17,18 @@
                             <input type="text" class="form-control" value="{{ auth()->user()->name }}" readonly>
                         </div>
                         <div class="col-md-12 mb-3">
+                            <label class="form-label fw-bold">Caja <span class="text-danger">*</span></label>
+                            <select name="caja_id" id="caja_id" class="form-select" required>
+                                <option value="">Selecciona una caja</option>
+                                @foreach ($cajas as $caja)
+                                    <option value="{{ $caja->id }}" @selected(auth()->user()->caja_id == $caja->id)>
+                                        {{ $caja->descripcion }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <div class="invalid-feedback" id="error-caja_id"></div>
+                        </div>
+                        <div class="col-md-12 mb-3">
                             <label class="form-label fw-bold">Monto Inicial <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <span class="input-group-text">S/</span>

@@ -405,7 +405,7 @@
                                                      alt="${escapeHtml(producto.descripcion)}" 
                                                      class="product-image" 
                                                      loading="lazy"
-                                                     onerror="this.src='{{ URL::asset('build/images/default-product.png') }}'">
+                                                     onerror="this.onerror=null; this.src='{{ URL::asset('build/images/default-product.png') }}'">
                                             </div>
                                             <div class="product-name">${escapeHtml(producto.descripcion)}</div>
                                             <div class="product-price">S/ ${producto.precio_venta.toFixed(2)}</div>

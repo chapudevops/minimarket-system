@@ -14,6 +14,7 @@ class AperturaCaja extends Model
     protected $fillable = [
         'fecha_apertura',
         'hora_apertura',
+        'caja_id',
         'responsable_id',
         'monto_inicial',
         'estado',
@@ -31,6 +32,11 @@ class AperturaCaja extends Model
         'fecha_cierre' => 'date',
         'hora_cierre' => 'datetime'
     ];
+
+    public function caja()
+    {
+        return $this->belongsTo(Caja::class);
+    }
 
     public function responsable()
     {

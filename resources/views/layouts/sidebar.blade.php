@@ -23,6 +23,7 @@
                 </a>
             </li>
 
+            @rol('Vendedor')
             <!-- Terminal POS -->
             <li class="menu-label">Punto de Venta</li>
             <li>
@@ -32,7 +33,9 @@
                     <span class="badge bg-success ms-auto">Nuevo</span>
                 </a>
             </li>
+            @endrol
 
+@rol('Vendedor')
             <!-- Cajas -->
             <li class="menu-label">Cajas</li>
             <li>
@@ -41,7 +44,9 @@
                     <div class="menu-title">Apertura de Caja</div>
                 </a>
             </li>
+            @endrol
 
+@rol('Vendedor')
             <!-- Ventas -->
             <li class="menu-label">Ventas</li>
             <li>
@@ -55,11 +60,15 @@
                     <li><a href="{{ route('notas-debito.index') }}"><i class="material-icons-outlined">assignment_ind</i>Notas de Débito</a></li>
                     <li><a href="{{ route('notas-venta.index') }}"><i class="material-icons-outlined">shopping_cart</i>Notas de Venta</a></li>
                     <li><a href="{{ route('cotizaciones.index') }}"><i class="material-icons-outlined">description</i>Cotizaciones</a></li>
+                    @rol('Almacenero')
                     <li><a href="{{ route('guias-remision.index') }}"><i class="material-icons-outlined">local_shipping</i>Guías de Remisión</a></li>
+                    @endrol
                 </ul>
             </li>
+            @endrol
 
-            <!-- Compras -->
+<!-- Compras -->
+            @rol('Almacenero')
             <li class="menu-label">Compras</li>
             <li>
                 <a href="{{ route('compras.index') }}">
@@ -67,13 +76,20 @@
                     <div class="menu-title">Compras</div>
                 </a>
             </li>
+            @endrol
+
+            <!-- Gastos -->
+            @rol('Vendedor')
+            <li class="menu-label">Gastos</li>
             <li>
                 <a href="{{ route('gastos.index') }}">
                     <div class="parent-icon"><i class="material-icons-outlined">money_off</i></div>
                     <div class="menu-title">Gastos</div>
                 </a>
             </li>
+            @endrol
 
+@rol('Almacenero')
             <!-- Inventario -->
             <li class="menu-label">Inventario</li>
             <li>
@@ -88,7 +104,9 @@
                     <li><a href="{{ route('traslados.index') }}"><i class="material-icons-outlined">swap_horiz</i>Órdenes de Traslado</a></li>
                 </ul>
             </li>
+            @endrol
 
+@rol('Almacenero', 'Vendedor')
             <!-- Contactos -->
             <li class="menu-label">Contactos</li>
             <li>
@@ -97,13 +115,20 @@
                     <div class="menu-title">Contactos</div>
                 </a>
                 <ul>
+                    @rol('Vendedor')
                     <li><a href="{{ route('clientes.index') }}"><i class="material-icons-outlined">people</i>Clientes</a></li>
+                    @endrol
+                    @rol('Almacenero')
                     <li><a href="{{ route('proveedores.index') }}"><i class="material-icons-outlined">local_shipping</i>Proveedores</a></li>
+                    @endrol
+                    @rol()
                     <li><a href="{{ route('usuarios.index') }}"><i class="material-icons-outlined">admin_panel_settings</i>Usuarios</a></li>
-                    <li><a href="#"><i class="material-icons-outlined">security</i>Roles</a></li>
+                    @endrol
                 </ul>
             </li>
+            @endrol
 
+@rol()
             <!-- Configuraciones -->
             <li class="menu-label">Configuración</li>
             <li>
@@ -117,6 +142,8 @@
                     <li><a href="{{ route('cajas.index') }}"><i class="material-icons-outlined">point_of_sale</i>Cajas</a></li>
                 </ul>
             </li>
+            @endrol
+
         </ul>
     </div>
     <div class="sidebar-bottom gap-4">

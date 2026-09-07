@@ -136,6 +136,7 @@ class OrdenTrasladoController extends Controller
             foreach ($orden->detalles as $detalle) {
                 $stock = ProductoAlmacen::where('producto_id', $detalle->producto_id)
                                         ->where('almacen_id', $orden->almacen_origen_id)
+                                        ->lockForUpdate()
                                         ->first();
                 
                 if (!$stock || $stock->stock < $detalle->cantidad) {
@@ -147,6 +148,7 @@ class OrdenTrasladoController extends Controller
             foreach ($orden->detalles as $detalle) {
                 $stockOrigen = ProductoAlmacen::where('producto_id', $detalle->producto_id)
                                               ->where('almacen_id', $orden->almacen_origen_id)
+                                              ->lockForUpdate()
                                               ->first();
                 $stockOrigen->stock -= $detalle->cantidad;
                 $stockOrigen->save();
@@ -154,6 +156,7 @@ class OrdenTrasladoController extends Controller
                 // Aumentar stock del almacén destino
                 $stockDestino = ProductoAlmacen::where('producto_id', $detalle->producto_id)
                                                ->where('almacen_id', $orden->almacen_destino_id)
+                                               ->lockForUpdate()
                                                ->first();
                 
                 if ($stockDestino) {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Caja;
 use App\Exports\ReporteCajaExport;
 use App\Http\Controllers\Controller;
 use App\Models\AperturaCaja;
+use App\Models\Caja;
 use App\Models\Venta;
 use App\Models\Gasto;
 use Illuminate\Http\Request;
@@ -17,7 +18,9 @@ class AperturaCajaController extends Controller
 {
     public function index()
     {
-        return view('apertura-caja.index');
+        $cajas = Caja::orderBy('descripcion')->get();
+
+        return view('apertura-caja.index', compact('cajas'));
     }
 
     public function getData(Request $request)
@@ -108,9 +111,12 @@ class AperturaCajaController extends Controller
             }
 
             $request->validate([
+                'caja_id' => 'required|exists:cajas,id',
                 'monto_inicial' => 'required|numeric|min:0',
                 'fecha_apertura' => 'required|date'
             ], [
+                'caja_id.required' => 'Debes elegir la caja que vas a abrir.',
+                'caja_id.exists' => 'La caja seleccionada no existe.',
                 'monto_inicial.required' => 'El monto inicial es obligatorio.',
                 'monto_inicial.numeric' => 'El monto inicial debe ser un número.',
                 'monto_inicial.min' => 'El monto inicial no puede ser negativo.',
@@ -121,6 +127,7 @@ class AperturaCajaController extends Controller
             $apertura = AperturaCaja::create([
                 'fecha_apertura' => $request->fecha_apertura,
                 'hora_apertura' => now(),
+                'caja_id' => $request->caja_id,
                 'responsable_id' => Auth::id(),
                 'monto_inicial' => $request->monto_inicial,
                 'estado' => 'ABIERTA'
@@ -134,6 +141,9 @@ class AperturaCajaController extends Controller
                 'data' => $apertura
             ]);
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            throw $e;
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -181,6 +191,9 @@ class AperturaCajaController extends Controller
                 'data' => $apertura
             ]);
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            throw $e;
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -196,7 +209,7 @@ class AperturaCajaController extends Controller
         
         // Obtener ventas desde la fecha de apertura hasta la fecha de cierre o actual
         $fechaFin = $apertura->fecha_cierre ?? now();
-        $ventas = Venta::where('caja_id', $apertura->id)
+        $ventas = Venta::where('caja_id', $apertura->caja_id)
                        ->whereBetween('fecha_emision', [$apertura->fecha_apertura, $fechaFin])
                        ->with('cliente')
                        ->orderBy('fecha_emision', 'desc')
@@ -236,7 +249,7 @@ class AperturaCajaController extends Controller
         $fechaFin = $apertura->fecha_cierre ?? now();
         
         // Ventas del período
-        $ventas = Venta::where('caja_id', $apertura->id)
+        $ventas = Venta::where('caja_id', $apertura->caja_id)
                        ->whereBetween('fecha_emision', [$apertura->fecha_apertura, $fechaFin])
                        ->get();
         
@@ -276,7 +289,7 @@ class AperturaCajaController extends Controller
         $apertura = AperturaCaja::findOrFail($id);
         $fechaFin = $apertura->fecha_cierre ?? now();
         
-        $ventas = Venta::where('caja_id', $apertura->id)
+        $ventas = Venta::where('caja_id', $apertura->caja_id)
                        ->whereBetween('fecha_emision', [$apertura->fecha_apertura, $fechaFin])
                        ->with('cliente')
                        ->orderBy('fecha_emision', 'desc')
@@ -301,7 +314,7 @@ public function exportarExcel($id)
     $apertura = AperturaCaja::findOrFail($id);
     $fechaFin = $apertura->fecha_cierre ?? now();
     
-    $ventas = Venta::where('caja_id', $apertura->id)
+    $ventas = Venta::where('caja_id', $apertura->caja_id)
                    ->whereBetween('fecha_emision', [$apertura->fecha_apertura, $fechaFin])
                    ->with('cliente')
                    ->orderBy('fecha_emision', 'desc')

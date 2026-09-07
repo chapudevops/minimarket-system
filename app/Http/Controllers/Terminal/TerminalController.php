@@ -72,9 +72,13 @@ class TerminalController extends Controller
         
         if ($search) {
             $query->where(function($q) use ($search) {
-                $q->where('descripcion', 'LIKE', "%{$search}%")
-                    ->orWhere('codigo_interno', 'LIKE', "%{$search}%")
-                    ->orWhere('codigo_barras', 'LIKE', "%{$search}%");
+                // El lector de codigo de barras manda el codigo completo: se
+                // busca por igualdad, que si puede usar indice. El comodin
+                // inicial queda solo para la descripcion, donde hace falta.
+                $q->where('codigo_barras', $search)
+                    ->orWhere('codigo_interno', $search)
+                    ->orWhere('descripcion', 'LIKE', "%{$search}%")
+                    ->orWhere('codigo_interno', 'LIKE', "{$search}%");
             });
         }
         
@@ -121,9 +125,10 @@ class TerminalController extends Controller
         
         $query = Producto::where('estado', 1)
             ->where(function($query) use ($search) {
-                $query->where('descripcion', 'LIKE', "%{$search}%")
-                    ->orWhere('codigo_interno', 'LIKE', "%{$search}%")
-                    ->orWhere('codigo_barras', 'LIKE', "%{$search}%");
+                $query->where('codigo_barras', $search)
+                    ->orWhere('codigo_interno', $search)
+                    ->orWhere('descripcion', 'LIKE', "%{$search}%")
+                    ->orWhere('codigo_interno', 'LIKE', "{$search}%");
             });
         
         $productos = $query->orderBy('descripcion', 'asc')->paginate(20, ['*'], 'page', $page);
@@ -202,7 +207,7 @@ class TerminalController extends Controller
                                        ->first();
             
             if ($cajaAbierta) {
-                $cajaId = $cajaAbierta->id;
+                $cajaId = $cajaAbierta->caja_id;
             }
         }
         
@@ -292,9 +297,13 @@ class TerminalController extends Controller
                 'observaciones' => 'nullable'
             ]);
 
+            // lockForUpdate retiene la fila hasta el commit: sin esto dos ventas
+            // simultaneas del ultimo articulo validan las dos contra el mismo
+            // stock y lo dejan negativo.
             foreach ($productos as $item) {
                 $stock = ProductoAlmacen::where('producto_id', $item['id'])
                                         ->where('almacen_id', $almacenId)
+                                        ->lockForUpdate()
                                         ->first();
                 
                 if (!$stock || $stock->stock < $item['cantidad']) {
@@ -307,8 +316,12 @@ class TerminalController extends Controller
                 }
             }
 
+            // El correlativo se toma bajo bloqueo: dos ventas concurrentes en la
+            // misma serie emitirian el mismo numero, y para SUNAT un correlativo
+            // repetido es rechazo del comprobante.
             $serie = Serie::where('tipo_comprobante', $request->tipo_comprobante)
-                         ->where('caja_id', $cajaAbierta->id)
+                         ->where('caja_id', $cajaAbierta->caja_id)
+                         ->lockForUpdate()
                          ->first();
             
             if (!$serie) {
@@ -319,8 +332,10 @@ class TerminalController extends Controller
             }
 
             $numero = $serie->correlativo + 1;
-            $subtotal = $request->total / 1.18;
-            $igv = $request->total - $subtotal;
+            // El precio de gondola ya incluye IGV, asi que se desagrega.
+            $importes = \App\Sunat\Monto::desagregarIgv((float) $request->total);
+            $subtotal = $importes['gravado'];
+            $igv = $importes['igv'];
 
             // Generar el código QR con la información de la venta
             $documentoCompleto = $serie->serie . '-' . str_pad($numero, 8, '0', STR_PAD_LEFT);
@@ -335,8 +350,9 @@ class TerminalController extends Controller
                 'ruc' => \App\Models\Empresa::first()?->ruc ?? '00000000000'
             ]);
             
-            // Generar QR en formato base64 para incrustar en HTML
-            $qrCodeBase64 = 'data:image/svg+xml;base64,' . base64_encode(QrCode::format('svg')->size(100)->generate($qrData));
+            // En la base se guarda el contenido del QR; la imagen se arma aparte
+            // para devolverla en la respuesta.
+            $qrCodeBase64 = Venta::qrComoImagen($qrData);
 
             $venta = Venta::create([
                 'tipo_comprobante' => $request->tipo_comprobante,
@@ -353,8 +369,8 @@ class TerminalController extends Controller
                 'cambio' => (float)$request->pagado - (float)$request->total,
                 'detraccion' => $request->has('detraccion'),
                 'observaciones' => $request->observaciones,
-                'codigo_qr' => $qrCodeBase64, // <-- AGREGAR EL QR
-                'caja_id' => $cajaAbierta->id,
+                'codigo_qr' => $qrData,
+                'caja_id' => $cajaAbierta->caja_id,
                 'usuario_id' => Auth::id(),
                 'estado' => $request->tipo_venta == 'CREDITO' ? 'PENDIENTE' : 'COMPLETADA'
             ]);
@@ -374,6 +390,7 @@ class TerminalController extends Controller
 
                 $stock = ProductoAlmacen::where('producto_id', $item['id'])
                                         ->where('almacen_id', $almacenId)
+                                        ->lockForUpdate()
                                         ->first();
                 
                 if ($stock) {

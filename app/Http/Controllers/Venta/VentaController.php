@@ -50,20 +50,30 @@ class VentaController extends Controller
 
     private function getXmlBadge($venta)
     {
-        // Simulación - Aquí verificarías si existe el archivo XML
-        return '<span class="badge bg-secondary">Pendiente</span>';
+        return $venta->ruta_xml
+            ? '<span class="badge bg-success">Generado</span>'
+            : '<span class="badge bg-secondary">Pendiente</span>';
     }
 
     private function getCdrBadge($venta)
     {
-        // Simulación - Aquí verificarías si existe el CDR
-        return '<span class="badge bg-secondary">Pendiente</span>';
+        return $venta->ruta_cdr
+            ? '<span class="badge bg-success">Recibido</span>'
+            : '<span class="badge bg-secondary">Pendiente</span>';
     }
 
     private function getSunatBadge($venta)
     {
-        // Simulación - Aquí verificarías el estado en SUNAT
-        return '<span class="badge bg-warning">Pendiente</span>';
+        // El codigo del CDR precisa el motivo cuando SUNAT rechaza u observa.
+        $detalle = $venta->codigo_respuesta ? " ({$venta->codigo_respuesta})" : '';
+
+        return match ($venta->estado_sunat) {
+            'ACEPTADO'  => '<span class="badge bg-success">Aceptado</span>',
+            'RECHAZADO' => '<span class="badge bg-danger">Rechazado' . $detalle . '</span>',
+            'OBSERVADO' => '<span class="badge bg-warning">Observado' . $detalle . '</span>',
+            'ANULADO'   => '<span class="badge bg-dark">Anulado</span>',
+            default     => '<span class="badge bg-secondary">Pendiente</span>',
+        };
     }
 
     private function generateActions($venta)
@@ -157,29 +167,9 @@ class VentaController extends Controller
     $qrCode = null;
     
     try {
-        // Si la venta ya tiene QR guardado, úsalo
-        if (isset($venta->codigo_qr) && $venta->codigo_qr) {
-            $qrCode = $venta->codigo_qr;
-        } else {
-            // Generar nuevo QR con los datos de la venta
-            $qrData = json_encode([
-                'documento' => $venta->documento,
-                'fecha' => $venta->fecha_emision->format('Y-m-d H:i:s'),
-                'total' => $venta->total,
-                'tipo' => $venta->tipo_comprobante,
-                'serie' => $venta->serie,
-                'numero' => $venta->numero,
-                'empresa' => $empresa->razon_social ?? 'Mi Empresa',
-                'ruc' => $empresa->ruc ?? '00000000000'
-            ]);
-            
-            // Usar Simple QR Code (requiere: composer require simplesoftwareio/simple-qrcode)
-            $qrCode = 'data:image/svg+xml;base64,' . base64_encode(
-                \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')
-                    ->size(100)
-                    ->generate($qrData)
-            );
-        }
+        // En la base se guarda el contenido del QR, no la imagen: se renderiza
+        // aca. Las ventas viejas no tienen contenido guardado, se recalcula.
+        $qrCode = Venta::qrComoImagen($venta->codigo_qr ?: $venta->contenidoQr());
     } catch (\Exception $e) {
         // Si hay error al generar QR, mostrar placeholder
         $qrCode = null;
@@ -206,6 +196,7 @@ class VentaController extends Controller
             foreach ($venta->detalles as $detalle) {
                 $stock = \App\Models\ProductoAlmacen::where('producto_id', $detalle->producto_id)
                                                     ->where('almacen_id', $detalle->almacen_id)
+                                                    ->lockForUpdate()
                                                     ->first();
                 if ($stock) {
                     $stock->stock += $detalle->cantidad;

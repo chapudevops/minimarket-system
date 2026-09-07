@@ -181,6 +181,7 @@ class NotaVentaController extends Controller
             foreach ($request->productos as $item) {
                 $stock = \App\Models\ProductoAlmacen::where('producto_id', $item['id'])
                                                     ->where('almacen_id', $item['almacen_id'])
+                                                    ->lockForUpdate()
                                                     ->first();
                 
                 if (!$stock || $stock->stock < $item['cantidad']) {
@@ -211,8 +212,10 @@ class NotaVentaController extends Controller
             foreach ($request->productos as $item) {
                 $subtotal += $item['cantidad'] * $item['precio'];
             }
-            $igv = $subtotal * 0.18;
-            $total = $subtotal + $igv;
+            $importes = \App\Sunat\Monto::agregarIgv($subtotal);
+            $subtotal = $importes['gravado'];
+            $igv = $importes['igv'];
+            $total = $importes['total'];
 
             // Crear nota de venta
             $nota = NotaVenta::create([
@@ -250,6 +253,7 @@ class NotaVentaController extends Controller
                 // Descontar stock
                 $stock = \App\Models\ProductoAlmacen::where('producto_id', $item['id'])
                                                     ->where('almacen_id', $item['almacen_id'])
+                                                    ->lockForUpdate()
                                                     ->first();
                 $stock->stock -= $item['cantidad'];
                 $stock->save();

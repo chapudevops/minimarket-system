@@ -202,8 +202,10 @@ class CotizacionController extends Controller
             
             $descuentoGeneral = $request->descuento_general ?? 0;
             $subtotalConDescuento = $subtotal - $descuentoGeneral;
-            $igv = $subtotalConDescuento * 0.18;
-            $total = $subtotalConDescuento + $igv;
+            $importes = \App\Sunat\Monto::agregarIgv($subtotalConDescuento);
+            $subtotalConDescuento = $importes['gravado'];
+            $igv = $importes['igv'];
+            $total = $importes['total'];
 
             // Crear cotización
             $cotizacion = Cotizacion::create([

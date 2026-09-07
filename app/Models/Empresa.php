@@ -37,6 +37,11 @@ class Empresa extends Model
 
     protected $casts = [
         'estado' => 'boolean',
+        // Credenciales de SUNAT: se cifran en reposo. Las columnas son TEXT
+        // porque un valor cifrado supera los 255 caracteres.
+        'clave' => 'encrypted',
+        'clave_certificado' => 'encrypted',
+        'client_secret' => 'encrypted',
     ];
 
     public function getLogoUrlAttribute()

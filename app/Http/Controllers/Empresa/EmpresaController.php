@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Empresa;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class EmpresaController extends Controller
 {
@@ -62,7 +63,7 @@ class EmpresaController extends Controller
                 'provincia' => 'required',
                 'distrito' => 'required',
                 'logo' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
-                'certificado_pfx' => 'nullable|file|mimes:pfx|max:5120',
+                'certificado_pfx' => 'nullable|file|extensions:pfx,p12|max:5120',
                 'email_contabilidad' => 'nullable|email',
                 'url_api' => 'nullable|url',
                 'link_ubicacion' => 'nullable|url', // NUEVA VALIDACIÓN
@@ -84,7 +85,7 @@ class EmpresaController extends Controller
                 'logo.image' => 'El archivo debe ser una imagen',
                 'logo.mimes' => 'El logo debe ser un archivo de tipo: jpg, jpeg, png, gif',
                 'logo.max' => 'El logo no debe pesar más de 2MB',
-                'certificado_pfx.mimes' => 'El certificado debe ser un archivo .pfx',
+                'certificado_pfx.extensions' => 'El certificado debe ser un archivo .pfx o .p12',
                 'certificado_pfx.max' => 'El certificado no debe pesar más de 5MB',
                 'email_contabilidad.email' => 'El correo de contabilidad debe ser una dirección de email válida',
                 'url_api.url' => 'La URL API debe ser una URL válida',
@@ -106,14 +107,17 @@ class EmpresaController extends Controller
                 $data['logo'] = $logoName;
             }
 
-            // Subir nuevo certificado
+            // Subir nuevo certificado.
+            // Va al disco privado (storage/app), NO a public: es la clave con la
+            // que se firman los comprobantes ante SUNAT y no debe ser accesible
+            // por URL. El nombre es aleatorio, no un timestamp adivinable.
             if ($request->hasFile('certificado_pfx')) {
                 if ($empresa->certificado_pfx) {
-                    Storage::delete('public/empresa/certificados/' . $empresa->certificado_pfx);
+                    Storage::delete('empresa/certificados/' . $empresa->certificado_pfx);
                 }
                 $certificado = $request->file('certificado_pfx');
-                $certificadoName = time() . '_certificado.' . $certificado->getClientOriginalExtension();
-                $certificado->storeAs('public/empresa/certificados', $certificadoName);
+                $certificadoName = Str::random(40) . '.' . $certificado->getClientOriginalExtension();
+                $certificado->storeAs('empresa/certificados', $certificadoName);
                 $data['certificado_pfx'] = $certificadoName;
             }
 

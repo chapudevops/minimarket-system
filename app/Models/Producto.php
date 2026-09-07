@@ -57,6 +57,28 @@ class Producto extends Model
         return $this->stocks()->sum('stock');
     }
 
+    /* --- Codigos SUNAT derivados de los valores del formulario --- */
+
+    public function getUnidadSunatAttribute(): string
+    {
+        return \App\Sunat\Catalogo::unidad($this->unidad);
+    }
+
+    public function getAfectacionIgvSunatAttribute(): string
+    {
+        return \App\Sunat\Catalogo::afectacionIgv($this->operacion);
+    }
+
+    public function getTributoSunatAttribute(): array
+    {
+        return \App\Sunat\Catalogo::tributo($this->operacion);
+    }
+
+    public function gravaIgv(): bool
+    {
+        return \App\Sunat\Catalogo::gravaIgv($this->operacion);
+    }
+
     // Obtener URL de la foto
     public function getFotoUrlAttribute()
     {

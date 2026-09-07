@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -12,11 +11,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // \App\Models\User::factory(10)->create();
-
-        // \App\Models\User::factory()->create([
-        //     'name' => 'Test User',
-        //     'email' => 'test@example.com',
-        // ]);
+        // El orden importa: cajas y almacenes antes de los usuarios que los
+        // referencian, y el catalogo antes de los movimientos.
+        $this->call([
+            RoleSeeder::class,
+            EmpresaSeeder::class,
+            AlmacenCajaSeeder::class,
+            UserSeeder::class,
+            CatalogoSeeder::class,
+            MovimientoSeeder::class,
+        ]);
     }
 }

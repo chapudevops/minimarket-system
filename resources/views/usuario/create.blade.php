@@ -63,7 +63,7 @@
                                 <option value="">Seleccionar caja</option>
                                 @foreach($cajas as $caja)
                                     <option value="{{ $caja->id }}" {{ old('caja_id') == $caja->id ? 'selected' : '' }}>
-                                        {{ $caja->nombre }}
+                                        {{ $caja->descripcion }}
                                     </option>
                                 @endforeach
                             </select>

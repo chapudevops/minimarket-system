@@ -65,8 +65,10 @@ class CompraController extends Controller
             foreach ($request->productos as $item) {
                 $subtotal += $item['cantidad'] * $item['precio_unitario'];
             }
-            $igv = $subtotal * 0.18;
-            $total = $subtotal + $igv;
+            $importes = \App\Sunat\Monto::agregarIgv($subtotal);
+            $subtotal = $importes['gravado'];
+            $igv = $importes['igv'];
+            $total = $importes['total'];
 
             // Crear compra
             $compra = Compra::create([
@@ -100,6 +102,7 @@ class CompraController extends Controller
                 // Actualizar stock en el almacén
                 $stock = ProductoAlmacen::where('producto_id', $item['producto_id'])
                                         ->where('almacen_id', $request->almacen_id)
+                                        ->lockForUpdate()
                                         ->first();
                 
                 if ($stock) {
@@ -149,6 +152,7 @@ class CompraController extends Controller
             foreach ($compra->detalles as $detalle) {
                 $stock = ProductoAlmacen::where('producto_id', $detalle->producto_id)
                                         ->where('almacen_id', $compra->almacen_id)
+                                        ->lockForUpdate()
                                         ->first();
                 
                 if ($stock) {

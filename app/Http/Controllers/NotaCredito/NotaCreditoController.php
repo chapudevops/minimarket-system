@@ -188,8 +188,10 @@ class NotaCreditoController extends Controller
             foreach ($request->detalles as $item) {
                 $subtotal += $item['cantidad'] * $item['precio_unitario'];
             }
-            $igv = $subtotal * 0.18;
-            $total = $subtotal + $igv;
+            $importes = \App\Sunat\Monto::agregarIgv($subtotal);
+            $subtotal = $importes['gravado'];
+            $igv = $importes['igv'];
+            $total = $importes['total'];
 
             // Crear nota de crédito
             $nota = NotaCredito::create([
@@ -229,6 +231,7 @@ class NotaCreditoController extends Controller
                 // Devolver stock al almacén
                 $stock = \App\Models\ProductoAlmacen::where('producto_id', $item['producto_id'])
                                                     ->where('almacen_id', $item['almacen_id'])
+                                                    ->lockForUpdate()
                                                     ->first();
                 if ($stock) {
                     $stock->stock += $item['cantidad'];

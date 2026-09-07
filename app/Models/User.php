@@ -64,6 +64,18 @@ class User extends Authenticatable
         return $this->roles()->whereIn('nombre', (array) $roles)->exists();
     }
 
+    /**
+     * Regla unica de autorizacion: la usan el middleware 'role' y la directiva
+     * @rol de Blade, para que el menu nunca muestre algo que la ruta rechaza.
+     * El Administrador pasa siempre, este o no en la lista.
+     */
+    public function puedeConRol($roles): bool
+    {
+        return $this->hasRole(self::ROL_ADMINISTRADOR) || $this->hasAnyRole($roles);
+    }
+
+    public const ROL_ADMINISTRADOR = 'Administrador';
+
     // Accesor para estado
     public function getEstadoBadgeAttribute()
     {

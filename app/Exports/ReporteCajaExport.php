@@ -107,7 +107,7 @@ class ReporteCajaExport implements FromArray, WithHeadings, WithStyles, WithColu
         return [];
     }
 
-    public function styles(Worksheet $sheet)
+    public function styles(Worksheet $sheet): ?array
     {
         // Estilos para el título principal
         $sheet->mergeCells('A1:F1');

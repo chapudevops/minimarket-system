@@ -6,9 +6,15 @@ $(function () {
 
   /* scrollar */
 
-  new PerfectScrollbar(".notify-list")
+  function scrollbarSiExiste(selector) {
+    if (typeof PerfectScrollbar === "undefined") return;
+    document.querySelectorAll(selector).forEach(function (el) {
+      new PerfectScrollbar(el);
+    });
+  }
 
-  new PerfectScrollbar(".search-content")
+  scrollbarSiExiste(".notify-list");
+  scrollbarSiExiste(".search-content");
 
   // new PerfectScrollbar(".mega-menu-widgets")
 

@@ -27,7 +27,16 @@ class NotaCredito extends Model
         'observaciones',
         'caja_id',
         'usuario_id',
-        'estado'
+        'estado',
+        'estado_sunat',
+        'hash_xml',
+        'ruta_xml',
+        'ruta_cdr',
+        'codigo_respuesta',
+        'descripcion_respuesta',
+        'ticket_sunat',
+        'enviado_sunat_at',
+        'intentos_envio',
     ];
 
     protected $casts = [
@@ -35,7 +44,8 @@ class NotaCredito extends Model
         'subtotal' => 'decimal:2',
         'igv' => 'decimal:2',
         'total' => 'decimal:2',
-        'detraccion' => 'boolean'
+        'detraccion' => 'boolean',
+        'enviado_sunat_at' => 'datetime',
     ];
 
     public function cliente()

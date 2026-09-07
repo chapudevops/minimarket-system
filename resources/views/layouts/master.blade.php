@@ -268,6 +268,9 @@
 @include('layouts.right-sidebar')
 @include('layouts.vendor-scripts')
 
+{{-- Helpers compartidos por los listados; debe cargar antes del config.js de cada modulo --}}
+<script src="{{ URL::asset('build/js/common/crud.js') }}"></script>
+
 @yield('scripts')
 
 <script>

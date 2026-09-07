@@ -101,7 +101,7 @@ class UsuarioController extends Controller
                 'id' => $usuario->id,
                 'name' => $usuario->name,
                 'email' => $usuario->email,
-                'caja' => $usuario->caja ? $usuario->caja->nombre : 'No asignada',
+                'caja' => $usuario->caja ? $usuario->caja->descripcion : 'No asignada',
                 'almacen' => $usuario->almacen ? $usuario->almacen->descripcion : 'No asignado',
                 'roles' => $usuario->roles->pluck('nombre')->implode(', '),
                 'estado_badge' => $usuario->estado_badge,

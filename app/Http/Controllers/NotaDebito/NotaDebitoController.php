@@ -36,9 +36,15 @@ class NotaDebitoController extends Controller
                     'documento' => $nota->documento,
                     'fecha_emision' => $nota->fecha_emision ? $nota->fecha_emision->format('d/m/Y H:i') : '-',
                     'cliente' => $nota->cliente->nombre_razon_social ?? 'CLIENTES VARIOS',
-                    'estado_sunat' => '<span class="badge bg-warning">Pendiente</span>',
-                    'xml' => '<span class="badge bg-secondary">Pendiente</span>',
-                    'cdr' => '<span class="badge bg-secondary">Pendiente</span>',
+                    'estado_sunat' => $nota->estado_sunat === 'ACEPTADO'
+                        ? '<span class="badge bg-success">Aceptado</span>'
+                        : '<span class="badge bg-secondary">' . ucfirst(strtolower($nota->estado_sunat ?? 'Pendiente')) . '</span>',
+                    'xml' => $nota->ruta_xml
+                        ? '<span class="badge bg-success">Generado</span>'
+                        : '<span class="badge bg-secondary">Pendiente</span>',
+                    'cdr' => $nota->ruta_cdr
+                        ? '<span class="badge bg-success">Recibido</span>'
+                        : '<span class="badge bg-secondary">Pendiente</span>',
                     'acciones' => $this->generateActions($nota)
                 ];
             })
@@ -165,8 +171,10 @@ class NotaDebitoController extends Controller
             foreach ($request->detalles as $item) {
                 $subtotal += $item['cantidad'] * $item['precio_unitario'];
             }
-            $igv = $subtotal * 0.18;
-            $total = $subtotal + $igv;
+            $importes = \App\Sunat\Monto::agregarIgv($subtotal);
+            $subtotal = $importes['gravado'];
+            $igv = $importes['igv'];
+            $total = $importes['total'];
 
             // Crear nota de débito
             $nota = NotaDebito::create([

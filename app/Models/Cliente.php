@@ -37,4 +37,10 @@ class Cliente extends Model
         ];
         return $tipos[$this->tipo_documento] ?? $this->tipo_documento;
     }
+
+    /** Catalogo 06 de SUNAT: DNI=1, CE=4, RUC=6. */
+    public function getTipoDocumentoSunatAttribute(): string
+    {
+        return \App\Sunat\Catalogo::documentoIdentidad($this->tipo_documento);
+    }
 }
