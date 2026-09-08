@@ -43,7 +43,17 @@ $(function () {
         if (datos) {
             Object.keys(datos).forEach(function (k) {
                 const campo = $("#formProducto").find('[name="' + k + '"]');
-                if (campo.length && campo.attr("type") !== "file") campo.val(datos[k]);
+                if (!campo.length || campo.attr("type") === "file") return;
+
+                // Un checkbox no se llena con .val(): hacerlo dejaba la casilla
+                // siempre vacia y editar un producto le borraba la detraccion
+                // en silencio.
+                if (campo.attr("type") === "checkbox") {
+                    campo.prop("checked", Boolean(datos[k]));
+                    return;
+                }
+
+                campo.val(datos[k] === null ? "" : datos[k]);
             });
         }
 
@@ -57,7 +67,12 @@ $(function () {
 
     $("#productosTable").on("click", ".btn-edit", function () {
         $.get("/productos/" + $(this).data("id"), function (res) {
-            abrirFormulario("Editar Producto", res.data);
+            // res.data trae los campos formateados para mostrar; el formulario
+            // necesita los crudos, que viajan en res.data.form.
+            abrirFormulario("Editar Producto", Object.assign({}, res.data.form, {
+                id: res.data.id,
+                stocks: res.data.stocks,
+            }));
         });
     });
 
@@ -88,7 +103,9 @@ $(function () {
                     ["Marca", d.marca],
                     ["Presentación", d.presentacion],
                     ["Unidad", d.unidad],
-                    ["Operación", d.operacion_texto],
+                    ["Operación (IGV)", d.operacion_texto],
+                    ["Afecto a ISC", d.afecto_isc_texto],
+                    ["Tratamiento IVAP", d.afecto_ivap_texto],
                     ["Precio compra", Crud.soles(d.precio_compra)],
                     ["Precio venta", Crud.soles(d.precio_venta)],
                     ["Stock por almacén", stocks],

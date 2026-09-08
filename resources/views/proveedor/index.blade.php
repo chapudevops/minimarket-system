@@ -34,7 +34,6 @@
                 </div>
 
                 <!-- Alertas -->
-                <div id="alert-messages"></div>
 
                 <div class="table-responsive">
                     <table id="proveedoresTable" class="table table-striped table-bordered" style="width:100%">
@@ -124,7 +123,6 @@ $(document).ready(function() {
         
         $('#btnGuardarCreate').hide();
         $('#btnLoadingCreate').show();
-        $('#alert-messages').html('');
         $('.is-invalid').removeClass('is-invalid');
         
         var formData = new FormData(this);
@@ -143,18 +141,9 @@ $(document).ready(function() {
                     $('#modalCreate').modal('hide');
                     $('#formCreate')[0].reset();
                     
-                    $('#alert-messages').html(`
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <i class="bi bi-check-circle"></i> ${response.message}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    `);
+                    Crud.aviso('success', response.message);
                     
-                    table.ajax.reload();
-                    
-                    setTimeout(function() {
-                        $('.alert-success').fadeOut();
-                    }, 3000);
+                    table.ajax.reload(null, false);
                 }
             },
             error: function(xhr) {
@@ -165,12 +154,7 @@ $(document).ready(function() {
                         $('#error-' + field + '_create').html(messages[0]);
                     });
                 } else {
-                    $('#alert-messages').html(`
-                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            <i class="bi bi-exclamation-triangle"></i> Error al crear el proveedor
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    `);
+                    Crud.aviso('danger', (xhr.responseJSON && xhr.responseJSON.message) || 'Ocurrió un error inesperado.');
                 }
             },
             complete: function() {
@@ -230,18 +214,9 @@ $(document).ready(function() {
             success: function(response) {
                 $('#modalEdit').modal('hide');
                 
-                $('#alert-messages').html(`
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <i class="bi bi-check-circle"></i> ${response.message}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                `);
+                Crud.aviso('success', response.message);
                 
-                table.ajax.reload();
-                
-                setTimeout(function() {
-                    $('.alert-success').fadeOut();
-                }, 3000);
+                table.ajax.reload(null, false);
             },
             error: function(xhr) {
                 if (xhr.status === 422) {
@@ -251,12 +226,7 @@ $(document).ready(function() {
                         $('#error-' + field + '_edit').html(messages[0]);
                     });
                 } else {
-                    $('#alert-messages').html(`
-                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            <i class="bi bi-exclamation-triangle"></i> Error al actualizar el proveedor
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    `);
+                    Crud.aviso('danger', (xhr.responseJSON && xhr.responseJSON.message) || 'Ocurrió un error inesperado.');
                 }
             },
             complete: function() {
@@ -292,26 +262,12 @@ $(document).ready(function() {
             success: function(response) {
                 $('#modalDelete').modal('hide');
                 
-                $('#alert-messages').html(`
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <i class="bi bi-check-circle"></i> ${response.message}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                `);
+                Crud.aviso('success', response.message);
                 
-                table.ajax.reload();
-                
-                setTimeout(function() {
-                    $('.alert-success').fadeOut();
-                }, 3000);
+                table.ajax.reload(null, false);
             },
             error: function(xhr) {
-                $('#alert-messages').html(`
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i class="bi bi-exclamation-triangle"></i> Error al eliminar el proveedor
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                `);
+                Crud.aviso('danger', (xhr.responseJSON && xhr.responseJSON.message) || 'Ocurrió un error inesperado.');
             },
             complete: function() {
                 $('#btnConfirmDelete').show();

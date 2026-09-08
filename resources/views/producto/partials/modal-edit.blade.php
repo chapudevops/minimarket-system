@@ -90,6 +90,20 @@
                                 <label class="form-check-label fw-bold" for="detraccion_edit">Configuración de Detracción</label>
                             </div>
                         </div>
+                        {{-- Ver el comentario del modal de creación: esto NO es la
+                             afectación del IGV. --}}
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check mt-4">
+                                <input type="checkbox" name="afecto_isc" class="form-check-input" id="afecto_isc_edit" value="1">
+                                <label class="form-check-label fw-bold" for="afecto_isc_edit">Afecto a ISC</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check mt-4">
+                                <input type="checkbox" name="afecto_ivap" class="form-check-input" id="afecto_ivap_edit" value="1">
+                                <label class="form-check-label fw-bold" for="afecto_ivap_edit">Tratamiento IVAP</label>
+                            </div>
+                        </div>
 
                         <div class="col-md-3 mb-3">
                             <label class="form-label fw-bold">Stock</label>

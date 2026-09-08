@@ -5,7 +5,9 @@ namespace App\Sunat;
 use App\Models\Empresa;
 use App\Models\Venta;
 use Greenter\Model\Sale\Invoice;
+use Greenter\Model\Sale\Note;
 use Greenter\Xml\Builder\InvoiceBuilder;
+use Greenter\Xml\Builder\NoteBuilder;
 use Greenter\XMLSecLibs\Certificate\X509Certificate;
 use Greenter\XMLSecLibs\Certificate\X509ContentType;
 use Greenter\XMLSecLibs\Sunat\SignedXml;
@@ -28,12 +30,20 @@ class GeneradorXml
     }
 
     /**
+     * Genera el XML firmado de cualquier comprobante: venta, nota de credito o
+     * nota de debito.
+     *
      * @return array{nombre: string, ruta: string, hash: string, xml: string}
      */
-    public function paraVenta(Venta $venta, bool $guardar = true): array
+    public function para(object $documento, bool $guardar = true): array
     {
-        $comprobante = $this->constructor->desdeVenta($venta);
-        $xml = (new InvoiceBuilder())->build($comprobante);
+        $comprobante = $this->constructor->desde($documento);
+
+        // Las notas usan otro builder: su XML raiz es CreditNote/DebitNote,
+        // no Invoice.
+        $xml = $comprobante instanceof Note
+            ? (new NoteBuilder())->build($comprobante)
+            : (new InvoiceBuilder())->build($comprobante);
         $firmado = $this->firmar($xml);
 
         $nombre = $this->nombreArchivo($comprobante);
@@ -51,10 +61,16 @@ class GeneradorXml
         ];
     }
 
+    /** @return array{nombre: string, ruta: string, hash: string, xml: string} */
+    public function paraVenta(Venta $venta, bool $guardar = true): array
+    {
+        return $this->para($venta, $guardar);
+    }
+
     /**
      * Nombre normalizado por SUNAT: RUC-tipo-serie-correlativo.
      */
-    private function nombreArchivo(Invoice $comprobante): string
+    private function nombreArchivo(Invoice|Note $comprobante): string
     {
         return sprintf(
             '%s-%s-%s-%s.xml',

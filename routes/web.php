@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Almacen\AlmacenController;
+use App\Http\Controllers\Auditoria\AuditoriaController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Caja\AperturaCajaController;
 use App\Http\Controllers\Caja\CajaController;
@@ -48,6 +49,14 @@ Route::middleware(['auth'])->group(function () {
     // Ruta para el dashboard, solo accesible para usuarios autenticados
     Route::get('/', [DashboardController::class, 'index'])->name('home');
     Route::get('/store-location', [DashboardController::class, 'getStoreLocation'])->name('store.location');
+    // Rutas para Auditoría
+    // Solo Administrador: la bitacora dice quien hizo que, y quien la lee no
+    // deberia poder ser cualquiera.
+    Route::middleware('role:Administrador')->group(function () {
+        Route::get('/auditoria', [AuditoriaController::class, 'index'])->name('auditoria.index');
+        Route::get('/auditoria/data', [AuditoriaController::class, 'getData'])->name('auditoria.data');
+    });
+
     // Rutas para la configuración de la empresa
     Route::middleware('role:Administrador')->group(function () {
         Route::get('/empresa', [EmpresaController::class, 'index'])->name('empresa.index');

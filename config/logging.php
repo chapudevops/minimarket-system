@@ -54,7 +54,9 @@ return [
     'channels' => [
         'stack' => [
             'driver' => 'stack',
-            'channels' => ['single'],
+            // 'single' escribia todo a un unico laravel.log que crecia sin
+            // techo; 'daily' rota por dia y descarta lo viejo.
+            'channels' => ['daily'],
             'ignore_exceptions' => false,
         ],
 
@@ -69,7 +71,7 @@ return [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
-            'days' => 14,
+            'days' => (int) env('LOG_DAILY_DAYS', 14),
             'replace_placeholders' => true,
         ],
 

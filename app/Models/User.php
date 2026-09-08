@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -10,7 +11,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use Auditable, HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
         'name',
@@ -82,5 +83,13 @@ class User extends Authenticatable
         return $this->estado 
             ? '<span class="badge bg-success">Activo</span>' 
             : '<span class="badge bg-danger">Inactivo</span>';
+    }
+
+    /** Solo estos campos generan entrada en la bitacora. */
+    protected array $auditarSolo = ['name', 'email', 'caja_id', 'almacen_id', 'estado'];
+
+    public function etiquetaAuditoria(): string
+    {
+        return $this->name;
     }
 }

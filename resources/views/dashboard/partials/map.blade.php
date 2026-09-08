@@ -8,7 +8,7 @@
                             <i class="bi bi-geo-alt-fill text-danger"></i>
                             {{ $empresa->nombre_comercial ?? $empresa->razon_social ?? 'Nuestra Ubicación' }}
                         </h5>
-                        @if($empresa->link_ubicacion)
+                        @if($empresa?->link_ubicacion)
                             <small class="text-success d-block mt-1">
                                 <i class="bi bi-check-circle"></i> Ubicación configurada en Google Maps
                             </small>

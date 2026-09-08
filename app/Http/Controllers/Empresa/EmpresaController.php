@@ -96,6 +96,15 @@ class EmpresaController extends Controller
 
             $data = $request->all();
 
+            // Las credenciales van en campos de contraseña que se muestran
+            // vacíos: si el usuario no las reescribe, no se tocan. Sin esto,
+            // guardar cualquier otro dato de la empresa las borraría.
+            foreach (['clave', 'clave_certificado', 'client_secret'] as $secreto) {
+                if (blank($request->input($secreto))) {
+                    unset($data[$secreto]);
+                }
+            }
+
             // Subir nuevo logo
             if ($request->hasFile('logo')) {
                 if ($empresa->logo) {

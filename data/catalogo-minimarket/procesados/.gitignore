@@ -1,0 +1,3 @@
+# Los reportes se regeneran con "php artisan catalogo:normalizar".
+*.csv
+!.gitkeep

@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Serie extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory;
 
     protected $table = 'series';
 
@@ -53,4 +54,15 @@ class Serie extends Model
     {
         return $this->serie . '-' . str_pad($this->correlativo, 8, '0', STR_PAD_LEFT);
     }
+
+    public function etiquetaAuditoria(): string
+    {
+        return $this->serie . " (" . $this->tipo_comprobante . ")";
+    }
+
+    /**
+     * El correlativo queda fuera a proposito: sube en cada comprobante emitido
+     * y ensuciaria la bitacora tapando los cambios que si importan.
+     */
+    protected array $auditarSolo = ['serie', 'tipo_comprobante', 'caja_id'];
 }

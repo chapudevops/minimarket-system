@@ -27,16 +27,11 @@ return [
 
     'ambiente' => env('SUNAT_AMBIENTE', 'beta'),
 
-    'endpoints' => [
-        'beta' => [
-            'facturacion' => 'https://e-beta.sunat.gob.pe/ol-ti-itcpgem-beta/billService',
-            'guias'       => 'https://api-cpe-beta.sunat.gob.pe/v1/contribuyente/gem',
-        ],
-        'produccion' => [
-            'facturacion' => 'https://e-factura.sunat.gob.pe/ol-ti-itcpfegem/billService',
-            'guias'       => 'https://api-cpe.sunat.gob.pe/v1/contribuyente/gem',
-        ],
-    ],
+    /*
+    | Las URLs no se escriben a mano: Greenter las mantiene en
+    | Greenter\Ws\Services\SunatEndpoints y las cambia cuando SUNAT las cambia.
+    | Una de las que estaban aca ya no era la correcta.
+    */
 
     /*
     |--------------------------------------------------------------------------

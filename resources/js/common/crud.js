@@ -29,13 +29,37 @@ window.Crud = (function ($) {
         $.ajaxSetup({ headers: { "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content") } });
     }
 
+    /**
+     * Aviso flotante. Antes se insertaba dentro de #alert-messages, lo que
+     * empujaba la tabla hacia abajo y obligaba a subir el scroll para leerlo:
+     * el conjunto se sentia como una recarga de pagina.
+     */
     function aviso(tipo, mensaje) {
-        $("#alert-messages").html(
-            '<div class="alert alert-' + tipo + ' alert-dismissible fade show" role="alert">' +
+        let zona = document.getElementById("crud-avisos");
+
+        if (!zona) {
+            zona = document.createElement("div");
+            zona.id = "crud-avisos";
+            zona.style.cssText =
+                "position:fixed;top:1rem;right:1rem;z-index:1085;" +
+                "display:flex;flex-direction:column;gap:.5rem;max-width:min(24rem,90vw)";
+            document.body.appendChild(zona);
+        }
+
+        const $aviso = $(
+            '<div class="alert alert-' + tipo + ' alert-dismissible fade show shadow-sm mb-0" role="alert">' +
             mensaje +
             '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>'
         );
-        $("html, body").animate({ scrollTop: 0 }, 200);
+
+        $(zona).append($aviso);
+
+        // Los errores se quedan hasta que el usuario los cierre; el resto se va solo.
+        if (tipo !== "danger") {
+            setTimeout(function () {
+                $aviso.fadeOut(300, () => $aviso.remove());
+            }, 4000);
+        }
     }
 
     function tabla(selector, url, columnas, extra) {

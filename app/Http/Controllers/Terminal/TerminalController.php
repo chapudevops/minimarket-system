@@ -297,6 +297,23 @@ class TerminalController extends Controller
                 'observaciones' => 'nullable'
             ]);
 
+            // Un producto sin afectacion de IGV resuelta no se vende. Si una
+            // importacion dejara pasar un PENDIENTE, el comprobante saldria con
+            // un IGV que nadie decidio y con la afectacion por defecto de
+            // ConstructorComprobante, que es GRAVADO. Es preferible frenar la
+            // venta aca que emitir mal y tener que anular ante SUNAT.
+            $sinClasificar = Producto::whereIn('id', array_column($productos, 'id'))
+                ->whereNotIn('operacion', \App\Sunat\Tributos::AFECTACIONES)
+                ->pluck('descripcion');
+
+            if ($sinClasificar->isNotEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Estos productos no tienen definida su afectación de IGV y no pueden venderse: '
+                        . $sinClasificar->implode(', ')
+                ], 422);
+            }
+
             // lockForUpdate retiene la fila hasta el commit: sin esto dos ventas
             // simultaneas del ultimo articulo validan las dos contra el mismo
             // stock y lo dejan negativo.
@@ -416,6 +433,24 @@ class TerminalController extends Controller
             }
 
             DB::commit();
+
+            // Despues del commit, nunca dentro: si se despacha en la
+            // transaccion el worker puede tomar el job antes de que la venta
+            // exista.
+            //
+            // El try es la garantia de fondo: la venta ya esta cerrada y no
+            // puede deshacerse porque falle el envio. Con QUEUE_CONNECTION=sync
+            // el job corre aca mismo, y sin este catch una caida de SUNAT
+            // devolveria un 500 al cajero por una venta que si se registro.
+            try {
+                \App\Jobs\EnviarComprobanteASunat::dispatch($venta->id);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('No se pudo encolar el envío a SUNAT', [
+                    'venta_id' => $venta->id,
+                    'error' => $e->getMessage(),
+                ]);
+                // Queda en PENDIENTE: sunat:enviar la retoma despues.
+            }
 
             return response()->json([
                 'success' => true,

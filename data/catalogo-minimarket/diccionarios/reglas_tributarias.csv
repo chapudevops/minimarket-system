@@ -1,0 +1,68 @@
+categoria,subcategoria,producto_tipo,igv,isc,ivap,requiere_revision,fuente_normativa,observacion
+BEBIDAS,GASEOSAS,*,GRAVADO,REVISAR,NO,false,TUO Ley IGV art. 1; Apendice IV (ISC),Gravada de IGV sin discusion. El ISC de bebidas azucaradas depende del contenido de azucar por 100 ml: la version sin azucar del mismo producto puede quedar fuera. Se marca por producto.
+BEBIDAS,AGUA,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Agua embotellada sin azucar ni edulcorante anadido: fuera del ambito del ISC de bebidas azucaradas.
+BEBIDAS,JUGOS Y NECTARES,*,GRAVADO,REVISAR,NO,false,TUO Ley IGV art. 1; Apendice IV (ISC),Mismo criterio que gaseosas: el ISC depende del azucar anadido del producto concreto.
+BEBIDAS,ENERGIZANTES,*,GRAVADO,REVISAR,NO,false,TUO Ley IGV art. 1; Apendice IV (ISC),Partida 22.02 (bebidas no alcoholicas). Confirmar alcance y sistema de ISC del producto antes de darlo por afecto.
+BEBIDAS,BEBIDAS DEPORTIVAS,*,GRAVADO,REVISAR,NO,false,TUO Ley IGV art. 1; Apendice IV (ISC),Rehidratantes con azucar anadido. Mismo criterio que gaseosas.
+BEBIDAS,TE E INFUSIONES LISTAS,*,GRAVADO,REVISAR,NO,false,TUO Ley IGV art. 1; Apendice IV (ISC),Te listo para tomar con azucar anadido. Revisar por producto.
+LICORES,CERVEZA,*,GRAVADO,SI,NO,false,TUO Ley IGV art. 1 y 50; Apendice IV,Bebida alcoholica: en el ambito del ISC. El minimarket NO lo declara (el ISC se aplica a nivel de productor o importador) pero el producto queda identificado.
+LICORES,VINO,*,GRAVADO,SI,NO,false,TUO Ley IGV art. 1 y 50; Apendice IV,Bebida alcoholica: en el ambito del ISC. Informativo para el minimarket.
+LICORES,PISCO,*,GRAVADO,SI,NO,false,TUO Ley IGV art. 1 y 50; Apendice IV,Bebida alcoholica: en el ambito del ISC. Informativo para el minimarket.
+LICORES,RON,*,GRAVADO,SI,NO,false,TUO Ley IGV art. 1 y 50; Apendice IV,Bebida alcoholica: en el ambito del ISC. Informativo para el minimarket.
+LICORES,WHISKY,*,GRAVADO,SI,NO,false,TUO Ley IGV art. 1 y 50; Apendice IV,Bebida alcoholica: en el ambito del ISC. Informativo para el minimarket.
+LICORES,VODKA,*,GRAVADO,SI,NO,false,TUO Ley IGV art. 1 y 50; Apendice IV,Bebida alcoholica: en el ambito del ISC. Informativo para el minimarket.
+LICORES,ESPUMANTES,*,GRAVADO,SI,NO,false,TUO Ley IGV art. 1 y 50; Apendice IV,Bebida alcoholica: en el ambito del ISC. Informativo para el minimarket.
+TABACO,CIGARRILLOS,*,GRAVADO,SI,NO,false,TUO Ley IGV art. 1 y 50; Apendice IV,El sistema todavia no maneja tabaco. La fila existe para que el dia que se venda no se clasifique a ojo.
+ABARROTES,ARROZ,*,PENDIENTE,NO,REVISAR,true,Ley 28211 (IVAP),No todo arroz es IVAP. El IVAP alcanza a determinadas operaciones con arroz pilado; hay que mirar la naturaleza del producto Y la operacion que hace el negocio. Clasificar por producto_tipo.
+ABARROTES,ARROZ,ARROZ_PILADO,PENDIENTE,NO,SI,true,Ley 28211 (IVAP),Producto dentro del ambito del IVAP. Que la venta del minimarket quede afecta a IVAP o exonerada de IGV depende de la operacion concreta: lo define el contador. No se asume.
+ABARROTES,ARROZ,ARROZ_INTEGRAL,PENDIENTE,NO,REVISAR,true,Ley 28211 (IVAP),Puede no ser arroz pilado en el sentido de la Ley 28211. Verificar la partida arancelaria del producto.
+ABARROTES,ACEITES,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Aceite vegetal envasado industrializado. No figura en el Apendice I.
+ABARROTES,AZUCAR,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Azucar refinada o rubia envasada. No figura en el Apendice I.
+ABARROTES,SAL,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Sal envasada industrializada. No figura en el Apendice I.
+ABARROTES,FIDEOS,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Pasta industrializada. No figura en el Apendice I.
+ABARROTES,HARINAS,*,PENDIENTE,NO,NO,true,Apendice I TUO Ley IGV,Algunas partidas de trigo y harina figuran en el Apendice I. Depende de la partida del producto: no se puede resolver por subcategoria.
+ABARROTES,MENESTRAS,*,PENDIENTE,NO,NO,true,Apendice I TUO Ley IGV,Las legumbres secas figuran en el Apendice I por partida. Envasadas y procesadas pueden salir de ese alcance. Definir por producto.
+ABARROTES,CONSERVAS,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Conserva industrializada. No figura en el Apendice I.
+ABARROTES,SALSAS Y SAZONADORES,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Producto industrializado. No figura en el Apendice I.
+ABARROTES,DESAYUNO,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Cereales y avenas industrializadas. No figuran en el Apendice I.
+ABARROTES,CAFE,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1; Apendice I,Cafe procesado y envasado. El cafe crudo en grano del Apendice I no es lo que vende un minimarket.
+ABARROTES,INFUSIONES,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Filtrantes envasados industrializados. No figuran en el Apendice I.
+LACTEOS,LECHE,*,PENDIENTE,NO,NO,true,Apendice I TUO Ley IGV,"No se puede clasificar la subcategoria completa: la leche cruda entera y la leche evaporada NO tributan igual. Clasificar por producto_tipo."
+LACTEOS,LECHE,LECHE_CRUDA_ENTERA,EXONERADO,NO,NO,false,Apendice I TUO Ley IGV,Producto listado nominalmente en el Apendice I. Un minimarket rara vez la vende.
+LACTEOS,LECHE,LECHE_EVAPORADA,PENDIENTE,NO,NO,true,TUO Ley IGV art. 1; Apendice I,"Producto industrializado: la regla general apunta a GRAVADO, pero al ser un derivado lacteo conviene que lo confirme el contador antes de importarlo. NO se asume por analogia con la leche cruda."
+LACTEOS,LECHE,LECHE_UHT,PENDIENTE,NO,NO,true,TUO Ley IGV art. 1; Apendice I,"Mismo caso que la evaporada: industrializada, pero se confirma antes de importar."
+LACTEOS,YOGURT,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Producto lacteo industrializado. No figura en el Apendice I.
+LACTEOS,QUESOS,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Producto lacteo industrializado. No figura en el Apendice I.
+LACTEOS,MANTEQUILLA Y MARGARINA,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Producto industrializado. No figura en el Apendice I.
+LACTEOS,CREMAS,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Producto industrializado. No figura en el Apendice I.
+GALLETAS Y DULCES,GALLETAS,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Producto industrializado. No figura en el Apendice I.
+GALLETAS Y DULCES,DULCES,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Producto industrializado. No figura en el Apendice I.
+GALLETAS Y DULCES,CHOCOLATES,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Producto industrializado. No figura en el Apendice I.
+GALLETAS Y DULCES,GOLOSINAS,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Producto industrializado. No figura en el Apendice I.
+GALLETAS Y DULCES,PANETONES,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Producto industrializado. No figura en el Apendice I.
+SNACKS,SNACKS SALADOS,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Producto industrializado. No figura en el Apendice I.
+SNACKS,EXTRUIDOS,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Producto industrializado. No figura en el Apendice I.
+SNACKS,FRUTOS SECOS,*,PENDIENTE,NO,NO,true,Apendice I TUO Ley IGV,Algunos frutos secos figuran en el Apendice I en estado natural; tostados y envasados cambian de tratamiento. Definir por producto.
+LIMPIEZA,DETERGENTES,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Producto industrializado no alimenticio. El Apendice I no alcanza articulos de limpieza.
+LIMPIEZA,LAVAVAJILLAS,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Producto industrializado no alimenticio.
+LIMPIEZA,LEJIAS Y DESINFECTANTES,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Producto industrializado no alimenticio.
+LIMPIEZA,SUAVIZANTES,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Producto industrializado no alimenticio.
+LIMPIEZA,PAPEL Y CELULOSA,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Producto industrializado no alimenticio.
+LIMPIEZA,UTILES DE LIMPIEZA,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Producto industrializado no alimenticio.
+HIGIENE PERSONAL,SHAMPOO Y ACONDICIONADOR,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Producto industrializado no alimenticio.
+HIGIENE PERSONAL,JABONES,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Producto industrializado no alimenticio.
+HIGIENE PERSONAL,CUIDADO DENTAL,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Producto industrializado no alimenticio.
+HIGIENE PERSONAL,DESODORANTES,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Producto industrializado no alimenticio.
+HIGIENE PERSONAL,PANALES Y TOALLAS,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Producto industrializado no alimenticio.
+HIGIENE PERSONAL,AFEITADO,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Producto industrializado no alimenticio.
+PANADERIA,PAN,*,PENDIENTE,NO,NO,true,Apendice I TUO Ley IGV,El pan tiene tratamiento propio segun la partida y la forma de venta. No se resuelve por subcategoria.
+PANADERIA,PASTELERIA,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Producto elaborado. No figura en el Apendice I.
+FRESCOS,FRUTAS,*,EXONERADO,NO,NO,false,Apendice I TUO Ley IGV,"Fruta fresca listada en el Apendice I. Verificar la partida de la fruta concreta: la fruta procesada, en conserva o deshidratada NO entra."
+FRESCOS,VERDURAS,*,EXONERADO,NO,NO,false,Apendice I TUO Ley IGV,"Hortalizas y legumbres frescas listadas en el Apendice I. Verificar la partida: procesadas o congeladas pueden no entrar."
+FRESCOS,HUEVOS,*,EXONERADO,NO,NO,false,Apendice I TUO Ley IGV,Huevos de ave con cascara frescos listados en el Apendice I.
+FRESCOS,CARNES,*,PENDIENTE,NO,NO,true,Apendice I TUO Ley IGV,Depende de la partida: carne fresca del Apendice I o producto procesado. Definir por producto.
+FRESCOS,POLLO,*,PENDIENTE,NO,NO,true,Apendice I TUO Ley IGV,Depende de si es ave viva o beneficiada segun partida. Definir con el contador.
+FRESCOS,PESCADOS,*,PENDIENTE,NO,NO,true,Apendice I TUO Ley IGV,Pescados frescos figuran en el Apendice I; congelados y procesados no siempre. Definir por producto.
+FRESCOS,EMBUTIDOS,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Producto carnico industrializado. No figura en el Apendice I.
+MASCOTAS,PERROS,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Alimento balanceado industrializado. El Apendice I no lo alcanza.
+MASCOTAS,GATOS,*,GRAVADO,NO,NO,false,TUO Ley IGV art. 1,Alimento balanceado industrializado. El Apendice I no lo alcanza.

@@ -37,7 +37,7 @@
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label fw-bold">Código de Barras</label>
-                                    <input type="text" name="codigo_barras" id="codigo_barras" class="form-control" placeholder="789123456001">
+                                    <input type="text" name="codigo_barras" id="codigo_barras" class="form-control" placeholder="Escanee el producto (opcional)">
                                     <div class="invalid-feedback" id="error-codigo_barras"></div>
                                 </div>
                                 <div class="col-md-12 mb-3">
@@ -114,6 +114,23 @@
                                         <input type="checkbox" name="detraccion" class="form-check-input" id="detraccion" value="1">
                                         <label class="form-check-label fw-bold" for="detraccion">Configuración de Detracción</label>
                                     </div>
+                                </div>
+                                {{-- Otros tratamientos tributarios. NO son la afectación del IGV:
+                                     una bebida energética es GRAVADA y además está en el ámbito
+                                     del ISC. Son informativos: no se calculan en el comprobante. --}}
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label fw-bold">Otros tratamientos tributarios</label>
+                                    <div class="d-flex gap-4">
+                                        <div class="form-check">
+                                            <input type="checkbox" name="afecto_isc" class="form-check-input" id="afecto_isc" value="1">
+                                            <label class="form-check-label" for="afecto_isc">Afecto a ISC</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input type="checkbox" name="afecto_ivap" class="form-check-input" id="afecto_ivap" value="1">
+                                            <label class="form-check-label" for="afecto_ivap">Tratamiento IVAP</label>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">Informativo: identifica el producto, no altera el IGV del comprobante.</small>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label fw-bold">Stock Mínimo</label>

@@ -133,6 +133,13 @@ class AperturaCajaController extends Controller
                 'estado' => 'ABIERTA'
             ]);
 
+            \App\Models\Auditoria::registrar(
+                'ABRIO_CAJA',
+                'AperturaCaja',
+                $apertura->id,
+                'Abrió caja con S/ ' . number_format((float) $request->monto_inicial, 2) . ' de monto inicial'
+            );
+
             DB::commit();
 
             return response()->json([
@@ -182,6 +189,13 @@ class AperturaCajaController extends Controller
                 'hora_cierre' => now(),
                 'responsable_cierre_id' => Auth::id()
             ]);
+
+            \App\Models\Auditoria::registrar(
+                'CERRO_CAJA',
+                'AperturaCaja',
+                $apertura->id,
+                'Cerró caja con S/ ' . number_format((float) $request->monto_cierre, 2) . ' declarados'
+            );
 
             DB::commit();
 

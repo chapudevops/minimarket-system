@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Producto extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory;
 
     protected $table = 'productos';
 
@@ -19,6 +20,8 @@ class Producto extends Model
         'marca',
         'presentacion',
         'operacion',
+        'afecto_isc',
+        'afecto_ivap',
         'precio_compra',
         'precio_venta',
         'fecha_vencimiento',
@@ -32,6 +35,8 @@ class Producto extends Model
     protected $casts = [
         'estado' => 'boolean',
         'detraccion' => 'boolean',
+        'afecto_isc' => 'boolean',
+        'afecto_ivap' => 'boolean',
         'precio_compra' => 'decimal:2',
         'precio_venta' => 'decimal:2',
         'fecha_vencimiento' => 'date'
@@ -55,6 +60,39 @@ class Producto extends Model
     public function getStockTotalAttribute()
     {
         return $this->stocks()->sum('stock');
+    }
+
+    /* --- Tributos ---------------------------------------------------------
+     *
+     * `operacion` es SOLO la afectacion del IGV (Catalogo 07). Los otros
+     * tratamientos viven en sus propias columnas porque no son lo mismo: una
+     * bebida energetica es GRAVADA de IGV y ademas esta en el ambito del ISC.
+     *
+     * afecto_isc y afecto_ivap son informativos: no entran al XML. Ver
+     * App\Sunat\Tributos para el porque.
+     */
+
+    /** Un producto sin afectacion de IGV resuelta no puede venderse. */
+    public function puedeVenderse(): bool
+    {
+        return \App\Sunat\Tributos::esVendible($this->operacion);
+    }
+
+    /** Solo productos activos y con la afectacion de IGV resuelta. */
+    public function scopeVendibles($query)
+    {
+        return $query->where('estado', 1)
+            ->whereIn('operacion', \App\Sunat\Tributos::AFECTACIONES);
+    }
+
+    /** @return array<int,string> combinaciones tributarias a revisar. */
+    public function advertenciasTributarias(): array
+    {
+        return \App\Sunat\Tributos::advertencias(
+            $this->operacion,
+            (bool) $this->afecto_isc,
+            (bool) $this->afecto_ivap,
+        );
     }
 
     /* --- Codigos SUNAT derivados de los valores del formulario --- */
@@ -97,12 +135,17 @@ class Producto extends Model
 
     public function getOperacionTextoAttribute()
     {
-        $operaciones = [
-            'GRAVADO' => 'Gravado - Operación Onerosa',
-            'EXONERADO' => 'Exonerado - Operación Onerosa',
-            'INAFECTO' => 'Inafecto - Operación Onerosa'
-        ];
-        return $operaciones[$this->operacion] ?? $this->operacion;
+        return \App\Sunat\Tributos::etiqueta($this->operacion);
+    }
+
+    public function getAfectoIscTextoAttribute(): string
+    {
+        return $this->afecto_isc ? 'Sí' : 'No';
+    }
+
+    public function getAfectoIvapTextoAttribute(): string
+    {
+        return $this->afecto_ivap ? 'Sí' : 'No';
     }
 
     public function getTipoProductoTextoAttribute()
@@ -117,5 +160,13 @@ class Producto extends Model
     public function getDetraccionTextoAttribute()
     {
         return $this->detraccion ? 'Sí' : 'No';
+    }
+
+    /** Solo estos campos generan entrada en la bitacora. */
+    protected array $auditarSolo = ['codigo_interno', 'codigo_barras', 'descripcion', 'precio_compra', 'precio_venta', 'stock_minimo', 'estado', 'unidad', 'operacion', 'afecto_isc', 'afecto_ivap'];
+
+    public function etiquetaAuditoria(): string
+    {
+        return $this->codigo_interno . " - " . $this->descripcion;
     }
 }

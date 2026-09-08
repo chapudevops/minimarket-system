@@ -11,24 +11,24 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         DB::transaction(function () {
-            $cajaId    = DB::table('cajas')->orderBy('id')->value('id');
+            $cajaId = DB::table('cajas')->orderBy('id')->value('id');
             $almacenId = DB::table('almacenes')->orderBy('id')->value('id');
 
             $usuarios = [
                 ['name' => 'Administrador', 'email' => 'admin@laesquina.pe',   'rol' => 'Administrador'],
                 ['name' => 'Lucia Vendedora', 'email' => 'ventas@laesquina.pe', 'rol' => 'Vendedor'],
-                ['name' => 'Marco Almacen',   'email' => 'almacen@laesquina.pe','rol' => 'Almacenero'],
+                ['name' => 'Marco Almacen',   'email' => 'almacen@laesquina.pe', 'rol' => 'Almacenero'],
             ];
 
             foreach ($usuarios as $usuario) {
                 DB::table('users')->updateOrInsert(
                     ['email' => $usuario['email']],
                     [
-                        'name'       => $usuario['name'],
-                        'password'   => Hash::make('password'),
-                        'caja_id'    => $cajaId,
+                        'name' => $usuario['name'],
+                        'password' => Hash::make('password'),
+                        'caja_id' => $cajaId,
                         'almacen_id' => $almacenId,
-                        'estado'     => 1,
+                        'estado' => 1,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]

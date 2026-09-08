@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Proveedor extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory;
 
     protected $table = 'proveedores';
 
@@ -36,5 +37,10 @@ class Proveedor extends Model
             'CE' => 'Carné de Extranjería'
         ];
         return $tipos[$this->tipo_documento] ?? $this->tipo_documento;
+    }
+
+    public function etiquetaAuditoria(): string
+    {
+        return $this->numero_documento . " - " . $this->nombre_razon_social;
     }
 }

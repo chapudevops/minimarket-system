@@ -32,11 +32,24 @@
     </div>
 
     <div class="info-section">
-        <tr>
-            <tr><td width="20%"><strong>Cliente:</strong></td><td colspan="3">{{ $nota->cliente->nombre_razon_social ?? 'CLIENTES VARIOS' }}</tr>
-            <tr><td><strong>RUC/DNI:</strong></td><td>{{ $nota->cliente->numero_documento ?? '00000000' }}</td>
-                <td><strong>Fecha:</strong></td><td>{{ $nota->fecha_emision->format('d/m/Y H:i:s') }}</td></tr>
-            <tr><td><strong>Tipo Nota:</strong></td><td colspan="3">{{ $nota->tipo_nota_texto }}</td></tr>
+        {{-- Faltaba la etiqueta de apertura de la tabla y habia una fila
+             anidada dentro de otra: dompdf abortaba con
+             "Parent table not found for table row". --}}
+        <table>
+            <tr>
+                <td width="20%"><strong>Cliente:</strong></td>
+                <td colspan="3">{{ $nota->cliente->nombre_razon_social ?? 'CLIENTES VARIOS' }}</td>
+            </tr>
+            <tr>
+                <td><strong>RUC/DNI:</strong></td>
+                <td>{{ $nota->cliente->numero_documento ?? '00000000' }}</td>
+                <td><strong>Fecha:</strong></td>
+                <td>{{ $nota->fecha_emision->format('d/m/Y H:i:s') }}</td>
+            </tr>
+            <tr>
+                <td><strong>Tipo Nota:</strong></td>
+                <td colspan="3">{{ $nota->tipo_nota_texto }}</td>
+            </tr>
         </table>
     </div>
 
@@ -59,7 +72,7 @@
     <div class="total-section">
         <table>
             <tr><td>OP. Gravadas:</td><td class="text-right">S/ {{ number_format($nota->subtotal, 2) }}</td></tr>
-            <tr><td>IGV (18%):</td><td class="text-right">S/ {{ number_format($nota->igv, 2) }}</td></tr>
+            <tr><td>IGV ({{ (int) (config('sunat.igv') * 100) }}%):</td><td class="text-right">S/ {{ number_format($nota->igv, 2) }}</td></tr>
             <tr class="total-row"><td><strong>TOTAL:</strong></td><td class="text-right"><strong>S/ {{ number_format($nota->total, 2) }}</strong></td></tr>
         </table>
     </div>

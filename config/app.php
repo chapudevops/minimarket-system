@@ -72,6 +72,19 @@ return [
 
     'timezone' => 'UTC',
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Huso horario de la tienda
+    |--------------------------------------------------------------------------
+    |
+    | 'timezone' queda en UTC porque de ahi salen las fechas de emision de los
+    | comprobantes electronicos. Este otro es solo para lo que lee una persona:
+    | nombres de archivo de respaldo y similares.
+    |
+    */
+
+    'timezone_local' => env('APP_TIMEZONE_LOCAL', 'America/Lima'),
     /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration

@@ -103,11 +103,37 @@ class ProductoController extends Controller
                 'fecha_vencimiento' => $producto->fecha_vencimiento ? $producto->fecha_vencimiento->format('d/m/Y') : '-',
                 'tipo_producto_texto' => $producto->tipo_producto_texto,
                 'detraccion_texto' => $producto->detraccion_texto,
+                'afecto_isc_texto' => $producto->afecto_isc_texto,
+                'afecto_ivap_texto' => $producto->afecto_ivap_texto,
                 'stock_minimo' => $producto->stock_minimo,
                 'stock_total' => $producto->stock_total,
                 'foto' => $producto->foto_url,
                 'stocks' => $stocksPorAlmacen,
                 'estado_texto' => $producto->estado ? 'Activo' : 'Inactivo',
+                // Valores crudos para el formulario de edicion. Los de arriba
+                // son para mostrar y estan formateados ('-' cuando falta algo,
+                // 'S/ 1.00' en los precios): llenar el formulario con ellos le
+                // guardaba un '-' como codigo de barras a los productos sin EAN
+                // —que con el indice unico ahora ademas revienta— y les borraba
+                // la detraccion en cada edicion.
+                'form' => [
+                    'codigo_interno'    => $producto->codigo_interno,
+                    'codigo_barras'     => $producto->codigo_barras,
+                    'unidad'            => $producto->unidad,
+                    'descripcion'       => $producto->descripcion,
+                    'marca'             => $producto->marca,
+                    'presentacion'      => $producto->presentacion,
+                    'operacion'         => $producto->operacion,
+                    'precio_compra'     => (float) $producto->precio_compra,
+                    'precio_venta'      => (float) $producto->precio_venta,
+                    'fecha_vencimiento' => $producto->fecha_vencimiento?->format('Y-m-d'),
+                    'tipo_producto'     => $producto->tipo_producto,
+                    'detraccion'        => (bool) $producto->detraccion,
+                    'afecto_isc'        => (bool) $producto->afecto_isc,
+                    'afecto_ivap'       => (bool) $producto->afecto_ivap,
+                    'stock_minimo'      => $producto->stock_minimo,
+                    'estado'            => (bool) $producto->estado,
+                ],
                 'created_at' => $producto->created_at ? $producto->created_at->format('d/m/Y H:i') : '-',
                 'updated_at' => $producto->updated_at ? $producto->updated_at->format('d/m/Y H:i') : '-'
             ]
@@ -119,7 +145,9 @@ class ProductoController extends Controller
         try {
             $request->validate([
                 'codigo_interno' => 'required|unique:productos,codigo_interno|max:50',
-                'codigo_barras' => 'nullable|max:100',
+                // Un EAN repetido hace que el lector del terminal cobre el
+                // producto equivocado; vacio es valido y frecuente.
+                'codigo_barras' => 'nullable|max:100|unique:productos,codigo_barras',
                 'unidad' => 'required|max:50',
                 'descripcion' => 'required',
                 'marca' => 'nullable|max:100',
@@ -130,6 +158,10 @@ class ProductoController extends Controller
                 'fecha_vencimiento' => 'nullable|date',
                 'tipo_producto' => 'required|in:PRODUCTO,SERVICIO',
                 'detraccion' => 'nullable|boolean',
+                // Tratamientos que NO son la afectacion del IGV: un producto
+                // GRAVADO puede ademas estar en el ambito del ISC.
+                'afecto_isc' => 'nullable|boolean',
+                'afecto_ivap' => 'nullable|boolean',
                 'stock_minimo' => 'nullable|integer|min:0',
                 'estado' => 'nullable|boolean',
                 'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -137,6 +169,7 @@ class ProductoController extends Controller
             ], [
                 'codigo_interno.required' => 'El código interno es obligatorio.',
                 'codigo_interno.unique' => 'Este código interno ya está registrado.',
+                'codigo_barras.unique' => 'Ese código de barras ya pertenece a otro producto.',
                 'unidad.required' => 'La unidad es obligatoria.',
                 'descripcion.required' => 'La descripción es obligatoria.',
                 'operacion.required' => 'La operación es obligatoria.',
@@ -151,6 +184,13 @@ class ProductoController extends Controller
             $data = $request->all();
             $data['estado'] = $request->has('estado') ? true : false;
             $data['detraccion'] = $request->has('detraccion') ? true : false;
+            $data['afecto_isc'] = $request->has('afecto_isc') ? true : false;
+            $data['afecto_ivap'] = $request->has('afecto_ivap') ? true : false;
+
+            // El formulario manda '' cuando el campo queda en blanco. Guardado
+            // asi, '' es un codigo de barras vacio y choca con el indice unico
+            // en cuanto haya un segundo producto sin EAN: "sin codigo" es NULL.
+            $data['codigo_barras'] = trim((string) $request->codigo_barras) ?: null;
 
             // Subir foto
             if ($request->hasFile('foto')) {
@@ -217,7 +257,7 @@ class ProductoController extends Controller
 
             $request->validate([
                 'codigo_interno' => 'required|unique:productos,codigo_interno,' . $id . '|max:50',
-                'codigo_barras' => 'nullable|max:100',
+                'codigo_barras' => 'nullable|max:100|unique:productos,codigo_barras,' . $id,
                 'unidad' => 'required|max:50',
                 'descripcion' => 'required',
                 'marca' => 'nullable|max:100',
@@ -228,6 +268,10 @@ class ProductoController extends Controller
                 'fecha_vencimiento' => 'nullable|date',
                 'tipo_producto' => 'required|in:PRODUCTO,SERVICIO',
                 'detraccion' => 'nullable|boolean',
+                // Tratamientos que NO son la afectacion del IGV: un producto
+                // GRAVADO puede ademas estar en el ambito del ISC.
+                'afecto_isc' => 'nullable|boolean',
+                'afecto_ivap' => 'nullable|boolean',
                 'stock_minimo' => 'nullable|integer|min:0',
                 'estado' => 'nullable|boolean',
                 'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -237,6 +281,13 @@ class ProductoController extends Controller
             $data = $request->all();
             $data['estado'] = $request->has('estado') ? true : false;
             $data['detraccion'] = $request->has('detraccion') ? true : false;
+            $data['afecto_isc'] = $request->has('afecto_isc') ? true : false;
+            $data['afecto_ivap'] = $request->has('afecto_ivap') ? true : false;
+
+            // El formulario manda '' cuando el campo queda en blanco. Guardado
+            // asi, '' es un codigo de barras vacio y choca con el indice unico
+            // en cuanto haya un segundo producto sin EAN: "sin codigo" es NULL.
+            $data['codigo_barras'] = trim((string) $request->codigo_barras) ?: null;
 
             // Subir nueva foto
             if ($request->hasFile('foto')) {

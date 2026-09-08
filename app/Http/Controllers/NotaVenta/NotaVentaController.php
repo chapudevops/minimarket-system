@@ -87,7 +87,7 @@ class NotaVentaController extends Controller
         }
         
         $serie = Serie::where('tipo_comprobante', 'NOTA_VENTA')
-                      ->where('caja_id', $cajaAbierta->id)
+                      ->where('caja_id', $cajaAbierta->caja_id)
                       ->first();
         
         if (!$serie) {
@@ -195,7 +195,7 @@ class NotaVentaController extends Controller
 
             // Obtener serie
             $serie = Serie::where('tipo_comprobante', 'NOTA_VENTA')
-                          ->where('caja_id', $cajaAbierta->id)
+                          ->where('caja_id', $cajaAbierta->caja_id)
                           ->first();
             
             if (!$serie) {
@@ -230,7 +230,7 @@ class NotaVentaController extends Controller
                 'total' => $total,
                 'detraccion' => $request->has('detraccion'),
                 'observaciones' => $request->observaciones,
-                'caja_id' => $cajaAbierta->id,
+                'caja_id' => $cajaAbierta->caja_id,
                 'usuario_id' => Auth::id(),
                 'estado' => 'REGISTRADA'
             ]);

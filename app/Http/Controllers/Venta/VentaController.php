@@ -208,6 +208,13 @@ class VentaController extends Controller
                 'estado' => 'ANULADA'
             ]);
 
+
+            \App\Models\Auditoria::registrar(
+                'ANULO',
+                'Venta',
+                $venta->id,
+                "Anuló la venta {$venta->documento} por S/ " . number_format($venta->total, 2)
+            );
             DB::commit();
 
             return response()->json([

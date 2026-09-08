@@ -53,6 +53,24 @@ class Catalogo
     ];
 
     /**
+     * Catalogo 09 — Tipo de nota de credito.
+     * Las claves son los valores que ofrece el formulario del sistema.
+     */
+    public const MOTIVOS_NOTA_CREDITO = [
+        'ANULACION'  => '01',   // Anulacion de la operacion
+        'DESCUENTO'  => '04',   // Descuento global
+        'DEVOLUCION' => '06',   // Devolucion total
+        'OTRO'       => '10',   // Otros conceptos
+    ];
+
+    /** Catalogo 10 — Tipo de nota de debito. */
+    public const MOTIVOS_NOTA_DEBITO = [
+        'INTERESES' => '01',   // Intereses por mora
+        'GASTOS'    => '03',   // Penalidades / otros conceptos
+        'OTRO'      => '03',
+    ];
+
+    /**
      * Catalogo 05 — Codigo de tributo asociado a cada afectacion.
      * Cada linea del comprobante declara cual le corresponde.
      */
@@ -86,6 +104,18 @@ class Catalogo
     public static function tributo(?string $operacion): array
     {
         return self::TRIBUTOS[$operacion] ?? self::TRIBUTOS['GRAVADO'];
+    }
+
+    /** Codigo de motivo de una nota de credito (catalogo 09). */
+    public static function motivoNotaCredito(?string $valor): string
+    {
+        return self::MOTIVOS_NOTA_CREDITO[$valor] ?? self::MOTIVOS_NOTA_CREDITO['OTRO'];
+    }
+
+    /** Codigo de motivo de una nota de debito (catalogo 10). */
+    public static function motivoNotaDebito(?string $valor): string
+    {
+        return self::MOTIVOS_NOTA_DEBITO[$valor] ?? self::MOTIVOS_NOTA_DEBITO['OTRO'];
     }
 
     /** true si la operacion paga IGV. */

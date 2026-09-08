@@ -103,13 +103,18 @@
 
 
         /* ========== ESTILOS PARA EL FOOTER FIJO AL FINAL ========== */
-        html, body {
+        /* min-height y no height: con height fijo el body mide exactamente una
+           pantalla, el contenido mas largo se desborda y el footer queda a
+           100vh, es decir encima del contenido. Con min-height el body crece
+           con lo que tenga adentro. */
+        html {
             height: 100%;
-            margin: 0;
-            padding: 0;
         }
 
         body {
+            min-height: 100%;
+            margin: 0;
+            padding: 0;
             display: flex;
             flex-direction: column;
         }
@@ -122,12 +127,36 @@
             flex: 1;
         }
 
+        /* main.css deja el footer en position:absolute, lo que lo saca del
+           flujo flex y hace que quede flotando sobre el contenido cuando la
+           pagina es mas corta o mas larga que la ventana. Como item flex normal
+           queda siempre despues del contenido, y al final si la pagina no llena
+           la pantalla. El margen izquierdo replica el del main-wrapper para
+           esquivar el sidebar, que es fixed. */
         footer.page-footer {
+            position: static;
             flex-shrink: 0;
+            height: auto;
+            width: auto;
+            margin-left: 260px;
             background: #f8f9fa;
-            padding: 1rem 0;
+            padding: 0.75rem 0;
             border-top: 1px solid #e9ecef;
-            width: 100%;
+            transition: margin-left ease-out 0.3s;
+        }
+
+        /* Sidebar colapsado */
+        body.toggled footer.page-footer {
+            margin-left: 70px;
+        }
+
+        @media (max-width: 1199px) {
+            footer.page-footer {
+                margin-left: 0;
+            }
+            body.toggled footer.page-footer {
+                margin-left: 0;
+            }
         }
 
         .page-wrapper {

@@ -88,7 +88,7 @@ class GuiaRemisionController extends Controller
         }
         
         $serie = Serie::where('tipo_comprobante', 'GUIA_REMISION')
-                      ->where('caja_id', $cajaAbierta->id)
+                      ->where('caja_id', $cajaAbierta->caja_id)
                       ->first();
         
         if (!$serie) {
@@ -167,7 +167,7 @@ class GuiaRemisionController extends Controller
 
             // Obtener serie
             $serie = Serie::where('tipo_comprobante', 'GUIA_REMISION')
-                          ->where('caja_id', $cajaAbierta->id)
+                          ->where('caja_id', $cajaAbierta->caja_id)
                           ->first();
             
             if (!$serie) {
@@ -198,7 +198,7 @@ class GuiaRemisionController extends Controller
                 'vehiculo_id' => $request->vehiculo_id,
                 'observaciones' => $request->observaciones,
                 'estado_sunat' => 'PENDIENTE',
-                'caja_id' => $cajaAbierta->id,
+                'caja_id' => $cajaAbierta->caja_id,
                 'usuario_id' => Auth::id()
             ]);
 

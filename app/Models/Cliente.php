@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Cliente extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory;
 
     protected $table = 'clientes';
 
@@ -42,5 +43,10 @@ class Cliente extends Model
     public function getTipoDocumentoSunatAttribute(): string
     {
         return \App\Sunat\Catalogo::documentoIdentidad($this->tipo_documento);
+    }
+
+    public function etiquetaAuditoria(): string
+    {
+        return $this->numero_documento . " - " . $this->nombre_razon_social;
     }
 }

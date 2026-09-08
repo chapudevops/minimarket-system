@@ -164,6 +164,8 @@ class CompraController extends Controller
             $compra->update([
                 'estado' => 'ANULADA'
             ]);
+            \App\Models\Auditoria::registrar('ANULO', 'Compra', $compra->id, "Anuló la compra {$compra->serie}-{$compra->numero} por S/ " . number_format($compra->total, 2));
+
 
             DB::commit();
 

@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Empresa extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory;
 
     protected $table = 'empresa';
     
@@ -103,5 +104,10 @@ class Empresa extends Model
         }
         
         return null;
+    }
+
+    public function etiquetaAuditoria(): string
+    {
+        return $this->razon_social;
     }
 }

@@ -121,7 +121,7 @@ class NotaCreditoController extends Controller
         }
         
         $serie = Serie::where('tipo_comprobante', 'NOTA_CREDITO')
-                      ->where('caja_id', $cajaAbierta->id)
+                      ->where('caja_id', $cajaAbierta->caja_id)
                       ->first();
         
         if (!$serie) {
@@ -171,7 +171,7 @@ class NotaCreditoController extends Controller
 
             // Obtener serie
             $serie = Serie::where('tipo_comprobante', 'NOTA_CREDITO')
-                          ->where('caja_id', $cajaAbierta->id)
+                          ->where('caja_id', $cajaAbierta->caja_id)
                           ->first();
             
             if (!$serie) {
@@ -208,7 +208,7 @@ class NotaCreditoController extends Controller
                 'total' => $total,
                 'detraccion' => $request->has('detraccion'),
                 'observaciones' => $request->observaciones,
-                'caja_id' => $cajaAbierta->id,
+                'caja_id' => $cajaAbierta->caja_id,
                 'usuario_id' => Auth::id(),
                 'estado' => 'REGISTRADA'
             ]);
@@ -240,6 +240,16 @@ class NotaCreditoController extends Controller
             }
 
             DB::commit();
+
+            // Igual que en el terminal: despues del commit y sin dejar que un
+            // fallo al encolar tumbe la nota ya emitida.
+            try {
+                \App\Jobs\EnviarComprobanteASunat::dispatch($nota->id, class_basename($nota));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('No se pudo encolar el envío a SUNAT', [
+                    'nota_id' => $nota->id, 'error' => $e->getMessage(),
+                ]);
+            }
 
             return response()->json([
                 'success' => true,

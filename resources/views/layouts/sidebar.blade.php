@@ -140,6 +140,7 @@
                     <li><a href="{{ route('empresa.index') }}"><i class="material-icons-outlined">business</i>Empresa</a></li>
                     <li><a href="{{ route('series.index') }}"><i class="material-icons-outlined">numbers</i>Series</a></li>
                     <li><a href="{{ route('cajas.index') }}"><i class="material-icons-outlined">point_of_sale</i>Cajas</a></li>
+                    <li><a href="{{ route('auditoria.index') }}"><i class="material-icons-outlined">history</i>Auditoría</a></li>
                 </ul>
             </li>
             @endrol

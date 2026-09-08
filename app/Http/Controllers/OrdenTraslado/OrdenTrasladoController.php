@@ -176,6 +176,8 @@ class OrdenTrasladoController extends Controller
                 'aprobado_por' => Auth::id(),
                 'fecha_aprobacion' => now()
             ]);
+            \App\Models\Auditoria::registrar('APROBO', 'OrdenTraslado', $orden->id, "Aprobó el traslado #{$orden->id}");
+
 
             DB::commit();
 
@@ -211,6 +213,13 @@ class OrdenTrasladoController extends Controller
                 'fecha_anulacion' => now(),
                 'motivo_anulacion' => $request->motivo_anulacion
             ]);
+
+            \App\Models\Auditoria::registrar(
+                'ANULO',
+                'OrdenTraslado',
+                $orden->id,
+                "Anuló el traslado #{$orden->id}: {$request->motivo_anulacion}"
+            );
 
             return redirect()->route('traslados.index')
                 ->with('success', '✅ Orden de traslado anulada exitosamente');

@@ -172,14 +172,12 @@
                                 
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label fw-bold">Clave</label>
-                                    <input type="text" name="clave" id="clave" class="form-control" 
-                                           value="{{ $empresa->clave }}">
+                                    <input type="password" name="clave" id="clave" class="form-control" placeholder="Dejar vacío para no cambiarla">
                                 </div>
                                 
                                 <div class="col-md-12 mb-3">
                                     <label class="form-label fw-bold">Clave Certificado</label>
-                                    <input type="text" name="clave_certificado" id="clave_certificado" class="form-control" 
-                                           value="{{ $empresa->clave_certificado }}">
+                                    <input type="password" name="clave_certificado" id="clave_certificado" class="form-control" placeholder="Dejar vacío para no cambiarla">
                                 </div>
                                 
                                 <div class="col-md-12 mb-3">
@@ -215,8 +213,7 @@
                                 
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label fw-bold">Client Secret</label>
-                                    <input type="text" name="client_secret" id="client_secret" class="form-control" 
-                                           value="{{ $empresa->client_secret }}">
+                                    <input type="password" name="client_secret" id="client_secret" class="form-control" placeholder="Dejar vacío para no cambiarla">
                                 </div>
                                 
                                 <div class="col-md-6 mb-3">

@@ -102,7 +102,7 @@ class CotizacionController extends Controller
         }
         
         $serie = Serie::where('tipo_comprobante', 'COTIZACION')
-                      ->where('caja_id', $cajaAbierta->id)
+                      ->where('caja_id', $cajaAbierta->caja_id)
                       ->first();
         
         if (!$serie) {
@@ -182,7 +182,7 @@ class CotizacionController extends Controller
 
             // Obtener serie
             $serie = Serie::where('tipo_comprobante', 'COTIZACION')
-                          ->where('caja_id', $cajaAbierta->id)
+                          ->where('caja_id', $cajaAbierta->caja_id)
                           ->first();
             
             if (!$serie) {
@@ -222,7 +222,7 @@ class CotizacionController extends Controller
                 'descuento' => $descuentoGeneral,
                 'observaciones' => $request->observaciones,
                 'estado' => 'PENDIENTE',
-                'caja_id' => $cajaAbierta->id,
+                'caja_id' => $cajaAbierta->caja_id,
                 'usuario_id' => Auth::id()
             ]);
 
@@ -315,6 +315,8 @@ class CotizacionController extends Controller
             $cotizacion->update([
                 'estado' => 'APROBADA'
             ]);
+            \App\Models\Auditoria::registrar('APROBO', 'Cotizacion', $cotizacion->id, "Aprobó la cotización {$cotizacion->serie}-{$cotizacion->numero}");
+
             
             return response()->json([
                 'success' => true,
@@ -344,6 +346,8 @@ class CotizacionController extends Controller
             $cotizacion->update([
                 'estado' => 'RECHAZADA'
             ]);
+            \App\Models\Auditoria::registrar('RECHAZO', 'Cotizacion', $cotizacion->id, "Rechazó la cotización {$cotizacion->serie}-{$cotizacion->numero}");
+
             
             return response()->json([
                 'success' => true,

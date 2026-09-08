@@ -257,10 +257,21 @@ class UsuarioController extends Controller
                 'message' => '✅ Usuario eliminado exitosamente'
             ]);
 
-        } catch (\Exception $e) {
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Las cajas y comprobantes referencian al usuario a proposito: el
+            // historial no se borra. Se explica en vez de devolver el SQL, que
+            // ademas filtraba nombres de tablas y restricciones.
             return response()->json([
                 'success' => false,
-                'message' => 'Error al eliminar el usuario: ' . $e->getMessage()
+                'message' => 'No se puede eliminar: el usuario tiene cajas o comprobantes asociados. '
+                    . 'Desactivalo en lugar de eliminarlo para conservar el historial.'
+            ], 409);
+        } catch (\Exception $e) {
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo eliminar el usuario.'
             ], 500);
         }
     }
@@ -281,6 +292,8 @@ class UsuarioController extends Controller
             $usuario->save();
 
             $mensaje = $usuario->estado ? 'activado' : 'desactivado';
+            \App\Models\Auditoria::registrar('ACTUALIZO', 'User', $usuario->id, ($usuario->estado ? "Activó" : "Desactivó") . " al usuario {$usuario->name}");
+
             
             return response()->json([
                 'success' => true,

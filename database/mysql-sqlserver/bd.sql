@@ -751,7 +751,9 @@ CREATE TABLE `productos` (
   `descripcion` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `marca` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `presentacion` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `operacion` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'GRAVADO' COMMENT 'GRAVADO, EXONERADO, INAFECTO',
+  `operacion` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'GRAVADO' COMMENT 'Afectacion IGV (Catalogo 07 SUNAT): GRAVADO, EXONERADO, INAFECTO',
+  `afecto_isc` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Ambito del ISC. Informativo: no se calcula en el comprobante',
+  `afecto_ivap` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Ambito del IVAP (Ley 28211). Informativo: requiere validacion contable',
   `precio_compra` decimal(10,2) NOT NULL DEFAULT '0.00',
   `precio_venta` decimal(10,2) NOT NULL DEFAULT '0.00',
   `fecha_vencimiento` date DEFAULT NULL,
@@ -764,7 +766,8 @@ CREATE TABLE `productos` (
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `codigo_interno` (`codigo_interno`)
+  UNIQUE KEY `codigo_interno` (`codigo_interno`),
+  UNIQUE KEY `productos_codigo_barras_unique` (`codigo_barras`)
 ) ENGINE=InnoDB AUTO_INCREMENT=232 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
