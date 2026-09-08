@@ -16,7 +16,6 @@ use App\Sunat\Tributos;
  * agrego a productos para dejar de meter todo dentro de `operacion`.
  *
  * Las columnas que quedan vacias a proposito en esta fase:
- *   codigo_barras      no hay EAN verificable en las fuentes publicas
  *   precio_compra      lo define la lista del proveedor, no la gondola
  *   precio_venta       depende del precio de compra
  *   fecha_vencimiento  la trae el lote al recepcionarlo
@@ -52,7 +51,6 @@ class EsquemaMaestro
 
     /** Columnas que esta fase deja vacias porque no hay dato verificable. */
     public const PENDIENTES_DE_DATO = [
-        'codigo_barras',
         'precio_compra',
         'precio_venta',
         'fecha_vencimiento',
@@ -61,8 +59,21 @@ class EsquemaMaestro
     ];
 
     /**
-     * Una fila esta lista para importarse a productos solo si tiene codigo,
-     * operacion resuelta y los precios definidos por alguien.
+     * Una fila esta lista para importarse si tiene codigo, descripcion, unidad
+     * y una afectacion de IGV resuelta.
+     *
+     * Los precios NO se exigen, y es deliberado. Exigirlos junto con la regla
+     * de que no se inventan —precio_compra sale de la lista del proveedor,
+     * precio_venta lo decide el comercio— dejaba el catalogo imposible de
+     * cargar: las dos reglas juntas no se pueden cumplir.
+     *
+     * La salida es la misma que se uso para el stock: el producto entra al
+     * catalogo, se puede buscar y aparece en el POS, pero no se puede vender
+     * hasta que alguien le ponga precio. Un producto sin precio no es un
+     * producto roto, es un producto que todavia no se puso a la venta.
+     *
+     * Quien impide la venta es Producto::estaListoParaVender(), no este
+     * control: aca se decide que entra al catalogo, no que se puede cobrar.
      *
      * @param  array<string,mixed>  $fila
      * @return array<int,string>
@@ -82,12 +93,6 @@ class EsquemaMaestro
         // lo tanto no puede llegar a una venta.
         if (! Tributos::esAfectacionValida($fila['operacion'] ?? '')) {
             $faltantes[] = 'operacion';
-        }
-
-        foreach (['precio_compra', 'precio_venta'] as $columna) {
-            if (! is_numeric(trim((string) ($fila[$columna] ?? '')))) {
-                $faltantes[] = $columna;
-            }
         }
 
         return $faltantes;

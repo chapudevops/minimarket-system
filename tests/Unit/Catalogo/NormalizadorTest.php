@@ -317,16 +317,42 @@ class NormalizadorTest extends TestCase
         $this->assertContains('precio_referencia no es numerico', EsquemaRaw::validar($this->raw(['precio_referencia' => 'S/ 2.90']), $taxonomia));
     }
 
+    /**
+     * Los precios dejaron de bloquear la importacion.
+     *
+     * Exigirlos aca, junto con la regla de que no se inventan —precio_compra
+     * sale de la lista del proveedor y precio_venta lo decide el comercio—,
+     * dejaba el catalogo imposible de cargar. Ahora el producto entra sin
+     * precio, igual que entra sin stock, y lo que impide cobrarlo es
+     * Producto::estaListoParaVender().
+     */
     #[Test]
-    public function el_maestro_dice_que_le_falta_a_cada_fila_para_importarse(): void
+    public function una_fila_del_maestro_sin_precios_igual_se_puede_importar(): void
     {
         $fila = $this->normalizador()->normalizar($this->raw());
 
         $faltantes = EsquemaMaestro::faltantesParaImportar($fila);
 
-        $this->assertContains('precio_compra', $faltantes);
-        $this->assertContains('precio_venta', $faltantes);
+        $this->assertNotContains('precio_compra', $faltantes);
+        $this->assertNotContains('precio_venta', $faltantes);
         $this->assertNotContains('codigo_interno', $faltantes);
         $this->assertNotContains('operacion', $faltantes);
+        $this->assertSame([], $faltantes);
+    }
+
+    #[Test]
+    public function el_maestro_sigue_frenando_lo_que_de_verdad_falta(): void
+    {
+        $fila = $this->normalizador()->normalizar($this->raw());
+
+        // Una afectacion sin resolver si bloquea: un comprobante con el IGV que
+        // nadie decidio es peor que un producto que no se puede vender todavia.
+        $this->assertContains('operacion', EsquemaMaestro::faltantesParaImportar(
+            array_replace($fila, ['operacion' => 'PENDIENTE'])
+        ));
+
+        $this->assertContains('descripcion', EsquemaMaestro::faltantesParaImportar(
+            array_replace($fila, ['descripcion' => ''])
+        ));
     }
 }

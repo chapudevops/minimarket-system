@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             EmpresaSeeder::class,
             AlmacenCajaSeeder::class,
+            TaxonomiaSeeder::class,
             UserSeeder::class,
             CatalogoSeeder::class,
             MovimientoSeeder::class,

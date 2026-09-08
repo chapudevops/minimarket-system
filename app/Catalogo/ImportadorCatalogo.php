@@ -58,6 +58,7 @@ class ImportadorCatalogo
     /** Del catalogo: se refrescan en cada corrida. */
     public const CAMPOS_DEL_CATALOGO = [
         'descripcion',
+        'subcategoria_id',
         'marca',
         'presentacion',
         'unidad',
@@ -85,6 +86,12 @@ class ImportadorCatalogo
 
     /** @var array<string,string> codigo_barras => codigo_interno, en este archivo */
     private array $barrasVistos = [];
+
+    /** @var array<string,int|null> "CATEGORIA|SUBCATEGORIA" => subcategorias.id */
+    private array $subcategorias = [];
+
+    /** Filas cuya categoria no existe en la tabla: quedan sin clasificar. */
+    private int $sinClasificar = 0;
 
     public function __construct(
         private readonly bool $simular = false,
@@ -310,6 +317,7 @@ class ImportadorCatalogo
     {
         return [
             'descripcion'       => trim((string) $fila['descripcion']),
+            'subcategoria_id'   => $this->subcategoriaId($fila),
             'marca'             => $this->oNulo($fila['marca'] ?? null),
             'presentacion'      => $this->oNulo($fila['presentacion'] ?? null),
             'unidad'            => strtoupper(trim((string) $fila['unidad'])),
@@ -317,13 +325,60 @@ class ImportadorCatalogo
             'afecto_isc'        => $this->booleano($fila['afecto_isc'] ?? null),
             'afecto_ivap'       => $this->booleano($fila['afecto_ivap'] ?? null),
             'tipo_producto'     => strtoupper(trim((string) $fila['tipo_producto'])),
-            'precio_compra'     => round((float) $fila['precio_compra'], 2),
-            'precio_venta'      => round((float) $fila['precio_venta'], 2),
+            // Celda vacia -> 0.00, que es el default de la columna y significa
+            // "sin precio todavia". No se deriva del precio de gondola: la
+            // vitrina de un supermercado no es el costo de un minimarket.
+            'precio_compra'     => round((float) ($fila['precio_compra'] ?: 0), 2),
+            'precio_venta'      => round((float) ($fila['precio_venta'] ?: 0), 2),
             'stock_minimo'      => (int) ($fila['stock_minimo'] ?? 0),
             'fecha_vencimiento' => $this->oNulo($fila['fecha_vencimiento'] ?? null),
             'detraccion'        => $this->booleano($fila['detraccion'] ?? null),
             'foto'              => $this->oNulo($fila['foto'] ?? null),
         ];
+    }
+
+    /**
+     * Traduce categoria/subcategoria del CSV al id de la tabla.
+     *
+     * Se resuelve una vez por combinacion y queda cacheado: un catalogo de
+     * miles de filas usa cuarenta y pico de subcategorias, no miles.
+     *
+     * Si la combinacion no existe en la tabla devuelve null, o sea "sin
+     * clasificar". No se crea la subcategoria al vuelo: la taxonomia es una
+     * decision de negocio y un CSV con una categoria mal escrita no deberia
+     * poder inventarla.
+     */
+    private function subcategoriaId(array $fila): ?int
+    {
+        $categoria = strtoupper(trim((string) ($fila['categoria'] ?? '')));
+        $subcategoria = strtoupper(trim((string) ($fila['subcategoria'] ?? '')));
+
+        if ($categoria === '' || $subcategoria === '') {
+            $this->sinClasificar++;
+
+            return null;
+        }
+
+        $clave = $categoria.'|'.$subcategoria;
+
+        if (! array_key_exists($clave, $this->subcategorias)) {
+            $this->subcategorias[$clave] = DB::table('subcategorias')
+                ->join('categorias', 'categorias.id', '=', 'subcategorias.categoria_id')
+                ->whereRaw('UPPER(categorias.nombre) = ?', [$categoria])
+                ->whereRaw('UPPER(subcategorias.nombre) = ?', [$subcategoria])
+                ->value('subcategorias.id');
+        }
+
+        if ($this->subcategorias[$clave] === null) {
+            $this->sinClasificar++;
+        }
+
+        return $this->subcategorias[$clave];
+    }
+
+    public function sinClasificar(): int
+    {
+        return $this->sinClasificar;
     }
 
     /**

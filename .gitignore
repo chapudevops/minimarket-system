@@ -20,3 +20,6 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+/data/catalogo-minimarket/raw/*.csv
+!/data/catalogo-minimarket/raw/_PLANTILLA.csv
+/data/catalogo-minimarket/procesados/*.csv

@@ -314,6 +314,23 @@ class TerminalController extends Controller
                 ], 422);
             }
 
+            // Un producto del catalogo entra sin precio: precio_compra sale de
+            // la lista del proveedor y precio_venta lo decide la tienda. Hasta
+            // que alguien lo complete, precio_venta vale 0.00 y eso NO es
+            // gratis, es "todavia no se puso a la venta". Sin este control una
+            // importacion recien hecha se podria cobrar a cero.
+            $sinPrecio = Producto::whereIn('id', array_column($productos, 'id'))
+                ->where('precio_venta', '<=', 0)
+                ->pluck('descripcion');
+
+            if ($sinPrecio->isNotEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Estos productos todavía no tienen precio de venta y no pueden venderse: '
+                        . $sinPrecio->implode(', ')
+                ], 422);
+            }
+
             // lockForUpdate retiene la fila hasta el commit: sin esto dos ventas
             // simultaneas del ultimo articulo validan las dos contra el mismo
             // stock y lo dejan negativo.

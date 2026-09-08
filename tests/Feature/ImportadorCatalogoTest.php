@@ -148,13 +148,32 @@ class ImportadorCatalogoTest extends TestCase
         $this->assertNull(Producto::where('codigo_interno', $this->prefijo.'-GAS-000001')->first());
     }
 
+    /**
+     * Cambio de regla respecto de la version anterior de este test.
+     *
+     * Antes una fila sin precios se rechazaba. Junto con la regla de que los
+     * precios no se inventan —precio_compra sale de la lista del proveedor,
+     * precio_venta lo decide el comercio— eso dejaba el catalogo imposible de
+     * cargar: las dos condiciones no se podian cumplir a la vez.
+     *
+     * Ahora entra sin precio, igual que entra sin stock, y lo que impide
+     * cobrarlo es estaListoParaVender(). El producto existe, se busca y se le
+     * puede comprar al proveedor; simplemente todavia no esta a la venta.
+     */
     #[Test]
-    public function una_fila_sin_precios_no_se_importa(): void
+    public function una_fila_sin_precios_se_importa_pero_no_queda_vendible(): void
     {
         $resultado = $this->importar([$this->fila(['precio_compra' => '', 'precio_venta' => ''])]);
 
-        $this->assertSame(1, $resultado->totalRechazadas());
-        $this->assertStringContainsString('precio_compra', $resultado->rechazos[0]['motivo']);
+        $this->assertSame(0, $resultado->totalRechazadas());
+        $this->assertSame(1, $resultado->creados);
+
+        $producto = Producto::where('codigo_interno', $this->prefijo.'-GAS-000001')->first();
+
+        $this->assertNotNull($producto);
+        $this->assertSame('0.00', $producto->precio_venta);
+        $this->assertFalse($producto->tienePrecio());
+        $this->assertFalse($producto->estaListoParaVender());
     }
 
     #[Test]

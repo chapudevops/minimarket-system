@@ -46,7 +46,7 @@ class Csv
         }
 
         try {
-            $cabecera = fgetcsv($manejador);
+            $cabecera = fgetcsv($manejador, 0, ",", "\"", "\\");
 
             if ($cabecera === false) {
                 return;
@@ -57,7 +57,7 @@ class Csv
             $cabecera[0] = preg_replace('/^\x{FEFF}/u', '', (string) $cabecera[0]);
             $cabecera = array_map(fn ($columna) => trim((string) $columna), $cabecera);
 
-            while (($datos = fgetcsv($manejador)) !== false) {
+            while (($datos = fgetcsv($manejador, 0, ",", "\"", "\\")) !== false) {
                 // Linea en blanco al final del archivo.
                 if ($datos === [null] || $datos === ['']) {
                     continue;

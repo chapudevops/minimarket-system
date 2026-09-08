@@ -7,7 +7,8 @@ namespace App\Catalogo;
  *
  * Lo que NO hace, y es deliberado:
  *   - no deriva precio_compra de precio_referencia (gondola != costo)
- *   - no inventa codigo de barras
+ *   - no inventa codigo de barras: solo deja pasar el que trajo el RAW, y
+ *     unicamente si valida el digito verificador
  *   - no inventa fecha de vencimiento ni stock
  *   - no fuerza una operacion tributaria que no este justificada
  *
@@ -65,7 +66,7 @@ class Normalizador
 
         return [
             'codigo_interno'    => $this->codigos->para($prefijo, $clave),
-            'codigo_barras'     => '',
+            'codigo_barras'     => CodigoBarras::paraCatalogo($raw['codigo_barras'] ?? null) ?? '',
             'descripcion'       => $descripcion,
             'categoria'         => $categoria,
             'subcategoria'      => $subcategoria,
@@ -126,10 +127,11 @@ class Normalizador
      */
     private function descripcion(?string $original, ?string $marca, ?string $presentacion): string
     {
-        // Texto::titulo capitalizaria "ml" como "Ml": la unidad se vuelve a
-        // canonizar despues para que la descripcion y la columna presentacion
-        // escriban lo mismo.
-        $base = $this->presentaciones->canonizarUnidades(Texto::titulo(Texto::plano($original)));
+        // Texto::titulo capitaliza y normaliza espacios por su cuenta. Pasarle
+        // antes por Texto::plano rompia los apostrofes —"Bell's" quedaba como
+        // "Bell S", "Kellogg's" como "Kellogg S"— porque plano los convierte en
+        // separador y despues ya no hay como distinguirlos de un espacio.
+        $base = $this->presentaciones->canonizarUnidades(Texto::titulo($original));
 
         if ($base === '') {
             return '';

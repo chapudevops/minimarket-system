@@ -26,6 +26,7 @@ class CatalogoNormalizar extends Command
 {
     protected $signature = 'catalogo:normalizar
                             {--solo-validar : Revisa el RAW y no escribe nada}
+                            {--por-subcategoria=0 : Primer lote: como maximo N referencias por subcategoria (0 = todas)}
                             {--sin-bd : No consulta productos para sembrar los correlativos}';
 
     protected $description = 'Normaliza los CSV de data/catalogo-minimarket/raw y arma el catalogo maestro';
@@ -103,6 +104,8 @@ class CatalogoNormalizar extends Command
             $maestro[] = $fila;
         }
 
+        $maestro = $this->fusionarPorEan($maestro);
+        $maestro = $this->primerLote($maestro);
         $maestro = $this->conservarLoCargadoAMano($maestro, $normalizador);
 
         $this->escribirDuplicados($detector);
@@ -137,6 +140,141 @@ class CatalogoNormalizar extends Command
      * anterior y los que ya viven en productos. Un codigo interno impreso en
      * una etiqueta no puede cambiar de producto entre corridas.
      */
+    /**
+     * Junta las filas que comparten un EAN verificable.
+     *
+     * Dos fuentes escriben el mismo producto distinto —"Gaseosa COCA COLA
+     * Botella 1.5L" y "COCA COLA Gaseosa 1.5 L"— y la clave por marca +
+     * descripcion + presentacion no las une. El EAN si: es el identificador
+     * que le puso el fabricante, y dos filas con el mismo GTIN valido son el
+     * mismo producto. Es la evidencia mas fuerte de identidad que tenemos.
+     *
+     * Se conserva la fila con mas datos completos y se cuenta la fusion. Esto
+     * es DUPLICADO_CONFIRMADO: no se toca nada de lo que el detector marco
+     * como sospechoso, que sigue yendo a revision a mano.
+     *
+     * @param  array<int,array<string,string>>  $maestro
+     * @return array<int,array<string,string>>
+     */
+    private function fusionarPorEan(array $maestro): array
+    {
+        $porEan = [];
+        $sinEan = [];
+        $fusionadas = 0;
+
+        foreach ($maestro as $fila) {
+            $ean = trim((string) ($fila['codigo_barras'] ?? ''));
+
+            if ($ean === '') {
+                $sinEan[] = $fila;
+
+                continue;
+            }
+
+            if (! isset($porEan[$ean])) {
+                $porEan[$ean] = $fila;
+
+                continue;
+            }
+
+            $fusionadas++;
+            $porEan[$ean] = $this->masCompleta($porEan[$ean], $fila);
+        }
+
+        if ($fusionadas > 0) {
+            $this->line(sprintf(
+                '  <fg=gray>%d filas fusionadas por compartir EAN verificable (duplicado confirmado)</>',
+                $fusionadas,
+            ));
+        }
+
+        return array_merge(array_values($porEan), $sinEan);
+    }
+
+    /**
+     * De dos filas del mismo producto, la que trae mas celdas llenas.
+     *
+     * No se mezclan campos de una y otra: se elige una fila entera. Combinar
+     * la marca de una con la presentacion de la otra produciria un producto
+     * que ninguna fuente publico.
+     *
+     * @param  array<string,string>  $a
+     * @param  array<string,string>  $b
+     * @return array<string,string>
+     */
+    private function masCompleta(array $a, array $b): array
+    {
+        $llenas = fn (array $f) => count(array_filter($f, fn ($v) => trim((string) $v) !== ''));
+
+        return $llenas($b) > $llenas($a) ? $b : $a;
+    }
+
+    /**
+     * Recorta el maestro a un primer lote manejable.
+     *
+     * El RAW guarda todo lo que se observo —es el registro de la consulta y no
+     * se toca— pero el catalogo de un minimarket no es el de un supermercado.
+     * La fuente trae 1.969 shampoos y 1.417 utiles de limpieza; una bodega
+     * lleva diez de cada uno. Importar la cola larga entera llena el POS de
+     * referencias que nadie va a comprarle a un distribuidor.
+     *
+     * El criterio de corte es explicito y no inventa nada:
+     *
+     *   1. primero las que tienen EAN verificable, porque son las unicas que
+     *      el escaner del mostrador va a poder leer;
+     *   2. dentro de cada grupo, las que tienen precio de referencia, que son
+     *      las que la tienda publica como surtido activo;
+     *   3. a igualdad de todo, orden alfabetico, para que dos corridas sobre
+     *      el mismo RAW den el mismo lote.
+     *
+     * @param  array<int,array<string,string>>  $maestro
+     * @return array<int,array<string,string>>
+     */
+    private function primerLote(array $maestro): array
+    {
+        $tope = max(0, (int) $this->option('por-subcategoria'));
+
+        if ($tope === 0) {
+            return $maestro;
+        }
+
+        $porSubcategoria = [];
+
+        foreach ($maestro as $fila) {
+            $porSubcategoria[($fila['categoria'] ?? '').'|'.($fila['subcategoria'] ?? '')][] = $fila;
+        }
+
+        ksort($porSubcategoria);
+        $lote = [];
+        $recortadas = 0;
+
+        foreach ($porSubcategoria as $grupo) {
+            usort($grupo, function (array $a, array $b) {
+                $porEan = ($b['codigo_barras'] !== '' ? 1 : 0) <=> ($a['codigo_barras'] !== '' ? 1 : 0);
+
+                if ($porEan !== 0) {
+                    return $porEan;
+                }
+
+                $porPrecio = (($b['precio_venta'] ?? '') !== '' ? 1 : 0) <=> (($a['precio_venta'] ?? '') !== '' ? 1 : 0);
+
+                return $porPrecio !== 0 ? $porPrecio : strcmp($a['descripcion'] ?? '', $b['descripcion'] ?? '');
+            });
+
+            $recortadas += max(0, count($grupo) - $tope);
+            $lote = array_merge($lote, array_slice($grupo, 0, $tope));
+        }
+
+        $this->line(sprintf(
+            '  <fg=gray>primer lote: %d referencias (máx. %d por subcategoría; %d quedaron en el RAW para después)</>',
+            count($lote),
+            $tope,
+            $recortadas,
+        ));
+
+        return $lote;
+    }
+
     private function generador(): GeneradorCodigoInterno
     {
         $generador = new GeneradorCodigoInterno();
