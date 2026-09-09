@@ -30,6 +30,10 @@ class Producto extends Model
         'detraccion',
         'stock_minimo',
         'foto',
+        'foto_fuente',
+        'foto_url_origen',
+        'foto_fecha_consulta',
+        'foto_estado',
         'estado'
     ];
 
@@ -40,7 +44,8 @@ class Producto extends Model
         'afecto_ivap' => 'boolean',
         'precio_compra' => 'decimal:2',
         'precio_venta' => 'decimal:2',
-        'fecha_vencimiento' => 'date'
+        'fecha_vencimiento' => 'date',
+        'foto_fecha_consulta' => 'date'
     ];
 
     // Relación con almacenes (stock por almacén)
@@ -150,13 +155,43 @@ class Producto extends Model
         return \App\Sunat\Catalogo::gravaIgv($this->operacion);
     }
 
-    // Obtener URL de la foto
+    /**
+     * URL de la imagen a mostrar, con el placeholder como ultimo recurso.
+     *
+     * El orden es PROPIA > VERIFICADA externa > placeholder. Nunca devuelve
+     * cadena vacia ni una ruta rota: el POS, las compras y el inventario
+     * pintan siempre algo.
+     */
     public function getFotoUrlAttribute()
     {
         if ($this->foto) {
-            return asset('storage/productos/' . $this->foto);
+            // Historicamente `foto` guardaba solo el nombre del archivo; el
+            // enriquecedor guarda la ruta completa. Se aceptan las dos.
+            $ruta = str_starts_with($this->foto, 'productos/') ? $this->foto : 'productos/'.$this->foto;
+
+            return asset('storage/'.$ruta);
         }
+
+        // Sin copia local, pero con una imagen externa cuya correspondencia se
+        // comprobo y cuya fuente solo permite enlazar.
+        if ($this->foto_url_origen && $this->foto_estado === \App\Catalogo\Imagenes\EstadoFoto::VERIFICADA) {
+            return $this->foto_url_origen;
+        }
+
+        return self::placeholder();
+    }
+
+    /** Imagen que se muestra cuando el producto no tiene foto. */
+    public static function placeholder(): string
+    {
         return asset('build/images/default-product.png');
+    }
+
+    public function tieneFoto(): bool
+    {
+        return $this->foto !== null
+            || ($this->foto_url_origen !== null
+                && $this->foto_estado === \App\Catalogo\Imagenes\EstadoFoto::VERIFICADA);
     }
 
     // Obtener stock de un almacén específico

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Catalogo\AptitudMinimarket;
 use App\Catalogo\ClaveProducto;
 use App\Catalogo\Csv;
 use App\Catalogo\DetectorDuplicados;
@@ -46,6 +47,8 @@ class CatalogoNormalizar extends Command
 
         $filasRaw = [];
         $errores = [];
+        $descartes = [];
+        $aptitudes = new AptitudMinimarket();
 
         foreach ($archivos as $archivo) {
             $nombre = basename($archivo);
@@ -65,6 +68,27 @@ class CatalogoNormalizar extends Command
                     ];
 
                     continue;
+                }
+
+                // Los supermercados de los que sale el RAW tambien venden
+                // secadoras de pelo y televisores. Lo que no es surtido de
+                // minimarket no entra, y queda listado con su motivo.
+                $aptitud = $aptitudes->evaluar($fila, $taxonomia);
+
+                if ($aptitud !== AptitudMinimarket::APTO) {
+                    $descartes[] = [
+                        'archivo'      => $nombre,
+                        'linea'        => $numero + 2,
+                        'aptitud'      => $aptitud,
+                        'categoria'    => $fila['categoria'] ?? '',
+                        'subcategoria' => $fila['subcategoria'] ?? '',
+                        'descripcion'  => $fila['descripcion'] ?? '',
+                        'motivo'       => $aptitudes->motivo(),
+                    ];
+
+                    if ($aptitud === AptitudMinimarket::FUERA) {
+                        continue;
+                    }
                 }
 
                 $filasRaw[] = $fila;
@@ -108,6 +132,7 @@ class CatalogoNormalizar extends Command
         $maestro = $this->primerLote($maestro);
         $maestro = $this->conservarLoCargadoAMano($maestro, $normalizador);
 
+        $this->escribirDescartes($descartes);
         $this->escribirDuplicados($detector);
         $this->escribirSospechosos($detector);
         $this->escribirErrores($errores);
@@ -121,6 +146,8 @@ class CatalogoNormalizar extends Command
         $this->table(['Concepto', 'Cantidad'], [
             ['Filas RAW leidas',            $detector->totalFilas() + count($errores)],
             ['Filas rechazadas',            count($errores)],
+            ['Fuera del surtido',            count(array_filter($descartes, fn ($d) => $d['aptitud'] === AptitudMinimarket::FUERA))],
+            ['A revisar por aptitud',        count(array_filter($descartes, fn ($d) => $d['aptitud'] === AptitudMinimarket::REVISAR))],
             ['Repeticiones descartadas',    $detector->totalRepetidas()],
             ['Grupos a revisar a mano',      count($detector->sospechosos())],
             ['Sin clasificar',              $sinClasificar],
@@ -482,6 +509,21 @@ class CatalogoNormalizar extends Command
         }
 
         return $maestro;
+    }
+
+    /**
+     * Lo que no es surtido de minimarket, con el motivo.
+     *
+     * Nunca se descarta en silencio: si el filtro se pasa de listo, el reporte
+     * es donde se ve.
+     */
+    private function escribirDescartes(array $descartes): void
+    {
+        Csv::escribir(
+            Rutas::procesados('fuera_de_alcance.csv'),
+            ['archivo', 'linea', 'aptitud', 'categoria', 'subcategoria', 'descripcion', 'motivo'],
+            $descartes
+        );
     }
 
     /** Filas cuya afectacion de IGV no se pudo resolver: no se importan. */
