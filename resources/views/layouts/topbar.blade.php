@@ -172,7 +172,9 @@ $(document).ready(function() {
                 $('#notificaciones-vacio').show();
                 
                 if (response.alertas && response.alertas.length > 0) {
-                    count = response.alertas.length;
+                    // El badge cuenta el total real, no las que caben en el
+                    // desplegable: la lista viene acotada por el servidor.
+                    count = response.total || response.alertas.length;
                     $('#notificaciones-vacio').hide();
                     $.each(response.alertas, function(i, alerta) {
                         $('#notificaciones-items').append(

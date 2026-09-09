@@ -2,6 +2,45 @@
 
 @section('title', 'Dashboard - Minimarket')
 
+@section('css')
+<style>
+    /*
+       El panel de alertas se desplaza por dentro en vez de estirar el
+       dashboard. La altura es un tope, no una altura fija: con dos alertas la
+       tarjeta mide dos alertas y no aparece scroll.
+    */
+    .alertas-scroll {
+        max-height: 420px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        /* Aire para que la barra no se monte sobre el texto de las alertas. */
+        padding-right: .25rem;
+        /* Evita que el gesto de scroll siga arrastrando la pagina al llegar
+           al final de la lista, que en movil se siente como un salto. */
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Misma barra fina que ya usa el terminal POS, para no inventar un estilo
+       de scrollbar distinto en cada pantalla. */
+    .alertas-scroll::-webkit-scrollbar { width: 6px; }
+    .alertas-scroll::-webkit-scrollbar-track { background: rgba(0, 0, 0, .05); border-radius: 10px; }
+    .alertas-scroll::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, .2); border-radius: 10px; }
+    .alertas-scroll::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, .35); }
+    .alertas-scroll { scrollbar-width: thin; }
+
+    /* Sin esto un mensaje largo estira el flex y saca scroll horizontal en
+       lugar de partirse en varias lineas. */
+    .alertas-scroll .min-w-0 { min-width: 0; }
+
+    /* En movil la pantalla es mas corta: 420px de alertas se comerian casi
+       todo el viewport antes de llegar a las metricas. */
+    @media (max-width: 575.98px) {
+        .alertas-scroll { max-height: 260px; }
+    }
+</style>
+@endsection
+
 @section('content')
 <x-page-title title="Dashboard" pagetitle="Minimarket" />
 

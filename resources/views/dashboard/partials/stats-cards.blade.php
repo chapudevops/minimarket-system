@@ -18,7 +18,7 @@
                         </a>
                         <h3 class="mb-0">{{ number_format($totalProductos) }}</h3>
                         <p class="mb-0 fw-semibold">Productos</p>
-                        <small class="text-muted text-warning">Bajo stock: {{ count($productosBajoStock) }}</small>
+                        <small class="text-muted text-warning">Bajo stock: {{ $productosBajoStock }}</small>
                     </div>
                     <div class="vr"></div>
                     <div class="d-flex flex-column align-items-center justify-content-center gap-2">

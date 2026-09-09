@@ -20,8 +20,14 @@ class DashboardController extends Controller
     public function index()
     {
         if (request()->has('_notificaciones')) {
+            $alertas = $this->dashboardService->getAlertas();
+
+            // El badge de la campana usa 'total', no el tamaño de 'alertas':
+            // la lista viene acotada y contarla mostraria el limite en vez de
+            // cuantos problemas hay realmente.
             return response()->json([
-                'alertas' => $this->dashboardService->getAlertas()
+                'alertas' => $alertas['items'],
+                'total' => $alertas['total'],
             ]);
         }
 
