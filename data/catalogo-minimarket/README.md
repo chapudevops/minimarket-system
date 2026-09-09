@@ -380,6 +380,41 @@ pipeline no distingue de dónde salió el archivo.
 
 ---
 
+## Imágenes de producto
+
+`php artisan catalogo:imagenes` gestiona el enriquecimiento visual.
+
+```bash
+php artisan catalogo:imagenes --fuentes        # qué fuentes hay y qué permite cada una
+php artisan catalogo:imagenes --sondear=60     # mide cobertura, no escribe nada
+php artisan catalogo:imagenes --ejecutar       # busca y guarda las imágenes
+```
+
+La fuente es la familia **Open Food Facts** (alimentos, cosmética, limpieza y
+mascotas: cuatro sitios, la misma API). Es la única del registro con una
+licencia que permite reutilizar las imágenes: **CC BY-SA 3.0**.
+
+**La atribución es obligatoria.** La ficha de producto muestra
+*"Imagen: Open Food Facts (CC BY-SA 3.0)"* con enlace cuando la imagen viene de
+ahí. Sin ese crédito el uso no está amparado por la licencia.
+
+### Lo que el proceso no hace
+
+- **No consulta fuentes sin permiso.** El registro
+  `diccionarios/fuentes_imagen.csv` separa dos cosas que no son lo mismo:
+  `robots_permite` (lo que dice el robots.txt) y `acceso_permitido` (la
+  conclusión, con el motivo escrito al lado). Metro prohíbe `/img/*` y Plaza Vea
+  calla sobre propiedad intelectual: ninguna de las dos se toca.
+- **No pisa una foto propia.** `PROPIA` gana sobre cualquier imagen automática y
+  el enriquecedor tiene prohibido tocarla.
+- **No asigna una imagen dudosa.** Se compara EAN, marca, presentación y
+  variante; ante cualquier contradicción queda en `REVISAR` y el POS sigue
+  mostrando el placeholder.
+- **No repite trabajo.** Lo ya resuelto no se vuelve a consultar; `SIN_IMAGEN` se
+  reintenta recién a los 30 días. El proceso se puede cortar y retomar.
+- **No supera el límite de la fuente.** OFF publica 15 peticiones por minuto; la
+  pausa es de 4,5 s.
+
 ## Tests
 
 ```bash

@@ -109,6 +109,13 @@ $(function () {
                     ["Precio compra", Crud.soles(d.precio_compra)],
                     ["Precio venta", Crud.soles(d.precio_venta)],
                     ["Stock por almacén", stocks],
+                    // La licencia CC BY-SA de Open Food Facts exige el crédito
+                    // con enlace. Sin esto el uso de la imagen no está amparado.
+                    ...(d.foto_credito
+                        ? [["Crédito de imagen",
+                            '<a href="' + d.foto_credito.url + '" target="_blank" rel="noopener">' +
+                            d.foto_credito.texto + "</a>"]]
+                        : []),
                 ])
             );
             Crud.ventana("#modalView").show();

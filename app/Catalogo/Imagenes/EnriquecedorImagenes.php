@@ -24,9 +24,6 @@ use Throwable;
  */
 class EnriquecedorImagenes
 {
-    /** Pausa entre consultas, en microsegundos. */
-    private const PAUSA = 1_200_000;
-
     private const REINTENTOS = 2;
 
     public function __construct(
@@ -35,6 +32,14 @@ class EnriquecedorImagenes
         private readonly RegistroFuentesImagen $registro,
         private readonly bool $simular = false,
         private readonly bool $pausar = true,
+        /**
+         * Microsegundos entre consultas. No es cosmetico: cada fuente publica
+         * su limite y superarlo puede costar el acceso. Open Food Facts admite
+         * 15 por minuto, no las 50 que darian 1,2 s.
+         */
+        private readonly int $pausaMicrosegundos = 1_200_000,
+        /** Sin descargador, la imagen solo se referencia por su URL. */
+        private readonly ?DescargadorImagen $descargador = null,
     ) {}
 
     /**
@@ -67,6 +72,12 @@ class EnriquecedorImagenes
                 continue;
             }
 
+            // Alimentos, cosmetica, limpieza y mascotas viven en sitios
+            // distintos de la misma familia.
+            if ($this->fuente instanceof FuenteEnrutablePorCategoria) {
+                $this->fuente->paraCategoria((string) $producto->categoria()?->nombre);
+            }
+
             try {
                 $this->procesar($producto, $resultado, $nombreFuente, $puedeAlmacenar);
             } catch (Throwable $e) {
@@ -79,7 +90,7 @@ class EnriquecedorImagenes
             }
 
             if ($this->pausar) {
-                usleep(self::PAUSA);
+                usleep($this->pausaMicrosegundos);
             }
         }
 
@@ -130,8 +141,16 @@ class EnriquecedorImagenes
 
         // Solo se guarda una copia si las condiciones de la fuente lo permiten.
         // Si solo dejan enlazar, queda la URL de origen y `foto` sigue en NULL.
-        if ($estado === EstadoFoto::VERIFICADA && $puedeAlmacenar) {
-            $cambios['foto'] = $this->nombreArchivo($producto);
+        if ($estado === EstadoFoto::VERIFICADA && $puedeAlmacenar && $this->descargador !== null && ! $this->simular) {
+            try {
+                $cambios['foto'] = $this->descargador->guardar($candidata->url, (int) $producto->id);
+            } catch (Throwable $e) {
+                // La ficha estaba bien pero el archivo no se pudo traer. Queda
+                // para revision en vez de dar por buena una imagen que no esta.
+                $estado = EstadoFoto::REVISAR;
+                $cambios['foto_estado'] = $estado;
+                $veredicto['motivos'][] = 'no se pudo descargar la imagen: '.$e->getMessage();
+            }
         }
 
         $this->guardar($producto, $cambios);
@@ -173,12 +192,6 @@ class EnriquecedorImagenes
         }
 
         $producto->forceFill($cambios)->save();
-    }
-
-    /** Nombre interno, nunca el del tercero. */
-    private function nombreArchivo(Producto $producto): string
-    {
-        return "productos/{$producto->id}.webp";
     }
 
     /** @return array<string,string> */

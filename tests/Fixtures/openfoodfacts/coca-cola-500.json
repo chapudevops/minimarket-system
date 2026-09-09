@@ -1,0 +1,21 @@
+{
+  "code": "7750182001234",
+  "status": 1,
+  "status_verbose": "product found",
+  "product": {
+    "code": "7750182001234",
+    "product_name": "Coca-Cola Original",
+    "product_name_es": "Coca-Cola Sabor Original",
+    "brands": "Coca-Cola, The Coca-Cola Company",
+    "quantity": "500 ml",
+    "image_front_url": "https://images.openfoodfacts.org/images/products/775/018/200/1234/front_es.4.400.jpg",
+    "selected_images": {
+      "front": {
+        "display": {
+          "es": "https://images.openfoodfacts.org/images/products/775/018/200/1234/front_es.4.400.jpg",
+          "en": "https://images.openfoodfacts.org/images/products/775/018/200/1234/front_en.4.400.jpg"
+        }
+      }
+    }
+  }
+}

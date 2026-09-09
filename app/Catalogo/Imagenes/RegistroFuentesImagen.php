@@ -49,6 +49,13 @@ class RegistroFuentesImagen
     /**
      * Si se le puede pedir una imagen de forma automatizada.
      *
+     * Decide `acceso_permitido`, no `robots_permite`. Son cosas distintas y
+     * mezclarlas obligaba a mentir en una de las dos columnas: el robots.txt de
+     * Open Food Facts prohibe /api a los rastreadores, y al mismo tiempo OFF
+     * publica una API para aplicaciones con su limite de tasa. `robots_permite`
+     * guarda el hecho; `acceso_permitido` guarda la conclusion, con el motivo
+     * escrito en `observacion`.
+     *
      * Una fuente sin registrar NO se usa: el default es no, porque el lado
      * seguro para equivocarse es no tocar el sitio de otro.
      */
@@ -60,7 +67,7 @@ class RegistroFuentesImagen
             return false;
         }
 
-        return ($registro['robots_permite'] ?? 'NO') === 'SI'
+        return ($registro['acceso_permitido'] ?? 'NO') === 'SI'
             && in_array($registro['estado'] ?? '', [self::DISPONIBLE, self::SOLO_REFERENCIA], true);
     }
 

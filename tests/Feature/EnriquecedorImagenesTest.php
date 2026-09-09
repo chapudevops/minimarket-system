@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Catalogo\Imagenes\DescargadorImagen;
 use App\Catalogo\Imagenes\EnriquecedorImagenes;
 use App\Catalogo\Imagenes\EstadoFoto;
 use App\Catalogo\Imagenes\FuenteImagenNoAutorizada;
@@ -27,13 +28,16 @@ class EnriquecedorImagenesTest extends TestCase
 {
     use CreaEscenarioDeVenta, DatabaseTransactions;
 
-    private function registro(string $estado = 'DISPONIBLE', string $almacenar = 'SI'): RegistroFuentesImagen
-    {
+    private function registro(
+        string $estado = 'DISPONIBLE',
+        string $almacenar = 'SI',
+        string $acceso = 'SI',
+    ): RegistroFuentesImagen {
         return new RegistroFuentesImagen([[
             'fuente' => 'FUENTE_PRUEBA', 'url_base' => 'https://ejemplo.test',
             'consulta_por' => 'EAN', 'licencia' => 'CC BY-SA 3.0',
             'permite_almacenar' => $almacenar, 'permite_enlazar' => 'SI',
-            'robots_permite' => 'SI', 'estado' => $estado,
+            'robots_permite' => 'SI', 'acceso_permitido' => $acceso, 'estado' => $estado,
             'verificado_el' => '2026-09-09', 'observacion' => 'fuente de prueba',
         ]]);
     }
@@ -42,6 +46,7 @@ class EnriquecedorImagenesTest extends TestCase
         FuenteImagenFalsa $fuente,
         ?RegistroFuentesImagen $registro = null,
         bool $simular = false,
+        ?DescargadorImagen $descargador = null,
     ): EnriquecedorImagenes {
         return new EnriquecedorImagenes(
             $fuente,
@@ -51,9 +56,51 @@ class EnriquecedorImagenesTest extends TestCase
             ),
             $registro ?? $this->registro(),
             simular: $simular,
-            // Sin pausas: el test no necesita esperar 1,2 s por producto.
+            // Sin pausas: el test no necesita esperar por producto.
             pausar: false,
+            descargador: $descargador,
         );
+    }
+
+    /** Descargador con una imagen real en memoria, sin salir a internet. */
+    private function descargador(?string $directorio = null, bool $falla = false): DescargadorImagen
+    {
+        $imagen = imagecreatetruecolor(300, 300);
+        imagefill($imagen, 0, 0, imagecolorallocate($imagen, 10, 90, 200));
+        ob_start();
+        imagepng($imagen);
+        $png = ob_get_clean();
+        imagedestroy($imagen);
+
+        return new DescargadorImagen(
+            $directorio ?? $this->directorioTemporal(),
+            fn (string $url) => $falla ? [500, null, null] : [200, $png, 'image/png'],
+        );
+    }
+
+    private function directorioTemporal(): string
+    {
+        $ruta = sys_get_temp_dir().'/enriquecedor-'.uniqid();
+        mkdir($ruta, 0775, true);
+        $this->temporales[] = $ruta;
+
+        return $ruta;
+    }
+
+    /** @var array<int,string> */
+    private array $temporales = [];
+
+    protected function tearDown(): void
+    {
+        foreach ($this->temporales as $ruta) {
+            foreach (glob($ruta.'/productos/*') ?: [] as $archivo) {
+                unlink($archivo);
+            }
+            @rmdir($ruta.'/productos');
+            @rmdir($ruta);
+        }
+
+        parent::tearDown();
     }
 
     private function producto(array $campos = []): Producto
@@ -285,6 +332,57 @@ class EnriquecedorImagenesTest extends TestCase
         $this->assertSame(EstadoFoto::SIN_IMAGEN, $producto->fresh()->foto_estado);
     }
 
+    /* --- Descarga real ---------------------------------------------------- */
+
+    #[Test]
+    public function descarga_y_guarda_el_archivo_cuando_la_fuente_lo_permite(): void
+    {
+        $producto = $this->producto();
+        $fuente = (new FuenteImagenFalsa())->responde('7750182001234', $this->datos());
+
+        $directorio = $this->directorioTemporal();
+        $resultado = $this->enriquecedor($fuente, descargador: $this->descargador($directorio))
+            ->enriquecer([$producto]);
+
+        $this->assertSame(1, $resultado->verificadas);
+
+        $producto->refresh();
+        $this->assertSame("productos/{$producto->id}.webp", $producto->foto);
+        $this->assertFileExists($directorio.'/'.$producto->foto);
+    }
+
+    #[Test]
+    public function si_la_descarga_falla_la_imagen_queda_para_revisar(): void
+    {
+        $producto = $this->producto();
+        $fuente = (new FuenteImagenFalsa())->responde('7750182001234', $this->datos());
+
+        $resultado = $this->enriquecedor($fuente, descargador: $this->descargador(falla: true))
+            ->enriquecer([$producto]);
+
+        // La ficha coincidia, pero el archivo no llego. Dar por buena una
+        // imagen que no esta seria peor que admitir que hay que mirarla.
+        $this->assertSame(0, $resultado->verificadas);
+        $this->assertSame(1, $resultado->aRevisar);
+
+        $producto->refresh();
+        $this->assertSame(EstadoFoto::REVISAR, $producto->foto_estado);
+        $this->assertNull($producto->foto);
+    }
+
+    #[Test]
+    public function una_candidata_a_revisar_no_se_descarga(): void
+    {
+        $producto = $this->producto();
+        $fuente = (new FuenteImagenFalsa())->responde('7750182001234', $this->datos(['nombre' => 'Coca Cola Zero']));
+
+        $directorio = $this->directorioTemporal();
+        $this->enriquecedor($fuente, descargador: $this->descargador($directorio))->enriquecer([$producto]);
+
+        // No se gasta ancho de banda ni disco en una imagen que no corresponde.
+        $this->assertFileDoesNotExist($directorio."/productos/{$producto->id}.webp");
+    }
+
     /* --- Placeholder ------------------------------------------------------ */
 
     #[Test]
@@ -308,6 +406,37 @@ class EnriquecedorImagenesTest extends TestCase
 
         $this->assertTrue($producto->tieneFoto());
         $this->assertSame('https://ejemplo.test/coca-500.jpg', $producto->foto_url);
+    }
+
+    #[Test]
+    public function una_imagen_de_open_food_facts_lleva_su_credito(): void
+    {
+        $producto = $this->producto([
+            'foto' => 'productos/1.webp',
+            'foto_estado' => EstadoFoto::VERIFICADA,
+            'foto_fuente' => 'OPENFOODFACTS',
+        ]);
+
+        $credito = $producto->creditoDeFoto();
+
+        // CC BY-SA exige citar la fuente con enlace. Sin credito el uso de la
+        // imagen no esta amparado por la licencia.
+        $this->assertNotNull($credito);
+        $this->assertStringContainsString('Open Food Facts', $credito['texto']);
+        $this->assertStringContainsString('CC BY-SA', $credito['texto']);
+        $this->assertSame('https://openfoodfacts.org', $credito['url']);
+    }
+
+    #[Test]
+    public function una_foto_propia_no_lleva_credito_de_terceros(): void
+    {
+        $producto = $this->producto([
+            'foto' => 'productos/1.webp',
+            'foto_estado' => EstadoFoto::PROPIA,
+            'foto_fuente' => 'PROPIA',
+        ]);
+
+        $this->assertNull($producto->creditoDeFoto());
     }
 
     #[Test]

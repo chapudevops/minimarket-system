@@ -103,6 +103,7 @@ class ProductoController extends Controller
                 'fecha_vencimiento' => $producto->fecha_vencimiento ? $producto->fecha_vencimiento->format('d/m/Y') : '-',
                 'tipo_producto_texto' => $producto->tipo_producto_texto,
                 'detraccion_texto' => $producto->detraccion_texto,
+                'foto_credito' => $producto->creditoDeFoto(),
                 'afecto_isc_texto' => $producto->afecto_isc_texto,
                 'afecto_ivap_texto' => $producto->afecto_ivap_texto,
                 'stock_minimo' => $producto->stock_minimo,
@@ -198,6 +199,11 @@ class ProductoController extends Controller
                 $fotoName = time() . '_' . uniqid() . '.' . $foto->getClientOriginalExtension();
                 $foto->storeAs('public/productos', $fotoName);
                 $data['foto'] = $fotoName;
+
+                // Una foto subida a mano es PROPIA, y eso es lo que impide que
+                // el enriquecimiento automatico la pise. Sin marcarla, quedaba
+                // en SIN_IMAGEN y el primer barrido de imagenes la reemplazaba.
+                $data = array_merge($data, $this->marcasDeFotoPropia());
             }
 
             $producto = Producto::create($data);
@@ -299,6 +305,10 @@ class ProductoController extends Controller
                 $fotoName = time() . '_' . uniqid() . '.' . $foto->getClientOriginalExtension();
                 $foto->storeAs('public/productos', $fotoName);
                 $data['foto'] = $fotoName;
+
+                // Ver el comentario de store(): sin esto la foto propia queda
+                // desprotegida frente al enriquecimiento automatico.
+                $data = array_merge($data, $this->marcasDeFotoPropia());
             }
 
             $producto->update($data);
@@ -329,6 +339,25 @@ class ProductoController extends Controller
                 'message' => 'Error al actualizar el producto: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Trazabilidad de una foto tomada por la tienda.
+     *
+     * PROPIA gana sobre cualquier imagen externa y el enriquecedor tiene
+     * prohibido tocarla. Se limpia el origen externo porque el archivo que
+     * queda ya no viene de ahi.
+     *
+     * @return array<string,mixed>
+     */
+    private function marcasDeFotoPropia(): array
+    {
+        return [
+            'foto_estado'         => \App\Catalogo\Imagenes\EstadoFoto::PROPIA,
+            'foto_fuente'         => 'PROPIA',
+            'foto_url_origen'     => null,
+            'foto_fecha_consulta' => now()->toDateString(),
+        ];
     }
 
     public function destroy($id)

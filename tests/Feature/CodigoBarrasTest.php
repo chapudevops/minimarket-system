@@ -2,12 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Catalogo\Imagenes\EstadoFoto;
 use App\Models\Producto;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Database\QueryException;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Support\CreaEscenarioDeVenta;
@@ -239,6 +241,37 @@ class CodigoBarrasTest extends TestCase
         $this->assertTrue($form['afecto_isc']);
         $this->assertFalse($form['afecto_ivap']);
         $this->assertSame('GRAVADO', $form['operacion']);
+    }
+
+    #[Test]
+    public function una_foto_subida_a_mano_queda_marcada_como_propia(): void
+    {
+        $this->montarEscenario();
+        $producto = $this->crearProducto(5);
+
+        \Illuminate\Support\Facades\Storage::fake('local');
+
+        $this->actingAs($this->administrador())
+            ->put('/productos/'.$producto->id, [
+                'codigo_interno' => $producto->codigo_interno,
+                'descripcion' => $producto->descripcion,
+                'unidad' => 'UNIDAD',
+                'operacion' => 'GRAVADO',
+                'tipo_producto' => 'PRODUCTO',
+                'precio_compra' => 5,
+                'precio_venta' => 9,
+                'subcategoria_id' => $producto->subcategoria_id,
+                'foto' => UploadedFile::fake()->image('mi-foto.jpg', 200, 200),
+            ]);
+
+        $producto->refresh();
+
+        // Sin esta marca la foto quedaba en SIN_IMAGEN y el primer barrido de
+        // enriquecimiento la reemplazaba por una de internet.
+        $this->assertNotNull($producto->foto);
+        $this->assertSame(EstadoFoto::PROPIA, $producto->foto_estado);
+        $this->assertSame('PROPIA', $producto->foto_fuente);
+        $this->assertFalse(EstadoFoto::sePuedeReemplazar($producto->foto_estado));
     }
 
     #[Test]

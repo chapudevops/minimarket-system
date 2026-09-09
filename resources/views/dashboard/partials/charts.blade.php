@@ -20,8 +20,8 @@
                     @forelse($productosMasVendidos as $producto)
                         <div class="d-flex align-items-center gap-3">
                             <div class="wh-48 d-flex align-items-center justify-content-center rounded-3 bg-primary bg-opacity-10">
-                                @if($producto->foto)
-                                    <img src="{{ asset('storage/productos/' . $producto->foto) }}" width="48" height="48" class="rounded-3" style="object-fit: cover;" alt="">
+                                @if($producto->tieneFoto())
+                                    <img src="{{ $producto->foto_url }}" width="48" height="48" class="rounded-3" style="object-fit: cover;" alt="">
                                 @else
                                     <i class="material-icons-outlined text-primary">shopping_bag</i>
                                 @endif

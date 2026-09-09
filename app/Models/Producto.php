@@ -187,6 +187,33 @@ class Producto extends Model
         return asset('build/images/default-product.png');
     }
 
+    /**
+     * Credito de la imagen, cuando la licencia de la fuente lo exige.
+     *
+     * Las imagenes de la familia Open Food Facts son CC BY-SA 3.0: se pueden
+     * usar, incluso comercialmente, pero citando la fuente con enlace. Sin el
+     * credito el uso no esta amparado por la licencia.
+     *
+     * @return array{texto: string, url: string}|null
+     */
+    public function creditoDeFoto(): ?array
+    {
+        $creditos = [
+            'OPENFOODFACTS' => ['Open Food Facts', 'https://openfoodfacts.org'],
+            'OPENBEAUTYFACTS' => ['Open Beauty Facts', 'https://openbeautyfacts.org'],
+            'OPENPRODUCTSFACTS' => ['Open Products Facts', 'https://openproductsfacts.org'],
+            'OPENPETFOODFACTS' => ['Open Pet Food Facts', 'https://openpetfoodfacts.org'],
+        ];
+
+        if (! $this->tieneFoto() || ! isset($creditos[$this->foto_fuente])) {
+            return null;
+        }
+
+        [$nombre, $url] = $creditos[$this->foto_fuente];
+
+        return ['texto' => "Imagen: {$nombre} (CC BY-SA 3.0)", 'url' => $url];
+    }
+
     public function tieneFoto(): bool
     {
         return $this->foto !== null
