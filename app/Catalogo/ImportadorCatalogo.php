@@ -216,13 +216,33 @@ class ImportadorCatalogo
             ->get()
             ->keyBy('codigo_interno');
 
-        // En simulacion se cuenta igual pero no se escribe: sirve para saber
-        // que va a pasar antes de tocar la base.
+        // En simulacion se calcula el cambio real de cada fila, no solo si el
+        // producto existe. Contar como "actualizado" todo lo que ya esta en la
+        // base exageraba el impacto —714 en vez de los 39 que de verdad
+        // cambiaban— y el dry-run existe justamente para poder confiar en el.
         if ($this->simular) {
             foreach ($lote as $item) {
-                isset($existentes[$item['codigo_interno']])
-                    ? $resultado->actualizados++
-                    : $resultado->creados++;
+                $producto = $existentes[$item['codigo_interno']] ?? null;
+
+                if ($producto === null) {
+                    $resultado->creados++;
+
+                    continue;
+                }
+
+                $cambios = $this->cambiosParaExistente($producto, $item);
+
+                if ($cambios === []) {
+                    $resultado->sinCambios++;
+
+                    continue;
+                }
+
+                if (array_key_exists('codigo_barras', $cambios)) {
+                    $resultado->codigosBarrasAsignados++;
+                }
+
+                $resultado->actualizados++;
             }
 
             return;

@@ -23,7 +23,7 @@ class ReglasTributariasTest extends TestCase
 
         $this->assertNotEmpty($reglas->todas());
         $this->assertSame('GRAVADO', $reglas->igv('LIMPIEZA', 'DETERGENTES'));
-        $this->assertSame('EXONERADO', $reglas->igv('FRESCOS', 'HUEVOS'));
+        $this->assertSame('EXONERADO', $reglas->igv('FRESCOS', 'FRUTAS'));
     }
 
     #[Test]
@@ -82,15 +82,30 @@ class ReglasTributariasTest extends TestCase
     {
         $reglas = ReglasTributarias::desdeArchivo();
 
-        // Sin precisar el tipo, no se marca IVAP: la Ley 28211 alcanza a
+        // Sin precisar el tipo no se marca IVAP: la Ley 28211 alcanza a
         // determinadas operaciones con arroz pilado, no a la palabra "arroz".
         $this->assertFalse($reglas->afectoIvap('ABARROTES', 'ARROZ'));
         $this->assertSame(Tributos::PENDIENTE, $reglas->igv('ABARROTES', 'ARROZ'));
 
-        // Precisado como arroz pilado si entra al ambito, pero la afectacion
-        // de IGV sigue pendiente: depende de que operacion haga el negocio.
+        // El arroz con cascara (paddy) esta en el Apendice I; el pilado no.
+        $this->assertSame('EXONERADO', $reglas->igv('ABARROTES', 'ARROZ', 'ARROZ_CON_CASCARA'));
+        $this->assertFalse($reglas->afectoIvap('ABARROTES', 'ARROZ', 'ARROZ_CON_CASCARA'));
+    }
+
+    #[Test]
+    public function el_arroz_pilado_es_inafecto_y_no_exonerado(): void
+    {
+        $reglas = ReglasTributarias::desdeArchivo();
+
+        // Ley 28211 art. 7 (mod. Ley 28309): tanto la operacion gravada con
+        // IVAP como las ventas POSTERIORES del bien en el pais quedan
+        // INAFECTAS al IGV. La venta del minimarket es una venta posterior.
+        //
+        // "Inafecto" y "exonerado" no son sinonimos: son los codigos 30 y 20
+        // de la Catalogo 07 y el comprobante sale distinto.
+        $this->assertSame('INAFECTO', $reglas->igv('ABARROTES', 'ARROZ', 'ARROZ_PILADO'));
         $this->assertTrue($reglas->afectoIvap('ABARROTES', 'ARROZ', 'ARROZ_PILADO'));
-        $this->assertSame(Tributos::PENDIENTE, $reglas->igv('ABARROTES', 'ARROZ', 'ARROZ_PILADO'));
+        $this->assertFalse($reglas->requiereRevisionIgv('ABARROTES', 'ARROZ', 'ARROZ_PILADO'));
     }
 
     #[Test]
@@ -99,9 +114,101 @@ class ReglasTributariasTest extends TestCase
         $reglas = ReglasTributarias::desdeArchivo();
 
         $this->assertSame(Tributos::PENDIENTE, $reglas->igv('LACTEOS', 'LECHE'));
+
+        // El Apendice I dice literalmente "Solo: leche cruda entera" en la
+        // partida 0401.20.00.00. Ese "Solo" excluye a todas las demas.
         $this->assertSame('EXONERADO', $reglas->igv('LACTEOS', 'LECHE', 'LECHE_CRUDA_ENTERA'));
-        // La evaporada NO hereda la exoneracion de la cruda por analogia.
-        $this->assertSame(Tributos::PENDIENTE, $reglas->igv('LACTEOS', 'LECHE', 'LECHE_EVAPORADA'));
+        $this->assertSame('GRAVADO', $reglas->igv('LACTEOS', 'LECHE', 'LECHE_EVAPORADA'));
+        $this->assertSame('GRAVADO', $reglas->igv('LACTEOS', 'LECHE', 'LECHE_UHT'));
+    }
+
+    #[Test]
+    public function los_huevos_no_estan_exonerados(): void
+    {
+        $reglas = ReglasTributarias::desdeArchivo();
+
+        // Los huevos NO figuran en el Apendice I: entre la partida 03.07
+        // (pescados) y la 04.01 (leche cruda) no existe la 04.07. Estuvieron
+        // exonerados por la Ley 31452 del 1.5.2022 al 31.7.2022, que vencio
+        // sin prorroga.
+        //
+        // Este test existe porque la matriz los daba por EXONERADOS y estaba
+        // mal: habria emitido boletas sin IGV.
+        $this->assertSame('GRAVADO', $reglas->igv('FRESCOS', 'HUEVOS'));
+        $this->assertSame('GRAVADO', $reglas->igv('FRESCOS', 'POLLO'));
+        $this->assertSame('GRAVADO', $reglas->igv('PANADERIA', 'PAN'));
+        $this->assertSame('GRAVADO', $reglas->igv('ABARROTES', 'AZUCAR'));
+        $this->assertSame('GRAVADO', $reglas->igv('ABARROTES', 'FIDEOS'));
+    }
+
+    #[Test]
+    public function lo_fresco_del_apendice_i_si_esta_exonerado(): void
+    {
+        $reglas = ReglasTributarias::desdeArchivo();
+
+        // Frutas (0803/0810.90.90), hortalizas (0701/0709.90.90), pescados
+        // (0301/0307.99.90.90) y legumbres secas (0713) figuran con rangos
+        // que incluyen clausulas de cierre.
+        $this->assertSame('EXONERADO', $reglas->igv('FRESCOS', 'FRUTAS'));
+        $this->assertSame('EXONERADO', $reglas->igv('FRESCOS', 'VERDURAS'));
+        $this->assertSame('EXONERADO', $reglas->igv('FRESCOS', 'PESCADOS'));
+        $this->assertSame('EXONERADO', $reglas->igv('ABARROTES', 'MENESTRAS'));
+
+        // Pero lo industrializado de esas mismas familias, no.
+        $this->assertSame('GRAVADO', $reglas->igv('FRESCOS', 'CARNES'));
+        $this->assertSame('GRAVADO', $reglas->igv('FRESCOS', 'EMBUTIDOS'));
+        $this->assertSame('GRAVADO', $reglas->igv('ABARROTES', 'CONSERVAS'));
+        $this->assertSame('GRAVADO', $reglas->igv('ABARROTES', 'HARINAS'));
+    }
+
+    #[Test]
+    public function el_te_se_distingue_de_la_infusion_de_hierbas(): void
+    {
+        $reglas = ReglasTributarias::desdeArchivo();
+
+        // El te de la partida 09.02 figura en el Apendice I; la manzanilla y
+        // el anis no son te y van por otra partida. Clasificar la subcategoria
+        // entera en cualquiera de los dos sentidos seria un error.
+        $this->assertSame(Tributos::PENDIENTE, $reglas->igv('ABARROTES', 'INFUSIONES'));
+        $this->assertSame('EXONERADO', $reglas->igv('ABARROTES', 'INFUSIONES', 'TE'));
+        $this->assertSame('GRAVADO', $reglas->igv('ABARROTES', 'INFUSIONES', 'INFUSION_DE_HIERBAS'));
+    }
+
+    #[Test]
+    public function solo_los_frutos_secos_nominados_estan_exonerados(): void
+    {
+        $reglas = ReglasTributarias::desdeArchivo();
+
+        // El Apendice I nombra cocos, nueces del Brasil y de maranon. Nada mas.
+        $this->assertSame('EXONERADO', $reglas->igv('SNACKS', 'FRUTOS SECOS', 'COCO'));
+        $this->assertSame('GRAVADO', $reglas->igv('SNACKS', 'FRUTOS SECOS', 'MANI'));
+        // Una almendra no tiene regla propia y no hereda de la familia.
+        $this->assertSame(Tributos::PENDIENTE, $reglas->igv('SNACKS', 'FRUTOS SECOS', 'ALMENDRA'));
+    }
+
+    #[Test]
+    public function toda_regla_dice_cuando_se_verifico_contra_la_norma(): void
+    {
+        $reglas = ReglasTributarias::desdeArchivo();
+
+        foreach ($reglas->todas() as $regla) {
+            $ref = "{$regla['categoria']}/{$regla['subcategoria']}/{$regla['producto_tipo']}";
+
+            $this->assertMatchesRegularExpression(
+                '/^\d{4}-\d{2}-\d{2}$/',
+                $regla['verificado_el'],
+                "{$ref} no dice cuando se verifico"
+            );
+        }
+
+        // Las reglas caducan: la Ley 31452 exonero pollo, huevos, azucar,
+        // fideos y pan del 1.5.2022 al 31.7.2022 y nadie la prorrogo. Un
+        // catalogo armado entonces y nunca revisado seguiria sin cobrar IGV.
+        $this->assertSame(
+            [],
+            $reglas->sinVerificarDesdeHace(24),
+            'hay reglas sin verificar contra la norma desde hace mas de dos años'
+        );
     }
 
     #[Test]

@@ -49,9 +49,13 @@ Al lado suyo hay dos columnas nuevas en `productos`:
 
 ### Por qué `afecto_isc` y `afecto_ivap` son informativos
 
-Porque un minimarket **no los declara**. El ISC grava la venta a nivel de
-productor e importador: al minimarket, que compra a un distribuidor y revende,
-le llega incorporado en el costo. Su boleta lleva IGV y nada más.
+Porque un minimarket **no los declara**. El artículo 50 del TUO define como
+operaciones gravadas con ISC la venta en el país **a nivel de productor** y la
+importación de los bienes de los Apéndices III y IV, más la venta en el país
+por el **importador** de los bienes del literal A del Apéndice IV. Un
+minimarket que compra a un distribuidor y revende no está en ninguno de esos
+supuestos: el ISC le llega incorporado en el costo. Su boleta lleva IGV y nada
+más.
 
 Marcar el producto sirve para identificarlo, analizar márgenes y responder ante
 una revisión — no para emitir un tributo aparte.
@@ -98,17 +102,17 @@ un IGV que nadie decidió.
 
 ## C. Cómo se representa cada producto
 
-| Producto | `operacion` | `afecto_isc` | `afecto_ivap` | Comentario |
+| Producto | `operacion` | `afecto_isc` | `afecto_ivap` | Norma |
 |---|---|---|---|---|
-| **Coca-Cola** | `GRAVADO` | *revisar* | `0` | IGV sin discusión. El ISC de bebidas azucaradas depende del azúcar por 100 ml: la versión sin azúcar puede quedar fuera. Se marca por producto. |
-| **Cerveza** | `GRAVADO` | `1` | `0` | El caso que el modelo viejo no sabía representar. |
-| **Bebida energética** | `GRAVADO` | *revisar* | `0` | Partida 22.02. Confirmar alcance antes de darla por afecta. |
-| **Arroz pilado** | `PENDIENTE` | `0` | `1` | El producto está en el ámbito del IVAP; que *la venta del minimarket* quede afecta depende de la operación. **No se asume.** |
-| **Leche evaporada** | `PENDIENTE` | `0` | `0` | Industrializada: la regla general apunta a GRAVADO, pero se confirma. No hereda de la leche cruda. |
-| **Leche cruda entera** | `EXONERADO` | `0` | `0` | Nominada en el Apéndice I. Un minimarket rara vez la vende. |
-| **Huevo fresco** | `EXONERADO` | `0` | `0` | Huevos de ave con cáscara frescos, Apéndice I. |
-| **Fruta fresca** | `EXONERADO` | `0` | `0` | Apéndice I. Verificar la partida: procesada o en conserva **no** entra. |
-| **Detergente** | `GRAVADO` | `0` | `0` | Regla general. El Apéndice I no alcanza artículos de limpieza. |
+| **Coca-Cola** | `GRAVADO` | *revisar* | `0` | Regla general. El ISC depende del azúcar del producto |
+| **Cerveza** | `GRAVADO` | `1` | `0` | Apéndice IV. El caso que el modelo viejo no representaba |
+| **Bebida energética** | `GRAVADO` | *revisar* | `0` | Partida 22.02; confirmar alcance |
+| **Arroz pilado** | **`INAFECTO`** | `0` | `1` | Ley 28211 art. 7 (mod. Ley 28309) |
+| **Leche evaporada** | **`GRAVADO`** | `0` | `0` | El Apéndice I dice *"Sólo: leche cruda entera"* |
+| **Leche cruda entera** | `EXONERADO` | `0` | `0` | Apéndice I, partida 0401.20.00.00 |
+| **Huevo fresco** | **`GRAVADO`** | `0` | `0` | **No** figura en el Apéndice I; Ley 31452 venció |
+| **Fruta fresca** | `EXONERADO` | `0` | `0` | Apéndice I, 0803.00.11.00 / 0810.90.90.00 |
+| **Detergente** | `GRAVADO` | `0` | `0` | Regla general |
 
 *revisar* significa que la matriz dice `REVISAR`: el producto entra al catálogo
 (su IGV es seguro) pero queda listado en el reporte para que alguien decida.
@@ -124,7 +128,7 @@ en otra columna.** Antes eran indistinguibles.
 **(categoría, subcategoría, producto_tipo)**.
 
 ```csv
-categoria,subcategoria,producto_tipo,igv,isc,ivap,requiere_revision,fuente_normativa,observacion
+categoria,subcategoria,producto_tipo,igv,isc,ivap,requiere_revision,fuente_normativa,observacion,verificado_el
 ```
 
 | Columna | Valores | Significado |
@@ -133,6 +137,7 @@ categoria,subcategoria,producto_tipo,igv,isc,ivap,requiere_revision,fuente_norma
 | `igv` | GRAVADO / EXONERADO / INAFECTO / PENDIENTE | afectación |
 | `isc` / `ivap` | SI / NO / REVISAR | **`REVISAR` nunca se convierte en `SI`** |
 | `requiere_revision` | true / false | **habla solo del IGV**: es lo único que bloquea |
+| `verificado_el` | AAAA-MM-DD | cuándo se contrastó contra la norma. Las reglas caducan |
 
 ### Las dos reglas que evitan clasificar mal
 
@@ -164,28 +169,42 @@ Bloquearla por eso dejaría medio catálogo afuera sin ninguna razón.
 
 ---
 
-## E. El arroz: estrategia del sistema
+## E. El arroz: resuelto
 
-**No todo producto que dice "arroz" es IVAP.** El sistema distingue tres cosas:
+**No todo producto que dice "arroz" recibe el mismo tratamiento.** El sistema
+distingue tres cosas, y ahora las tres tienen respuesta:
 
-1. **Naturaleza del producto** — ¿es arroz pilado en el sentido de la Ley 28211?
-   Eso lo dice `producto_tipo`, no la descripción. `ARROZ_PILADO` → `afecto_ivap = 1`.
-   `ARROZ_INTEGRAL` → `REVISAR`, puede no serlo. Sin `producto_tipo` → no se
-   marca nada.
+**1. Naturaleza del producto** — lo dice `producto_tipo`, nunca la descripción.
 
-2. **Operación realizada** — el IVAP alcanza a *determinadas operaciones*. Que
-   la venta de un minimarket quede afecta a IVAP, exonerada de IGV o gravada
-   **depende de qué operación hace el negocio en la cadena**, no del producto.
-   El sistema **no lo decide**: deja `operacion = PENDIENTE`.
+| `producto_tipo` | Partida | `operacion` | `afecto_ivap` |
+|---|---|---|---|
+| `ARROZ_PILADO` | 1006.30.00.00 | `INAFECTO` | `1` |
+| `ARROZ_CON_CASCARA` | 1006.10.90.00 | `EXONERADO` | `0` |
+| `ARROZ_INTEGRAL` | 1006.20 o fuera | `PENDIENTE` | *revisar* |
+| *(sin precisar)* | — | `PENDIENTE` | `0` |
 
-3. **Tratamiento almacenado** — `afecto_ivap` guarda el hecho sobre el producto
-   (está en el ámbito). `operacion` guarda la decisión sobre la venta. Son dos
-   columnas porque son dos preguntas.
+**2. Operación realizada** — el IVAP grava la primera venta en el país y la
+importación. El minimarket es una **venta posterior**, y el artículo 7 de la
+Ley 28211 (modificado por el art. 11 de la Ley 28309) alcanza también a esas:
 
-**Consecuencia práctica:** hoy ningún arroz se puede importar al catálogo
-definitivo hasta que el contador defina el punto 2. Es intencional.
+> las operaciones de venta o importación de bienes comprendidos en dicha Ley
+> no estarán afectos al IGV, ISC o al IPM
+>
+> — y con la modificación de la Ley 28309, **también las ventas posteriores
+> de dicho bien en el territorio nacional**
 
----
+**3. Tratamiento almacenado** — la palabra importa: es **INAFECTO**, no
+"exonerado". Son los códigos **30** y **20** de la Catálogo 07 y el comprobante
+sale distinto. `afecto_ivap = 1` guarda el hecho sobre el producto;
+`operacion = INAFECTO` guarda la consecuencia sobre la venta.
+
+**En la práctica:** el minimarket vende arroz pilado **sin cobrar IGV** y sin
+declarar IVAP (ese lo pagó el molino en la primera venta). El comprobante lleva
+la línea como inafecta.
+
+> **Fuera de alcance:** la declaración mensual del IVAP (PDT/formulario propio)
+> no la genera este sistema. Aquí solo se representa la afectación en el
+> comprobante.
 
 ## F. El ISC: qué se implementó y qué no
 
@@ -245,22 +264,59 @@ comprobante**, cuando antes habría salido como GRAVADO por defecto.
 
 ---
 
-## I. Decisiones que requieren validación contable
+## I. Estado de las decisiones tributarias
 
-Ninguna de estas la puede tomar el sistema. Cada una bloquea la importación de
-su familia hasta que se resuelva.
+Verificado el **2026-09-08** contra el Apéndice I del TUO de la Ley del IGV
+(texto actualizado al 24.4.2024, D.S. 058-2024-EF), la Ley 28211 y el art. 50
+del TUO. Cada regla de la matriz lleva su fecha en `verificado_el`.
 
-| # | Tema | Qué hay que decidir |
+### Resueltas en esta fase (7 de 9)
+
+| # | Tema | Resolución | Norma |
+|---|---|---|---|
+| 1 | **Arroz** | `INAFECTO` + `afecto_ivap` | Ley 28211 art. 7, mod. Ley 28309 art. 11 |
+| 2 | **Leche evaporada / UHT** | `GRAVADO` | Apéndice I 0401.20.00.00: *"Sólo: leche cruda entera"* |
+| 3a | **Harinas** | `GRAVADO` | Del trigo solo está exonerado el **de siembra** (1001.10.10.00) |
+| 3b | **Menestras** | `EXONERADO` | Apéndice I 0713.10.10.00 / 0713.90.90.00 |
+| 4a | **Carnes y pollo** | `GRAVADO` | El Apéndice I lista animales **vivos** (01.01–01.04), no carne beneficiada |
+| 4b | **Pescados** | `EXONERADO` | Apéndice I 0301.10.00.00 / 0307.99.90.90 (excepto harina y aceite de pescado) |
+| 5 | **Pan** | `GRAVADO` | No figura; la Ley 31452 venció el 31.7.2022 sin prórroga |
+| 6 | **Frutos secos** | Parcial | Solo coco, nuez del Brasil y de marañón (0801.11/0801.32). Almendra, pecana y pistacho: `PENDIENTE` |
+
+### Corrección importante
+
+**Los huevos estaban mal clasificados.** La matriz los daba por `EXONERADO`.
+No lo están: entre la partida 03.07 (pescados) y la 04.01 (leche cruda) **no
+existe la 04.07** en el Apéndice I. Estuvieron exonerados por la Ley 31452
+entre el 1.5.2022 y el 31.7.2022, que venció sin prórroga.
+
+De haberse importado el catálogo antes de esta verificación, cada venta de
+huevos habría salido en una boleta **sin IGV**. Lo mismo aplicaba a pollo, pan,
+azúcar y fideos, que estaban en `PENDIENTE` y por eso no llegaron a facturarse.
+
+### Abiertas (2 de 9, más 3 nuevas acotadas)
+
+| # | Tema | Qué falta |
 |---|---|---|
-| 1 | **Arroz** | Qué operación realiza el negocio en la cadena, y por lo tanto si su venta va afecta a IVAP, exonerada de IGV o gravada |
-| 2 | **Leche evaporada / UHT** | Confirmar que van GRAVADAS. No se asumió por analogía con la cruda |
-| 3 | **Harinas y menestras** | Depende de la partida arancelaria del producto concreto |
-| 4 | **Carnes, pollo, pescados** | Fresco del Apéndice I contra procesado, por partida |
-| 5 | **Pan** | Tratamiento propio según partida y forma de venta |
-| 6 | **Frutos secos** | Naturales (Apéndice I) contra tostados y envasados |
-| 7 | **ISC de bebidas azucaradas** | Qué productos concretos superan el umbral de azúcar |
-| 8 | **ISC en general** | Si el negocio alguna vez importa o produce; ahí cambia todo el diseño |
-| 9 | **ICBPER** | *No auditado en esta fase.* `ConstructorComprobante` manda `setFactorIcbper(0)` fijo. Si el minimarket cobra bolsas plásticas, hay que modelarlo |
+| 7 | **ISC de bebidas azucaradas** | Qué productos concretos superan el umbral de azúcar. Solo afecta la bandera informativa, no el IGV ni el comprobante |
+| 8 | **ISC en general** | Solo cambia si el negocio importa o produce. Hoy no aplica: el art. 50 grava a nivel de productor e importador |
+| 9 | **ICBPER** | *No auditado.* `ConstructorComprobante` manda `setFactorIcbper(0)` fijo. Si el minimarket cobra bolsas plásticas, hay que modelarlo |
+| 10 | **Frutos secos no nominados** | Almendra, pecana, pistacho: verificar partida |
+| 11 | **Arroz integral** | ¿Es 1006.20 (dentro del IVAP) o queda fuera? |
+| 12 | **Infusiones** | Ya separado: el té (09.02) está exonerado, la manzanilla no. Falta asignar `producto_tipo` a cada producto real |
 
-El reporte `procesados/pendientes_para_importar.csv` lista producto por producto
-qué falta, con su categoría, tipo y las tres columnas tributarias.
+Las 5 reglas que siguen en `PENDIENTE` bloquean la importación de su familia,
+que es lo correcto: `ABARROTES/ARROZ` sin tipo, `ABARROTES/INFUSIONES` sin
+tipo, `LACTEOS/LECHE` sin tipo, `SNACKS/FRUTOS SECOS` sin tipo, y
+`ABARROTES/ARROZ/ARROZ_INTEGRAL`.
+
+### Por qué esto no reemplaza a un contador
+
+Las reglas están verificadas contra el texto publicado de la norma y cada una
+cita su partida, pero **la clasificación arancelaria de un producto concreto es
+una decisión que toma el contribuyente**. Lo que cambió es el costo de
+revisarlas: antes eran nueve preguntas abiertas, ahora son afirmaciones
+citadas que alguien confirma o corrige.
+
+Y caducan. `verificado_el` existe para eso, y `sinVerificarDesdeHace()` las
+lista: un test falla si alguna pasa los dos años sin revisión.

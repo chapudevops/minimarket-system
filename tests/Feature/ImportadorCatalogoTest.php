@@ -371,6 +371,30 @@ class ImportadorCatalogoTest extends TestCase
         $this->assertSame(1, $resultado->creados);
     }
 
+    #[Test]
+    public function la_simulacion_cuenta_los_cambios_reales_y_no_solo_lo_que_existe(): void
+    {
+        // Tres productos ya importados; solo uno cambia en el CSV.
+        $filas = [
+            $this->fila(['codigo_interno' => $this->prefijo.'-SIM-000001']),
+            $this->fila(['codigo_interno' => $this->prefijo.'-SIM-000002']),
+            $this->fila(['codigo_interno' => $this->prefijo.'-SIM-000003']),
+        ];
+        $this->importar($filas);
+
+        $filas[1]['operacion'] = 'EXONERADO';
+        $filas[] = $this->fila(['codigo_interno' => $this->prefijo.'-SIM-000004']);
+
+        $resultado = $this->importar($filas, simular: true);
+
+        // Contar como "actualizado" todo lo que ya esta en la base exageraba
+        // el impacto y volvia inutil el dry-run, que es lo unico que hay para
+        // decidir antes de escribir sobre una tienda que ya opera.
+        $this->assertSame(1, $resultado->creados);
+        $this->assertSame(1, $resultado->actualizados);
+        $this->assertSame(2, $resultado->sinCambios);
+    }
+
     /* --- Volumen -------------------------------------------------------- */
 
     #[Test]

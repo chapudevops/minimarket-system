@@ -19,6 +19,11 @@ use App\Sunat\Tributos;
  * Cuando no hay regla segura la afectacion sale PENDIENTE. PENDIENTE bloquea la
  * importacion y bloquea la venta: es preferible frenar a emitir un comprobante
  * con un IGV que nadie decidio.
+ *
+ * Cada regla lleva la fecha en que se verifico contra la norma, porque las
+ * reglas caducan. La Ley 31452 es el ejemplo: exonero pollo, huevos, azucar,
+ * fideos y pan del 1.5.2022 al 31.7.2022 y no se prorrogo. Un catalogo armado
+ * en junio de 2022 y nunca revisado seguiria emitiendo boletas sin IGV.
  */
 class ReglasTributarias
 {
@@ -55,6 +60,7 @@ class ReglasTributarias
                 'requiere_revision' => $this->booleano($fila['requiere_revision'] ?? 'true'),
                 'fuente_normativa'  => trim((string) ($fila['fuente_normativa'] ?? '')),
                 'observacion'       => trim((string) ($fila['observacion'] ?? '')),
+                'verificado_el'     => trim((string) ($fila['verificado_el'] ?? '')),
             ];
         }
     }
@@ -164,6 +170,24 @@ class ReglasTributarias
         return array_values($this->reglas);
     }
 
+    /**
+     * Reglas cuya ultima verificacion contra la norma tiene mas de $meses.
+     *
+     * No bloquea nada: es un recordatorio. Una regla vieja no esta mal, pero
+     * nadie confirmo que siga vigente.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    public function sinVerificarDesdeHace(int $meses = 12): array
+    {
+        $limite = now()->subMonths($meses)->toDateString();
+
+        return array_values(array_filter(
+            $this->reglas,
+            fn (array $regla) => $regla['verificado_el'] === '' || $regla['verificado_el'] < $limite
+        ));
+    }
+
     /** Si alguna regla de esa subcategoria declara un producto_tipo concreto. */
     private function distinguePorTipo(string $categoria, string $subcategoria): bool
     {
@@ -191,6 +215,7 @@ class ReglasTributarias
             'requiere_revision' => true,
             'fuente_normativa'  => '',
             'observacion'       => $motivo,
+            'verificado_el'     => '',
         ];
     }
 
