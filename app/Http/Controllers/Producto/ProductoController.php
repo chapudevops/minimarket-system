@@ -195,15 +195,7 @@ class ProductoController extends Controller
 
             // Subir foto
             if ($request->hasFile('foto')) {
-                $foto = $request->file('foto');
-                $fotoName = time() . '_' . uniqid() . '.' . $foto->getClientOriginalExtension();
-                $foto->storeAs('public/productos', $fotoName);
-                $data['foto'] = $fotoName;
-
-                // Una foto subida a mano es PROPIA, y eso es lo que impide que
-                // el enriquecimiento automatico la pise. Sin marcarla, quedaba
-                // en SIN_IMAGEN y el primer barrido de imagenes la reemplazaba.
-                $data = array_merge($data, $this->marcasDeFotoPropia());
+                $data = array_merge($data, $this->guardarFotoPropia($request->file('foto')));
             }
 
             $producto = Producto::create($data);
@@ -301,14 +293,7 @@ class ProductoController extends Controller
                 if ($producto->foto) {
                     Storage::delete('public/productos/' . $producto->foto);
                 }
-                $foto = $request->file('foto');
-                $fotoName = time() . '_' . uniqid() . '.' . $foto->getClientOriginalExtension();
-                $foto->storeAs('public/productos', $fotoName);
-                $data['foto'] = $fotoName;
-
-                // Ver el comentario de store(): sin esto la foto propia queda
-                // desprotegida frente al enriquecimiento automatico.
-                $data = array_merge($data, $this->marcasDeFotoPropia());
+                $data = array_merge($data, $this->guardarFotoPropia($request->file('foto')));
             }
 
             $producto->update($data);
@@ -342,19 +327,36 @@ class ProductoController extends Controller
     }
 
     /**
-     * Trazabilidad de una foto tomada por la tienda.
+     * Guarda una foto tomada por la tienda y devuelve su trazabilidad.
      *
-     * PROPIA gana sobre cualquier imagen externa y el enriquecedor tiene
-     * prohibido tocarla. Se limpia el origen externo porque el archivo que
-     * queda ya no viene de ahi.
+     * Pasa por el mismo procesador que las imagenes externas: se achica a 600 px
+     * y se convierte a WebP. Antes se guardaba el archivo tal cual, asi que un
+     * JPEG de 4 MB del celular quedaba entero en disco y el POS lo bajaba en
+     * cada pantalla.
+     *
+     * PROPIA es lo que impide que el enriquecimiento automatico la pise. Sin
+     * esa marca la foto quedaba en SIN_IMAGEN y el primer barrido la
+     * reemplazaba por una de internet.
      *
      * @return array<string,mixed>
      */
-    private function marcasDeFotoPropia(): array
+    private function guardarFotoPropia(\Illuminate\Http\UploadedFile $archivo): array
     {
+        $nombre = 'productos/'.now()->format('Ymd').'_'.uniqid().'.webp';
+
+        (new \App\Catalogo\Imagenes\ProcesadorImagen())->guardarComoWebp(
+            (string) file_get_contents($archivo->getRealPath()),
+            storage_path('app/public/'.$nombre),
+            $archivo->getMimeType(),
+        );
+
         return [
+            'foto'                => $nombre,
             'foto_estado'         => \App\Catalogo\Imagenes\EstadoFoto::PROPIA,
             'foto_fuente'         => 'PROPIA',
+            // Una foto propia no acredita a nadie mas y no tiene URL de origen.
+            'foto_licencia'       => null,
+            'foto_atribucion'     => null,
             'foto_url_origen'     => null,
             'foto_fecha_consulta' => now()->toDateString(),
         ];

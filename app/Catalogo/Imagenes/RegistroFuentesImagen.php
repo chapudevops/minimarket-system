@@ -71,6 +71,60 @@ class RegistroFuentesImagen
             && in_array($registro['estado'] ?? '', [self::DISPONIBLE, self::SOLO_REFERENCIA], true);
     }
 
+    /** Valor que usa el registro cuando la licencia de la imagen no se sabe. */
+    public const NO_DETERMINABLE = 'NO_DETERMINABLE';
+
+    /**
+     * Licencia de la IMAGEN declarada por la fuente, o null si no se sabe.
+     *
+     * No es lo mismo que la licencia de los DATOS. En Open Food Facts la base
+     * es ODbL y las fotos son CC BY-SA: dos licencias distintas del mismo
+     * sitio, con obligaciones distintas. Confundirlas seria atribuir mal.
+     */
+    public function licenciaImagen(string $fuente): ?string
+    {
+        $licencia = trim($this->buscar($fuente)['licencia_imagen'] ?? '');
+
+        return ($licencia === '' || $licencia === self::NO_DETERMINABLE) ? null : $licencia;
+    }
+
+    /** Licencia de los datos (nombre, marca, cantidad). Informativa. */
+    public function licenciaDatos(string $fuente): ?string
+    {
+        return trim($this->buscar($fuente)['licencia_datos'] ?? '') ?: null;
+    }
+
+    /**
+     * Credito exacto que exige la licencia de la imagen, o null si no aplica.
+     *
+     * @return array{texto: string, url: string}|null
+     */
+    public function atribucion(string $fuente): ?array
+    {
+        $licencia = $this->licenciaImagen($fuente);
+        $quien = trim($this->buscar($fuente)['atribucion'] ?? '');
+
+        if ($licencia === null || $quien === '') {
+            return null;
+        }
+
+        return [
+            'texto' => "Imagen: {$quien} ({$licencia})",
+            'url' => trim($this->buscar($fuente)['url_atribucion'] ?? ''),
+        ];
+    }
+
+    /**
+     * Si se puede usar una imagen de esta fuente.
+     *
+     * Poder acceder no alcanza. Sin una licencia determinable no hay con que
+     * justificar el uso, y una licencia inventada es peor que no tener imagen.
+     */
+    public function sePuedeUsarLaImagen(string $fuente): bool
+    {
+        return $this->licenciaImagen($fuente) !== null;
+    }
+
     /** Si sus condiciones permiten guardar una copia del archivo. */
     public function sePuedeAlmacenar(string $fuente): bool
     {

@@ -32,10 +32,13 @@ class EnriquecedorImagenesTest extends TestCase
         string $estado = 'DISPONIBLE',
         string $almacenar = 'SI',
         string $acceso = 'SI',
+        string $licenciaImagen = 'CC BY-SA 3.0',
     ): RegistroFuentesImagen {
         return new RegistroFuentesImagen([[
             'fuente' => 'FUENTE_PRUEBA', 'url_base' => 'https://ejemplo.test',
-            'consulta_por' => 'EAN', 'licencia' => 'CC BY-SA 3.0',
+            'consulta_por' => 'EAN',
+            'licencia_datos' => 'ODbL 1.0', 'licencia_imagen' => $licenciaImagen,
+            'atribucion' => 'Fuente de Prueba', 'url_atribucion' => 'https://ejemplo.test',
             'permite_almacenar' => $almacenar, 'permite_enlazar' => 'SI',
             'robots_permite' => 'SI', 'acceso_permitido' => $acceso, 'estado' => $estado,
             'verificado_el' => '2026-09-09', 'observacion' => 'fuente de prueba',
@@ -409,22 +412,51 @@ class EnriquecedorImagenesTest extends TestCase
     }
 
     #[Test]
-    public function una_imagen_de_open_food_facts_lleva_su_credito(): void
+    public function la_imagen_externa_guarda_su_licencia_y_su_credito(): void
     {
-        $producto = $this->producto([
-            'foto' => 'productos/1.webp',
-            'foto_estado' => EstadoFoto::VERIFICADA,
-            'foto_fuente' => 'OPENFOODFACTS',
-        ]);
+        $producto = $this->producto();
+        $fuente = (new FuenteImagenFalsa())->responde('7750182001234', $this->datos());
+
+        $this->enriquecedor($fuente)->enriquecer([$producto]);
+
+        $producto->refresh();
+
+        // La licencia se guarda al obtener la foto, no se deduce despues: si la
+        // fuente cambia sus condiciones, esta imagen sigue amparada por lo que
+        // decia el dia que se bajo.
+        $this->assertSame('CC BY-SA 3.0', $producto->foto_licencia);
+        $this->assertSame('Imagen: Fuente de Prueba (CC BY-SA 3.0)', $producto->foto_atribucion);
+        $this->assertSame('2026-09-09', $producto->foto_fecha_consulta?->toDateString() ?: now()->toDateString());
 
         $credito = $producto->creditoDeFoto();
-
-        // CC BY-SA exige citar la fuente con enlace. Sin credito el uso de la
-        // imagen no esta amparado por la licencia.
         $this->assertNotNull($credito);
-        $this->assertStringContainsString('Open Food Facts', $credito['texto']);
         $this->assertStringContainsString('CC BY-SA', $credito['texto']);
-        $this->assertSame('https://openfoodfacts.org', $credito['url']);
+    }
+
+    #[Test]
+    public function sin_licencia_determinable_la_imagen_no_se_publica(): void
+    {
+        $producto = $this->producto();
+        $fuente = (new FuenteImagenFalsa())->responde('7750182001234', $this->datos());
+
+        $directorio = $this->directorioTemporal();
+        $registro = $this->registro(licenciaImagen: RegistroFuentesImagen::NO_DETERMINABLE);
+
+        $resultado = $this->enriquecedor($fuente, $registro, descargador: $this->descargador($directorio))
+            ->enriquecer([$producto]);
+
+        // Coincidian marca, presentacion y EAN, pero no hay con que justificar
+        // el uso de la foto. Una licencia inventada es peor que no tener imagen.
+        $this->assertSame(0, $resultado->verificadas);
+        $this->assertSame(1, $resultado->aRevisar);
+
+        $producto->refresh();
+        $this->assertSame(EstadoFoto::REVISAR, $producto->foto_estado);
+        $this->assertNull($producto->foto);
+        $this->assertNull($producto->foto_licencia);
+        $this->assertFileDoesNotExist($directorio."/productos/{$producto->id}.webp");
+        // Y no se muestra: el POS sigue con el placeholder.
+        $this->assertFalse($producto->tieneFoto());
     }
 
     #[Test]
@@ -434,9 +466,27 @@ class EnriquecedorImagenesTest extends TestCase
             'foto' => 'productos/1.webp',
             'foto_estado' => EstadoFoto::PROPIA,
             'foto_fuente' => 'PROPIA',
+            'foto_licencia' => null,
+            'foto_atribucion' => null,
         ]);
 
+        $this->assertTrue($producto->tieneFoto());
         $this->assertNull($producto->creditoDeFoto());
+    }
+
+    #[Test]
+    public function la_url_de_la_foto_no_duplica_el_segmento_de_carpeta(): void
+    {
+        // El dashboard armaba la URL a mano con 'storage/productos/' . $foto,
+        // y con las rutas nuevas producia storage/productos/productos/1.webp.
+        // Todas las vistas tienen que pasar por foto_url.
+        $conPrefijo = $this->producto(['foto' => 'productos/1.webp', 'foto_estado' => EstadoFoto::VERIFICADA]);
+        $this->assertStringEndsWith('/storage/productos/1.webp', $conPrefijo->foto_url);
+        $this->assertStringNotContainsString('productos/productos', $conPrefijo->foto_url);
+
+        // Y el formato viejo, sin prefijo, sigue resolviendo igual.
+        $conPrefijo->forceFill(['foto' => '1758000000_abc.jpg'])->save();
+        $this->assertStringEndsWith('/storage/productos/1758000000_abc.jpg', $conPrefijo->fresh()->foto_url);
     }
 
     #[Test]

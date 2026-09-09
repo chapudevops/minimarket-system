@@ -249,8 +249,6 @@ class CodigoBarrasTest extends TestCase
         $this->montarEscenario();
         $producto = $this->crearProducto(5);
 
-        \Illuminate\Support\Facades\Storage::fake('local');
-
         $this->actingAs($this->administrador())
             ->put('/productos/'.$producto->id, [
                 'codigo_interno' => $producto->codigo_interno,
@@ -272,6 +270,53 @@ class CodigoBarrasTest extends TestCase
         $this->assertSame(EstadoFoto::PROPIA, $producto->foto_estado);
         $this->assertSame('PROPIA', $producto->foto_fuente);
         $this->assertFalse(EstadoFoto::sePuedeReemplazar($producto->foto_estado));
+
+        // Una foto propia no acredita a terceros.
+        $this->assertNull($producto->foto_licencia);
+        $this->assertNull($producto->creditoDeFoto());
+
+        // Y pasa por el mismo procesador que las externas: WebP, no el JPEG
+        // de 4 MB que sale del celular.
+        $archivo = storage_path('app/public/'.$producto->foto);
+
+        try {
+            $this->assertFileExists($archivo);
+            $this->assertSame('image/webp', image_type_to_mime_type(getimagesize($archivo)[2]));
+            $this->assertLessThanOrEqual(600, max(getimagesize($archivo)[0], getimagesize($archivo)[1]));
+        } finally {
+            @unlink($archivo);
+        }
+    }
+
+    #[Test]
+    public function una_foto_propia_grande_se_achica_al_guardarse(): void
+    {
+        $this->montarEscenario();
+        $producto = $this->crearProducto(5);
+
+        $this->actingAs($this->administrador())
+            ->put('/productos/'.$producto->id, [
+                'codigo_interno' => $producto->codigo_interno,
+                'descripcion' => $producto->descripcion,
+                'unidad' => 'UNIDAD',
+                'operacion' => 'GRAVADO',
+                'tipo_producto' => 'PRODUCTO',
+                'precio_compra' => 5,
+                'precio_venta' => 9,
+                'subcategoria_id' => $producto->subcategoria_id,
+                'foto' => UploadedFile::fake()->image('grande.jpg', 1800, 1200),
+            ]);
+
+        $archivo = storage_path('app/public/'.$producto->fresh()->foto);
+
+        try {
+            [$ancho, $alto] = getimagesize($archivo);
+            $this->assertSame(600, $ancho);
+            // 1800x1200 -> 600x400: la proporcion se conserva.
+            $this->assertSame(400, $alto);
+        } finally {
+            @unlink($archivo);
+        }
     }
 
     #[Test]

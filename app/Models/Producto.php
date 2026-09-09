@@ -31,6 +31,8 @@ class Producto extends Model
         'stock_minimo',
         'foto',
         'foto_fuente',
+        'foto_licencia',
+        'foto_atribucion',
         'foto_url_origen',
         'foto_fecha_consulta',
         'foto_estado',
@@ -188,30 +190,31 @@ class Producto extends Model
     }
 
     /**
-     * Credito de la imagen, cuando la licencia de la fuente lo exige.
+     * Credito de la imagen, cuando la licencia lo exige.
      *
-     * Las imagenes de la familia Open Food Facts son CC BY-SA 3.0: se pueden
-     * usar, incluso comercialmente, pero citando la fuente con enlace. Sin el
-     * credito el uso no esta amparado por la licencia.
+     * Sale de lo que se guardo al obtener la foto, no de una tabla en el
+     * codigo. Es a proposito: si la fuente cambia sus condiciones manana, esta
+     * imagen sigue amparada por la licencia que estaba vigente cuando se bajo,
+     * y foto_fecha_consulta lo prueba.
      *
-     * @return array{texto: string, url: string}|null
+     * Devuelve null para una foto propia —no hay a quien acreditar— y tambien
+     * cuando no hay licencia registrada, que es justamente el caso en el que la
+     * imagen no deberia estar publicada.
+     *
+     * @return array{texto: string, url: string, licencia: string}|null
      */
     public function creditoDeFoto(): ?array
     {
-        $creditos = [
-            'OPENFOODFACTS' => ['Open Food Facts', 'https://openfoodfacts.org'],
-            'OPENBEAUTYFACTS' => ['Open Beauty Facts', 'https://openbeautyfacts.org'],
-            'OPENPRODUCTSFACTS' => ['Open Products Facts', 'https://openproductsfacts.org'],
-            'OPENPETFOODFACTS' => ['Open Pet Food Facts', 'https://openpetfoodfacts.org'],
-        ];
-
-        if (! $this->tieneFoto() || ! isset($creditos[$this->foto_fuente])) {
+        if (! $this->tieneFoto() || $this->foto_atribucion === null || $this->foto_licencia === null) {
             return null;
         }
 
-        [$nombre, $url] = $creditos[$this->foto_fuente];
-
-        return ['texto' => "Imagen: {$nombre} (CC BY-SA 3.0)", 'url' => $url];
+        return [
+            'texto' => $this->foto_atribucion,
+            'licencia' => $this->foto_licencia,
+            'url' => \App\Catalogo\Imagenes\RegistroFuentesImagen::desdeArchivo()
+                ->atribucion((string) $this->foto_fuente)['url'] ?? '',
+        ];
     }
 
     public function tieneFoto(): bool

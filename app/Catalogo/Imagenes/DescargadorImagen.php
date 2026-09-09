@@ -23,17 +23,6 @@ use RuntimeException;
  */
 class DescargadorImagen
 {
-    /** Lado mayor de la imagen guardada. Un POS no necesita mas. */
-    public const LADO_MAXIMO = 600;
-
-    /** Calidad WebP: por encima de esto el peso sube sin verse mejor. */
-    private const CALIDAD = 82;
-
-    /** Tope de descarga. Las imagenes de catalogo no llegan ni cerca. */
-    private const PESO_MAXIMO = 5_242_880;
-
-    private const TIPOS = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-
     /**
      * @param  string  $directorio  donde se guardan los .webp
      * @param  Closure|null  $descargar  fn(string $url): array{0:int,1:?string,2:?string}
@@ -44,7 +33,11 @@ class DescargadorImagen
         private readonly string $directorio,
         private readonly ?Closure $descargar = null,
         private readonly string $agente = Fuentes\ClienteOpenFoodFacts::AGENTE,
+        private readonly ?ProcesadorImagen $procesador = null,
     ) {}
+
+    /** Lado mayor de la imagen guardada. Lo fija ProcesadorImagen. */
+    public const LADO_MAXIMO = ProcesadorImagen::LADO_MAXIMO;
 
     /**
      * Guarda la imagen del producto y devuelve la ruta relativa.
@@ -61,71 +54,15 @@ class DescargadorImagen
             throw new RuntimeException("la descarga devolvió HTTP {$codigo}");
         }
 
-        if (strlen($cuerpo) > self::PESO_MAXIMO) {
-            throw new RuntimeException('la imagen supera el tope de peso');
-        }
+        $relativa = "productos/{$productoId}.webp";
 
-        // El Content-Type puede faltar; en ese caso decide GD, que es el juez
-        // que importa: si no puede abrirlo, no es una imagen.
-        if ($tipo !== null && ! $this->esTipoDeImagen($tipo)) {
-            throw new RuntimeException("el contenido no es una imagen ({$tipo})");
-        }
+        ($this->procesador ?? new ProcesadorImagen())->guardarComoWebp(
+            $cuerpo,
+            rtrim($this->directorio, '/').'/'.$relativa,
+            $tipo,
+        );
 
-        $imagen = @imagecreatefromstring($cuerpo);
-
-        if ($imagen === false) {
-            throw new RuntimeException('el contenido no se pudo abrir como imagen');
-        }
-
-        try {
-            $redimensionada = $this->redimensionar($imagen);
-
-            $relativa = "productos/{$productoId}.webp";
-            $destino = rtrim($this->directorio, '/').'/'.$relativa;
-
-            $carpeta = dirname($destino);
-
-            if (! is_dir($carpeta) && ! mkdir($carpeta, 0775, true) && ! is_dir($carpeta)) {
-                throw new RuntimeException("no se pudo crear {$carpeta}");
-            }
-
-            if (! imagewebp($redimensionada, $destino, self::CALIDAD)) {
-                throw new RuntimeException('no se pudo escribir el WebP');
-            }
-
-            if ($redimensionada !== $imagen) {
-                imagedestroy($redimensionada);
-            }
-
-            return $relativa;
-        } finally {
-            imagedestroy($imagen);
-        }
-    }
-
-    /** Achica al lado maximo conservando la proporcion. No agranda nunca. */
-    private function redimensionar(\GdImage $imagen): \GdImage
-    {
-        $ancho = imagesx($imagen);
-        $alto = imagesy($imagen);
-        $lado = max($ancho, $alto);
-
-        if ($lado <= self::LADO_MAXIMO) {
-            return $imagen;
-        }
-
-        $escala = self::LADO_MAXIMO / $lado;
-
-        $nueva = imagescale($imagen, (int) round($ancho * $escala), (int) round($alto * $escala));
-
-        return $nueva === false ? $imagen : $nueva;
-    }
-
-    private function esTipoDeImagen(string $tipo): bool
-    {
-        $tipo = strtolower(trim(explode(';', $tipo)[0]));
-
-        return in_array($tipo, self::TIPOS, true);
+        return $relativa;
     }
 
     /** @return array{0:int,1:?string,2:?string} */

@@ -61,6 +61,13 @@ class EnriquecedorImagenes
 
         $puedeAlmacenar = $this->registro->sePuedeAlmacenar($nombreFuente);
 
+        // Acceder no alcanza: sin una licencia determinable no hay con que
+        // justificar el uso de la foto. Se consulta igual —los datos sirven
+        // para saber si la fuente conoce el producto— pero la imagen no se
+        // publica sola.
+        $licencia = $this->registro->licenciaImagen($nombreFuente);
+        $atribucion = $this->registro->atribucion($nombreFuente);
+
         foreach ($productos as $producto) {
             if ($avance !== null) {
                 $avance();
@@ -79,7 +86,7 @@ class EnriquecedorImagenes
             }
 
             try {
-                $this->procesar($producto, $resultado, $nombreFuente, $puedeAlmacenar);
+                $this->procesar($producto, $resultado, $nombreFuente, $puedeAlmacenar, $licencia, $atribucion);
             } catch (Throwable $e) {
                 // Una imagen que falla no puede tumbar el lote entero.
                 $resultado->errores++;
@@ -115,6 +122,8 @@ class EnriquecedorImagenes
         ResultadoEnriquecimiento $resultado,
         string $nombreFuente,
         bool $puedeAlmacenar,
+        ?string $licencia,
+        ?array $atribucion,
     ): void {
         $resultado->consultados++;
 
@@ -137,11 +146,24 @@ class EnriquecedorImagenes
             'foto_fuente' => $nombreFuente,
             'foto_url_origen' => $candidata->url,
             'foto_fecha_consulta' => now()->toDateString(),
+            // Se guarda la licencia vigente al momento de obtenerla, no se
+            // deriva del registro al mostrarla: si la fuente cambia sus
+            // condiciones, esta foto sigue amparada por lo que decia hoy.
+            'foto_licencia' => $licencia,
+            'foto_atribucion' => $atribucion['texto'] ?? null,
         ];
+
+        // Procedencia sin licencia determinable: la imagen no se publica.
+        if ($licencia === null) {
+            $estado = EstadoFoto::REVISAR;
+            $cambios['foto_estado'] = $estado;
+            $veredicto['motivos'][] = 'la fuente no declara una licencia de imagen determinable';
+        }
 
         // Solo se guarda una copia si las condiciones de la fuente lo permiten.
         // Si solo dejan enlazar, queda la URL de origen y `foto` sigue en NULL.
-        if ($estado === EstadoFoto::VERIFICADA && $puedeAlmacenar && $this->descargador !== null && ! $this->simular) {
+        if ($estado === EstadoFoto::VERIFICADA && $licencia !== null
+            && $puedeAlmacenar && $this->descargador !== null && ! $this->simular) {
             try {
                 $cambios['foto'] = $this->descargador->guardar($candidata->url, (int) $producto->id);
             } catch (Throwable $e) {

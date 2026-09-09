@@ -104,9 +104,13 @@ class CatalogoImagenes extends Command
         }
 
         $this->newLine();
-        $this->line($simular
-            ? '  <options=bold>Sondeo de cobertura</> (no se escribe nada)'
-            : '  <options=bold>Enriqueciendo</>');
+
+        if ($simular) {
+            $this->line('  <options=bold>Sondeo de cobertura</> — solo diagnóstico');
+            $this->line('  <fg=gray>No modifica productos, no guarda imágenes, no cambia foto_estado</>');
+        } else {
+            $this->line('  <options=bold>Enriqueciendo</> — esto SÍ escribe en la base');
+        }
         $this->line('  Agente: <info>'.ClienteOpenFoodFacts::AGENTE.'</info>');
         $this->line('  Pausa:  <info>'.round(ClienteOpenFoodFacts::PAUSA / 1_000_000, 1).' s</info> entre consultas (límite de OFF: 15/min)');
 
@@ -157,7 +161,10 @@ class CatalogoImagenes extends Command
             ['Cobertura del sondeo', round($resultado->verificadas / $consultados * 100, 1).' %'],
         ]);
 
-        $ruta = Rutas::procesados('imagenes_resultado.csv');
+        // El sondeo escribe su propio archivo: si compartiera el del
+        // enriquecimiento real, un diagnostico pisaria el reporte de la ultima
+        // corrida que si escribio en la base.
+        $ruta = Rutas::procesados($simular ? 'imagenes_sondeo.csv' : 'imagenes_resultado.csv');
         Csv::escribir($ruta, ['codigo_interno', 'codigo_barras', 'descripcion', 'marca', 'presentacion',
             'fuente', 'url_origen', 'estado', 'motivo'], $resultado->detalle);
         $this->line('  Detalle en <info>'.$ruta.'</info>');
