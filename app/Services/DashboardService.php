@@ -158,20 +158,27 @@ class DashboardService
         return ['meses' => $meses, 'montosCompras' => $montos];
     }
 
+    /**
+     * Los cinco productos con mas unidades vendidas.
+     *
+     * Devuelve modelos Producto y no filas sueltas de DB::table() porque la
+     * vista necesita foto_url y tieneFoto(): la URL de la imagen la decide el
+     * modelo y en un solo lugar. Cuando esto devolvia stdClass, la vista tenia
+     * que armar la ruta a mano y quedaba desincronizada del modelo.
+     *
+     * total_vendido y total_monto vienen como atributos calculados.
+     */
     public function getProductosMasVendidos()
     {
-        return DB::table('venta_detalles')
-            ->join('productos', 'venta_detalles.producto_id', '=', 'productos.id')
-            ->select(
-                'productos.id',
-                'productos.descripcion',
-                'productos.codigo_interno',
-                'productos.foto',
-                DB::raw('SUM(venta_detalles.cantidad) as total_vendido'),
-                DB::raw('SUM(venta_detalles.total) as total_monto')
-            )
-            ->groupBy('productos.id', 'productos.descripcion', 'productos.codigo_interno', 'productos.foto')
-            ->orderBy('total_vendido', 'desc')
+        return Producto::query()
+            ->join('venta_detalles', 'venta_detalles.producto_id', '=', 'productos.id')
+            ->select('productos.*')
+            ->selectRaw('SUM(venta_detalles.cantidad) as total_vendido')
+            ->selectRaw('SUM(venta_detalles.total) as total_monto')
+            // Agrupar por la clave primaria alcanza: el resto de las columnas
+            // de productos dependen funcionalmente de ella.
+            ->groupBy('productos.id')
+            ->orderByDesc('total_vendido')
             ->limit(5)
             ->get();
     }
