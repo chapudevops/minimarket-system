@@ -40,6 +40,51 @@ php artisan test --filter=Venta     # por nombre
 
 `phpunit.xml` ya apunta a `minimarketsystem_test`; no hace falta tocar el `.env`.
 
+## Ojo: el dump esta desfasado respecto de la base real
+
+`bd.sql` ya no refleja el esquema que usa la aplicacion. Su tabla `users` no
+tiene `caja_id`, `almacen_id`, `estado`, `ultimo_acceso` ni `ultimo_ip`, que si
+existen en desarrollo y de las que dependen el login, los permisos por rol y la
+auditoria. Montar la base de test solo desde el dump falla al migrar con
+`Unknown column 'estado' in 'users'`.
+
+Hasta que el dump se regenere, la forma fiable de rearmarla es clonar el
+esquema real (sin datos) y copiar el historial de migraciones:
+
+```bash
+mysqldump -u root -p --no-data --single-transaction minimarketsystem > /tmp/esquema.sql
+mysqldump -u root -p --no-create-info --single-transaction minimarketsystem migrations > /tmp/migraciones.sql
+
+mysql -u root -p -e "DROP DATABASE IF EXISTS minimarketsystem_test;
+  CREATE DATABASE minimarketsystem_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -u root -p minimarketsystem_test < /tmp/esquema.sql
+mysql -u root -p minimarketsystem_test < /tmp/migraciones.sql
+
+# Datos de referencia que algunos tests dan por sentados.
+DB_DATABASE=minimarketsystem_test php artisan db:seed --class=RoleSeeder --force
+DB_DATABASE=minimarketsystem_test php artisan db:seed --class=TaxonomiaSeeder --force
+```
+
+Cargar el esquema por un fichero y no por una tuberia
+(`mysqldump ... | mysql ...`): las dos puntas compiten por los mismos locks en
+el mismo servidor y la carga muere a medias con un deadlock, dejando la base
+con parte de las tablas.
+
+## Si la suite empieza a fallar con deadlocks
+
+Sintoma: `BaseVaciaTest` falla con `DeadlockException` en la suite completa pero
+pasa cuando se corre sola.
+
+Causa: filas huerfanas en `auditorias`. Si una corrida se corta antes del
+rollback, sus registros de bitacora se quedan; `ResetDemo` los borra todos en el
+`setUp` de cada test de `BaseVaciaTest`, y esa toma masiva de locks choca con
+los tests siguientes. Con miles de filas acumuladas la suite se vuelve
+intermitente.
+
+```bash
+mysql -u root -p minimarketsystem_test -e "DELETE FROM auditorias;"
+```
+
 ## Cuando agregues una migracion
 
 Correrla tambien sobre la base de test:

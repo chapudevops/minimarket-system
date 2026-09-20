@@ -426,7 +426,11 @@ class EnriquecedorImagenesTest extends TestCase
         // decia el dia que se bajo.
         $this->assertSame('CC BY-SA 3.0', $producto->foto_licencia);
         $this->assertSame('Imagen: Fuente de Prueba (CC BY-SA 3.0)', $producto->foto_atribucion);
-        $this->assertSame('2026-09-09', $producto->foto_fecha_consulta?->toDateString() ?: now()->toDateString());
+        // La fecha de consulta es la del dia en que se bajo la imagen. Estaba
+        // fijada al '2026-09-09' (el dia que se escribio el test), asi que
+        // fallaba a partir del dia siguiente. El `?: now()` de antes ademas
+        // dejaba pasar un valor nulo sin que el test se enterara.
+        $this->assertSame(now()->toDateString(), $producto->foto_fecha_consulta?->toDateString());
 
         $credito = $producto->creditoDeFoto();
         $this->assertNotNull($credito);
