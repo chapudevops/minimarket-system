@@ -139,7 +139,7 @@
     <div class="container">
         <!-- Encabezado - Empresa que compra -->
         <div class="header">
-            <h1>DISTRIBUIDORA BEJAR E.I.R.L.</h1>
+            <h1>{{ \App\Marca::nombre() }}</h1>
             <p>MZA. E LOTE. 2 CAS. SAN MARTIN ICA - ICA - ICA</p>
             <p>Ica - Ica - Ica</p>
             <p>Teléfono: -</p>

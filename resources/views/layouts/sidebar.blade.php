@@ -1,14 +1,14 @@
 <aside class="sidebar-wrapper">
     <div class="sidebar-header">
         <div class="logo-icon">
-            <img src="{{ $empresa && $empresa->logo ? asset('storage/empresa/' . $empresa->logo) : URL::asset('build/images/logo-icon.png') }}" 
-                 class="logo-img" 
-                 alt="{{ $empresa->razon_social ?? 'Minimarket' }}"
+            <img src="{{ \App\Marca::logo() }}"
+                 class="logo-img"
+                 alt="{{ \App\Marca::nombre() }}"
                  style="width: 45px; height: 45px; object-fit: contain; border-radius: 10px;">
         </div>
         <div class="logo-name flex-grow-1">
-            <h5 class="mb-0">{{ $empresa->razon_social ?? 'Minimarket' }}</h5>
-            <small class="text-muted">{{ $empresa->ruc ?? '' }}</small>
+            <h5 class="mb-0">{{ \App\Marca::nombre() }}</h5>
+            <small class="text-muted">{{ \App\Marca::ruc() }}</small>
         </div>
         <div class="sidebar-close">
             <span class="material-icons-outlined">close</span>

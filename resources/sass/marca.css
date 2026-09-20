@@ -1,0 +1,402 @@
+/*
+   Identidad de color del sistema: azul y blanco.
+
+   El azul base (#002254) esta tomado del propio logo de la tienda, asi que la
+   interfaz y la marca dicen lo mismo. La plantilla venia con morados
+   (#667eea / #764ba2) y verdes sueltos que no pertenecian a ninguna paleta.
+
+   Se carga DESPUES del tema y de layout-fixes.css: reescribe los tokens de
+   Bootstrap en vez de perseguir reglas una por una.
+
+   Los colores de estado (verde = correcto, rojo = error, amarillo = aviso) se
+   conservan a proposito: son informacion, no decoracion. Si todo fuera azul,
+   un error y una confirmacion se verian igual.
+*/
+:root {
+    /* Rampa de azul, del logo hacia la luz. */
+    --mm-azul-900: #001733;
+    --mm-azul-800: #001c44;
+    --mm-azul-700: #002254;   /* azul del logo */
+    --mm-azul-600: #043a82;
+    --mm-azul-500: #0b51ad;   /* acciones primarias */
+    --mm-azul-400: #1a6fd4;
+    --mm-azul-300: #4f97e6;
+    --mm-azul-200: #a9cdf3;
+    --mm-azul-100: #e7f0fb;
+    --mm-azul-050: #f4f8fd;
+
+    --mm-blanco: #ffffff;
+
+    /* Tokens de Bootstrap. Todo lo que sea "primary" pasa a ser el azul. */
+    --bs-primary: var(--mm-azul-500);
+    --bs-primary-rgb: 11, 81, 173;
+    --bs-primary-text-emphasis: var(--mm-azul-700);
+    --bs-primary-bg-subtle: var(--mm-azul-100);
+    --bs-primary-border-subtle: var(--mm-azul-200);
+
+    --bs-link-color: var(--mm-azul-500);
+    --bs-link-color-rgb: 11, 81, 173;
+    --bs-link-hover-color: var(--mm-azul-700);
+    --bs-link-hover-color-rgb: 0, 34, 84;
+}
+
+/* ---------- Botones y enlaces ---------- */
+
+.btn-primary {
+    --bs-btn-bg: var(--mm-azul-500);
+    --bs-btn-border-color: var(--mm-azul-500);
+    --bs-btn-hover-bg: var(--mm-azul-600);
+    --bs-btn-hover-border-color: var(--mm-azul-600);
+    --bs-btn-active-bg: var(--mm-azul-700);
+    --bs-btn-active-border-color: var(--mm-azul-700);
+    --bs-btn-disabled-bg: var(--mm-azul-300);
+    --bs-btn-disabled-border-color: var(--mm-azul-300);
+    --bs-btn-color: var(--mm-blanco);
+    --bs-btn-hover-color: var(--mm-blanco);
+    --bs-btn-active-color: var(--mm-blanco);
+}
+
+.btn-outline-primary {
+    --bs-btn-color: var(--mm-azul-600);
+    --bs-btn-border-color: var(--mm-azul-500);
+    --bs-btn-hover-bg: var(--mm-azul-500);
+    --bs-btn-hover-border-color: var(--mm-azul-500);
+    --bs-btn-hover-color: var(--mm-blanco);
+}
+
+.bg-primary { background-color: var(--mm-azul-500) !important; }
+.text-primary { color: var(--mm-azul-600) !important; }
+.border-primary { border-color: var(--mm-azul-500) !important; }
+.badge.bg-primary { background-color: var(--mm-azul-500) !important; }
+
+a { color: var(--mm-azul-500); }
+a:hover { color: var(--mm-azul-700); }
+
+/* ---------- Sidebar ---------- */
+
+/*
+   El sidebar pasa a azul oscuro con texto blanco: es el bloque que da el tono
+   a toda la pantalla y en blanco competia con el contenido.
+*/
+.sidebar-wrapper {
+    background-color: var(--mm-azul-700) !important;
+    border-right-color: var(--mm-azul-800) !important;
+}
+
+/*
+   Cabecera, menu y pie comparten el MISMO azul. Antes cada bloque tenia el
+   suyo (800 / 700 / 800) y el sidebar se veia partido en franjas, como tres
+   paneles apilados en vez de una columna.
+*/
+.sidebar-wrapper .sidebar-header {
+    background-color: transparent !important;
+    border-bottom: 1px solid rgba(255, 255, 255, .08) !important;
+}
+
+.sidebar-wrapper .sidebar-header h5,
+.sidebar-wrapper .sidebar-header .logo-name h5 { color: var(--mm-blanco) !important; }
+.sidebar-wrapper .sidebar-header small,
+.sidebar-wrapper .sidebar-header .text-muted { color: var(--mm-azul-200) !important; }
+.sidebar-wrapper .sidebar-close .material-icons-outlined { color: var(--mm-blanco); }
+
+/* El logo va sobre fondo blanco: casi todos los logos llevan fondo claro. */
+.sidebar-wrapper .logo-icon .logo-img {
+    background-color: var(--mm-blanco);
+    padding: 2px;
+}
+
+/*
+   El contenedor de simplebar trae fondo blanco propio y tapaba el azul del
+   aside: el menu quedaba en texto claro sobre blanco, ilegible.
+*/
+.sidebar-wrapper .sidebar-nav,
+.sidebar-wrapper .simplebar-content,
+.sidebar-wrapper .simplebar-content-wrapper {
+    background-color: transparent !important;
+}
+
+.sidebar-wrapper .metismenu a {
+    color: var(--mm-azul-100) !important;
+}
+
+.sidebar-wrapper .metismenu a:hover,
+.sidebar-wrapper .metismenu a:focus,
+.sidebar-wrapper .metismenu a.active,
+.sidebar-wrapper .metismenu li.mm-active > a {
+    background-color: var(--mm-azul-600) !important;
+    color: var(--mm-blanco) !important;
+}
+
+/*
+   El submenu se distinguia con un azul propio que se leia como un bloque
+   celeste pegado. Un velo translucido basta para marcar la jerarquia sin
+   introducir otro color.
+*/
+.sidebar-wrapper .metismenu ul {
+    background-color: rgba(0, 0, 0, .18) !important;
+}
+
+.sidebar-wrapper .metismenu ul a {
+    color: var(--mm-azul-200) !important;
+    padding-left: 3rem;
+}
+
+.sidebar-wrapper .metismenu ul a:hover,
+.sidebar-wrapper .metismenu ul a.active {
+    background-color: var(--mm-azul-500) !important;
+    color: var(--mm-blanco) !important;
+}
+
+.sidebar-wrapper .menu-label { color: var(--mm-azul-300) !important; }
+
+/* El pie va en el mismo azul; solo lo separa una linea fina. */
+.sidebar-wrapper .sidebar-bottom {
+    background-color: var(--mm-azul-700) !important;
+    border-top: 1px solid rgba(255, 255, 255, .08);
+}
+
+/*
+   "Version 1.0.0" quedaba en gris oscuro sobre azul: practicamente ilegible.
+   El .text-muted de Bootstrap esta pensado para fondos claros.
+*/
+.sidebar-wrapper .sidebar-bottom,
+.sidebar-wrapper .sidebar-bottom .text-muted,
+.sidebar-wrapper .sidebar-bottom small,
+.sidebar-wrapper .sidebar-bottom span {
+    color: var(--mm-azul-200) !important;
+}
+
+.sidebar-wrapper .sidebar-bottom .footer-icon { color: var(--mm-azul-100); }
+.sidebar-wrapper .sidebar-bottom .footer-icon:hover { background-color: var(--mm-azul-600); }
+
+/* ---------- Topbar ---------- */
+
+:root:not([data-bs-theme="dark"]) .top-header .navbar {
+    background-color: var(--mm-blanco) !important;
+    border-bottom: 1px solid var(--mm-azul-100);
+}
+
+.top-header .navbar .nav-right-links > .nav-item > .nav-link,
+.top-header .navbar .nav-right-links .material-icons-outlined {
+    color: var(--mm-azul-700);
+}
+
+.top-header .navbar .nav-right-links > .nav-item > .nav-link:hover {
+    color: var(--mm-azul-500);
+}
+
+/* ---------- Fondo y tarjetas ---------- */
+
+.main-wrapper .main-content { background-color: transparent; }
+
+:root:not([data-bs-theme="dark"]) body { background-color: var(--mm-azul-050); }
+:root:not([data-bs-theme="dark"]) .card { background-color: var(--mm-blanco); }
+
+:root:not([data-bs-theme="dark"]) .card-header {
+    background-color: var(--mm-azul-050);
+    border-bottom-color: var(--mm-azul-100);
+}
+
+/* ---------- Tablas ---------- */
+
+.table > thead th {
+    background-color: var(--mm-azul-700);
+    color: var(--mm-blanco);
+    border-color: var(--mm-azul-600);
+}
+
+:root:not([data-bs-theme="dark"]) .table-striped > tbody > tr:nth-of-type(odd) > * {
+    --bs-table-accent-bg: var(--mm-azul-050);
+    background-color: var(--mm-azul-050);
+}
+
+:root:not([data-bs-theme="dark"]) .table > tbody > tr:hover > * {
+    background-color: var(--mm-azul-100);
+}
+
+/* DataTables: paginacion y buscador en la misma gama. */
+.dataTables_wrapper .dataTables_paginate .paginate_button.current,
+.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+    background: var(--mm-azul-500) !important;
+    border-color: var(--mm-azul-500) !important;
+    color: var(--mm-blanco) !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background: var(--mm-azul-100) !important;
+    border-color: var(--mm-azul-200) !important;
+    color: var(--mm-azul-700) !important;
+}
+
+/* ---------- Formularios ---------- */
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--mm-azul-300);
+    box-shadow: 0 0 0 .2rem rgba(11, 81, 173, .15);
+}
+
+.form-check-input:checked {
+    background-color: var(--mm-azul-500);
+    border-color: var(--mm-azul-500);
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--mm-azul-700);
+    border-bottom-color: var(--mm-azul-500);
+}
+
+/* ---------- Pantallas de sesion y preloader ---------- */
+
+/*
+   Sustituye el degradado morado de la plantilla (#667eea -> #764ba2), que no
+   pertenecia a ninguna paleta del sistema.
+*/
+#preloader,
+.auth-fondo-marca {
+    background: linear-gradient(135deg, var(--mm-azul-700) 0%, var(--mm-azul-500) 100%) !important;
+}
+
+.preloader-title { color: var(--mm-blanco); }
+.preloader-sub { color: var(--mm-azul-200); }
+
+/* El logo del preloader sobre fondo blanco, para que se lea. */
+.preloader-logo {
+    background-color: var(--mm-blanco) !important;
+    border-color: var(--mm-azul-200) !important;
+}
+
+/* ==========================================================================
+   MODO OSCURO
+   ==========================================================================
+
+   El tema oscuro estaba roto: las reglas de arriba forzaban tarjetas y topbar
+   en blanco con !important, y el texto seguia siendo claro. Resultado: fondo
+   oscuro con tarjetas blancas y letras casi blancas encima, ilegible.
+
+   Ahora las superficies claras solo aplican en modo claro (ver los selectores
+   :root:not([data-bs-theme="dark"]) de arriba) y aqui se define la version
+   oscura de cada una, manteniendo el azul de la marca como color de acento.
+*/
+:root[data-bs-theme="dark"] {
+    --mm-superficie: #10192c;      /* tarjetas y barras */
+    --mm-superficie-alta: #17233d; /* cabeceras y filas alternas */
+    --mm-fondo: #0a1120;           /* fondo de pagina */
+    --mm-borde: #22314f;
+    --mm-texto: #e6edf7;
+    --mm-texto-apagado: #9fb0cc;
+
+    /* En oscuro el azul del logo no contrasta: se sube la rampa. */
+    --bs-primary: var(--mm-azul-400);
+    --bs-primary-rgb: 26, 111, 212;
+    --bs-link-color: #6fa8ee;
+    --bs-link-hover-color: #a9cdf3;
+}
+
+:root[data-bs-theme="dark"] body {
+    background-color: var(--mm-fondo);
+    color: var(--mm-texto);
+}
+
+:root[data-bs-theme="dark"] .card,
+:root[data-bs-theme="dark"] .dropdown-menu,
+:root[data-bs-theme="dark"] .modal-content {
+    background-color: var(--mm-superficie);
+    border-color: var(--mm-borde);
+    color: var(--mm-texto);
+}
+
+:root[data-bs-theme="dark"] .card-header {
+    background-color: var(--mm-superficie-alta);
+    border-bottom-color: var(--mm-borde);
+    color: var(--mm-texto);
+}
+
+:root[data-bs-theme="dark"] .top-header .navbar {
+    background-color: var(--mm-superficie) !important;
+    border-bottom: 1px solid var(--mm-borde);
+}
+
+:root[data-bs-theme="dark"] .top-header .navbar .nav-right-links > .nav-item > .nav-link,
+:root[data-bs-theme="dark"] .top-header .navbar .nav-right-links .material-icons-outlined,
+:root[data-bs-theme="dark"] .top-header .navbar .dropdown-toggle small {
+    color: var(--mm-texto);
+}
+
+:root[data-bs-theme="dark"] .top-header .navbar .text-muted {
+    color: var(--mm-texto-apagado) !important;
+}
+
+/* Tablas */
+:root[data-bs-theme="dark"] .table {
+    --bs-table-color: var(--mm-texto);
+    --bs-table-bg: transparent;
+    --bs-table-border-color: var(--mm-borde);
+    color: var(--mm-texto);
+}
+
+:root[data-bs-theme="dark"] .table > thead th {
+    background-color: var(--mm-azul-800);
+    color: var(--mm-texto);
+    border-color: var(--mm-borde);
+}
+
+:root[data-bs-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > * {
+    --bs-table-accent-bg: var(--mm-superficie-alta);
+    background-color: var(--mm-superficie-alta);
+    color: var(--mm-texto);
+}
+
+:root[data-bs-theme="dark"] .table > tbody > tr:hover > * {
+    background-color: #1d2c49;
+}
+
+/* Formularios */
+:root[data-bs-theme="dark"] .form-control,
+:root[data-bs-theme="dark"] .form-select {
+    background-color: var(--mm-fondo);
+    border-color: var(--mm-borde);
+    color: var(--mm-texto);
+}
+
+:root[data-bs-theme="dark"] .form-control::placeholder { color: var(--mm-texto-apagado); }
+
+:root[data-bs-theme="dark"] .form-control:focus,
+:root[data-bs-theme="dark"] .form-select:focus {
+    background-color: var(--mm-fondo);
+    border-color: var(--mm-azul-400);
+    color: var(--mm-texto);
+    box-shadow: 0 0 0 .2rem rgba(26, 111, 212, .25);
+}
+
+/* Texto secundario: el gris de Bootstrap desaparece sobre fondo oscuro. */
+:root[data-bs-theme="dark"] .text-muted,
+:root[data-bs-theme="dark"] small.text-muted {
+    color: var(--mm-texto-apagado) !important;
+}
+
+:root[data-bs-theme="dark"] .page-footer {
+    background-color: var(--mm-superficie);
+    border-top-color: var(--mm-borde);
+}
+
+/* DataTables tambien pinta sus controles con colores propios. */
+:root[data-bs-theme="dark"] .dataTables_wrapper,
+:root[data-bs-theme="dark"] .dataTables_wrapper label,
+:root[data-bs-theme="dark"] .dataTables_wrapper .dataTables_info,
+:root[data-bs-theme="dark"] .dataTables_wrapper .dataTables_paginate .paginate_button {
+    color: var(--mm-texto) !important;
+}
+
+:root[data-bs-theme="dark"] .dataTables_wrapper input,
+:root[data-bs-theme="dark"] .dataTables_wrapper select {
+    background-color: var(--mm-fondo);
+    border-color: var(--mm-borde);
+    color: var(--mm-texto);
+}
+
+/* Las alertas del dashboard: fondo tenue en vez del pastel de modo claro. */
+:root[data-bs-theme="dark"] .alert-danger  { background-color: #3a1620; border-color: #5d2130; color: #f3c2cb; }
+:root[data-bs-theme="dark"] .alert-warning { background-color: #3a2f12; border-color: #5d4a1c; color: #f5dfa8; }
+:root[data-bs-theme="dark"] .alert-info    { background-color: #10293f; border-color: #1c4266; color: #b6ddf7; }
+:root[data-bs-theme="dark"] .alert-success { background-color: #12301f; border-color: #1d4c33; color: #b4e3c7; }

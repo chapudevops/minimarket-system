@@ -13,7 +13,7 @@
     <div class="row g-4 align-items-center">
       <div class="col-lg-6 d-flex">
         <div class="card-body">
-          <img src="{{ URL::asset('build/images/logo1.png') }}" class="mb-4" width="145" alt="">
+          <img src="{{ \App\Marca::logo() }}" class="mb-4" width="145" alt="">
           <h4 class="fw-bold">Genrate New Password</h4>
           <p class="mb-0">We received your reset password request. Please enter your new password!</p>
           <div class="form-body mt-4">

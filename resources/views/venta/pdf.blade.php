@@ -80,7 +80,7 @@
                     @endif
                 </td>
                 <td class="empresa-info">
-                    <div class="empresa-nombre">{{ $empresa->razon_social ?? 'MI EMPRESA S.A.C' }}</div>
+                    <div class="empresa-nombre">{{ $empresa->razon_social ?? \App\Marca::nombre() }}</div>
                     <div style="font-size: 9px;">
                         {{ $empresa->direccion ?? 'Dirección Fiscal' }}<br>
                         Teléfono: {{ $empresa->telefono ?? '-' }} | Email: {{ $empresa->email ?? '-' }}

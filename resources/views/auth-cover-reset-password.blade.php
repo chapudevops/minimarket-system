@@ -14,7 +14,7 @@
 
           <div class="card rounded-0 mb-0 border-0 shadow-none bg-transparent">
             <div class="card-body">
-              <img src="{{ URL::asset('build/images/auth/forgot-password1.png') }}" class="img-fluid auth-img-cover-login" width="600"
+              <img src="{{ \App\Marca::logo() }}" class="img-fluid auth-img-cover-login" width="600"
                 alt="">
             </div>
           </div>
@@ -24,7 +24,7 @@
         <div class="col-12 col-xl-5 col-xxl-4 auth-cover-right align-items-center justify-content-center">
           <div class="card rounded-0 m-3 mb-0 border-0 shadow-none">
             <div class="card-body p-5">
-              <img src="{{ URL::asset('build/images/logo1.png') }}" class="mb-4" width="145" alt="">
+              <img src="{{ \App\Marca::logo() }}" class="mb-4" width="145" alt="">
               <h4 class="fw-bold">Genrate New Password</h4>
               <p class="mb-0">We received your reset password request. Please enter your new password!</p>
               <div class="form-body mt-4">

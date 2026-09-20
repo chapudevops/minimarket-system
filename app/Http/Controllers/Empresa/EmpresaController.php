@@ -132,9 +132,14 @@ class EmpresaController extends Controller
 
             $empresa->update($data);
 
+            // El logo y el nombre viven cacheados por peticion en App\Marca;
+            // sin esto el sidebar y los titulos seguirian mostrando el valor
+            // anterior en lo que queda de esta peticion.
+            \App\Marca::olvidar();
+
             return response()->json([
                 'success' => true,
-                'message' => '✅ Configuración actualizada exitosamente',
+                'message' => 'Configuración actualizada exitosamente',
                 'data' => [
                     'id' => $empresa->id,
                     'logo' => $empresa->logo ? asset('storage/empresa/' . $empresa->logo) : null,

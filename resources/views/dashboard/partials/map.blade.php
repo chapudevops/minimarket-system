@@ -6,7 +6,7 @@
                     <div class="">
                         <h5 class="mb-0 fw-bold">
                             <i class="bi bi-geo-alt-fill text-danger"></i>
-                            {{ $empresa->nombre_comercial ?? $empresa->razon_social ?? 'Nuestra Ubicación' }}
+                            {{ \App\Marca::nombre() }}
                         </h5>
                         @if($empresa?->link_ubicacion)
                             <small class="text-success d-block mt-1">
@@ -37,7 +37,7 @@
 
 <script>
     let map, marker, storeLink = null;
-    let storeName = '{{ addslashes($empresa->nombre_comercial ?? $empresa->razon_social ?? "Mi Minimarket") }}';
+    let storeName = '{{ addslashes(\App\Marca::nombre()) }}';
     let storeLat = -12.046374, storeLng = -77.042793;
 
     window.openGoogleMaps = function() {
@@ -54,7 +54,7 @@
                 if (d.lat && d.lng) { storeLat = parseFloat(d.lat); storeLng = parseFloat(d.lng); }
                 if (map && marker) { map.setCenter({ lat: storeLat, lng: storeLng }); marker.setPosition({ lat: storeLat, lng: storeLng }); }
             } else {
-                document.getElementById('storeMap').innerHTML = '<div class="alert alert-warning text-center p-5">⚠️ No hay ubicación configurada.</div>';
+                document.getElementById('storeMap').innerHTML = '<div class="alert alert-warning text-center p-5"> No hay ubicación configurada.</div>';
             }
         } catch (e) { console.error('Error:', e); }
     }
@@ -77,7 +77,7 @@
             icon: { url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png', scaledSize: new google.maps.Size(50, 50) }
         });
         var info = new google.maps.InfoWindow({
-            content: '<div style="padding:12px;"><h6 style="margin:0;font-weight:bold;">' + storeName + '</h6><hr><button onclick="openGoogleMaps()" style="width:100%;padding:5px;background:#0d6efd;color:#fff;border:none;border-radius:5px;">📍 Ver en Google Maps</button></div>'
+            content: '<div style="padding:12px;"><h6 style="margin:0;font-weight:bold;">' + storeName + '</h6><hr><button onclick="openGoogleMaps()" style="width:100%;padding:5px;background:#0d6efd;color:#fff;border:none;border-radius:5px;"> Ver en Google Maps</button></div>'
         });
         marker.addListener('click', function() { info.open(map, marker); });
     }

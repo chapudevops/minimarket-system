@@ -27,7 +27,7 @@
     <div class="header">
         <h1>NOTA DE CRÉDITO ELECTRÓNICA</h1>
         <h2>{{ $nota->documento }}</h2>
-        <p>{{ $empresa->razon_social ?? 'DISTRIBUIDORA BEJAR E.I.R.L.' }}</p>
+        <p>{{ $empresa->razon_social ?? \App\Marca::nombre() }}</p>
         <p>RUC: {{ $empresa->ruc ?? '20100066603' }}</p>
     </div>
 

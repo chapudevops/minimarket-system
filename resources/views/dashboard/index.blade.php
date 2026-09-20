@@ -1,6 +1,6 @@
 @extends('layouts.master')
 
-@section('title', 'Dashboard - Minimarket')
+@section('title', 'Dashboard')
 
 @section('css')
 <style>
@@ -42,7 +42,7 @@
 @endsection
 
 @section('content')
-<x-page-title title="Dashboard" pagetitle="Minimarket" />
+<x-page-title title="Dashboard" :pagetitle="\App\Marca::nombre()" />
 
 <!-- Filtros de fecha -->
 <div class="card mb-3 rounded-4 border-0 shadow-sm">

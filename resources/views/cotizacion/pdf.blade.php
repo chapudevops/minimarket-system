@@ -27,7 +27,7 @@
     <div class="header">
         <h1>COTIZACIÓN</h1>
         <h2>{{ $cotizacion->documento }}</h2>
-        <p>{{ $empresa->razon_social ?? 'DISTRIBUIDORA BEJAR E.I.R.L.' }}</p>
+        <p>{{ $empresa->razon_social ?? \App\Marca::nombre() }}</p>
         <p>RUC: {{ $empresa->ruc ?? '20100066603' }}</p>
     </div>
 

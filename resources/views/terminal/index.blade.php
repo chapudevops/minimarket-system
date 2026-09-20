@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Terminal POS | {{ $empresa->nombre_razon_social ?? 'Minimarket' }}</title>
+    <title>Terminal POS | {{ \App\Marca::nombre() }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
@@ -90,10 +90,10 @@
     <div class="pos-container">
         <div class="products-panel">
             <div class="search-box">
-                <input type="text" id="searchInput" placeholder="🔍 Buscar producto por nombre, código o barras..." autofocus>
+                <input type="text" id="searchInput" placeholder="Buscar producto por nombre, código o barras..." autofocus>
                 <div class="tab-switch mt-2">
-                    <button class="active" id="tabProductos" onclick="switchTab('productos')">🛒 Productos</button>
-                    <button id="tabCombos" onclick="switchTab('combos')">🎁 Combos</button>
+                    <button class="active" id="tabProductos" onclick="switchTab('productos')"> Productos</button>
+                    <button id="tabCombos" onclick="switchTab('combos')"> Combos</button>
                 </div>
             </div>
             <div class="products-grid" id="productsGrid">
@@ -114,15 +114,15 @@
         <div class="cart-panel">
             <div class="cart-header">
                 <h4><i class="bi bi-bag-check-fill"></i> Carrito de compra</h4>
-                <div class="company-info">{{ $empresa->razon_social ?? 'DISTRIBUIDORA BEJAR E.I.R.L.' }}<br>RUC: {{ $empresa->ruc ?? '20100066603' }}</div>
+                <div class="company-info">{{ \App\Marca::nombre() }}<br>RUC: {{ $empresa->ruc ?? '20100066603' }}</div>
             </div>
             <div class="cart-items" id="cartItems">
                 <div class="empty-cart"><i class="bi bi-cart-x" style="font-size: 52px;"></i><p class="mt-2">Agrega productos al carrito</p></div>
             </div>
             <div class="cart-summary">
-                <div class="summary-row"><span>🚀 Subtotal</span><span id="subtotal">S/ 0.00</span></div>
-                <div class="summary-row"><span>📊 IGV (18%)</span><span id="igv">S/ 0.00</span></div>
-                <div class="summary-row summary-total"><span>💰 Total</span><span id="total">S/ 0.00</span></div>
+                <div class="summary-row"><span> Subtotal</span><span id="subtotal">S/ 0.00</span></div>
+                <div class="summary-row"><span> IGV (18%)</span><span id="igv">S/ 0.00</span></div>
+                <div class="summary-row summary-total"><span> Total</span><span id="total">S/ 0.00</span></div>
                 <div class="cart-buttons">
                     <button class="btn-cancel" id="btnCancelar"><i class="bi bi-trash3"></i> Cancelar</button>
                     <button class="btn-pay" id="btnPagar"><i class="bi bi-lightning-charge-fill"></i> Pagar ahora</button>
@@ -409,7 +409,7 @@
                                             </div>
                                             <div class="product-name">${escapeHtml(producto.descripcion)}</div>
                                             <div class="product-price">S/ ${producto.precio_venta.toFixed(2)}</div>
-                                            <div class="product-stock ${stockTextClass}">📦 Stock: ${producto.stock}</div>
+                                            <div class="product-stock ${stockTextClass}"> Stock: ${producto.stock}</div>
                                         </div>`;
                             $('#productsGrid').append(html);
                             productosStock.set(producto.id, producto.stock);
@@ -546,7 +546,7 @@
             const $productCard = $(`.product-card[data-id="${productoId}"]`);
             if ($productCard.length) {
                 $productCard.data('stock', nuevoStock);
-                $productCard.find('.product-stock').text(`📦 Stock: ${nuevoStock}`);
+                $productCard.find('.product-stock').text(` Stock: ${nuevoStock}`);
                 if (nuevoStock <= 0) {
                     $productCard.find('.product-stock').addClass('sin-stock');
                     $productCard.addClass('disabled');
@@ -979,12 +979,12 @@
                                             <div class="product-img">
                                                 <i class="bi bi-gift-fill" style="font-size:42px;color:#f59e0b;"></i>
                                             </div>
-                                            <div class="combo-badge-pos">🎁 COMBO</div>
+                                            <div class="combo-badge-pos"> COMBO</div>
                                             <div class="product-name">${escapeHtml(combo.nombre)}</div>
                                             <div class="combo-precio-regular">S/ ${combo.precio_regular.toFixed(2)}</div>
                                             <div class="product-price">S/ ${combo.precio_combo.toFixed(2)}</div>
                                             <div class="combo-ahorro">Ahorro: S/ ${combo.ahorro.toFixed(2)} (-${combo.descuento_porcentaje}%)</div>
-                                            <div class="product-stock" style="margin-top:6px;">📦 Disponible: ${combo.stock}</div>
+                                            <div class="product-stock" style="margin-top:6px;"> Disponible: ${combo.stock}</div>
                                         </div>`;
                             $('#combosGrid').append(html);
                         });
@@ -1012,7 +1012,7 @@
                             } else {
                                 cart.push({
                                     id: 'combo_' + comboId,
-                                    nombre: '🎁 ' + comboNombre,
+                                    nombre: '' + comboNombre,
                                     precio: comboPrecio,
                                     cantidad: 1,
                                     almacen_id: {{ $almacenId ?? 1 }},
@@ -1024,7 +1024,7 @@
                             
                             updateCartUI();
                             playAddBeep();
-                            mostrarToast('🎁 Combo agregado al carrito');
+                            mostrarToast('Combo agregado al carrito');
                         });
                     }
                 },

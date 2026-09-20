@@ -401,7 +401,7 @@ if (!function_exists('convertirBloque')) {
                     <img src="{{ asset('storage/empresa/' . $empresa->logo) }}" class="logo-img" alt="Logo">
                 @endisset
             @endif
-            <div class="empresa-nombre">{{ $empresa->razon_social ?? 'DISTRIBUIDORA BEJAR E.I.R.L.' }}</div>
+            <div class="empresa-nombre">{{ $empresa->razon_social ?? \App\Marca::nombre() }}</div>
             <div class="empresa-ruc">RUC: {{ $empresa->ruc ?? '20100066603' }}</div>
             <div class="empresa-direccion">{{ $empresa->direccion ?? 'Av. Principal N° 123 - Lima' }}</div>
         </div>
@@ -483,9 +483,9 @@ if (!function_exists('convertirBloque')) {
 
         <!-- MÉTODO DE PAGO -->
         <div class="payment-method">
-            🏦 PAGADO CON: <span>{{ strtoupper($venta->forma_pago) }}</span> - S/ {{ number_format($venta->total, 2) }}
+ PAGADO CON: <span>{{ strtoupper($venta->forma_pago) }}</span> - S/ {{ number_format($venta->total, 2) }}
             @if($venta->tipo_venta == 'CONTADO' && $venta->cambio > 0)
-            <br>💵 CAMBIO: S/ {{ number_format($venta->cambio, 2) }}
+            <br> CAMBIO: S/ {{ number_format($venta->cambio, 2) }}
             @endif
         </div>
 
@@ -508,7 +508,7 @@ if (!function_exists('convertirBloque')) {
 
         <!-- FOOTER -->
         <div class="footer">
-            <div class="footer-gracias">✨ ¡GRACIAS POR SU COMPRA! ✨</div>
+            <div class="footer-gracias"> ¡GRACIAS POR SU COMPRA! </div>
             <div class="footer-legal">Representación impresa de {{ $venta->tipo_comprobante }} ELECTRÓNICA</div>
             <div class="footer-legal">Válido como comprobante de pago</div>
             <div class="separator-dashed"></div>
@@ -519,10 +519,10 @@ if (!function_exists('convertirBloque')) {
     <!-- BOTÓN PARA IMPRIMIR -->
     <div class="no-print">
         <button onclick="window.print()" class="print-btn">
-            🖨️ IMPRIMIR TICKET
+ IMPRIMIR TICKET
         </button>
         <button onclick="window.close()" class="print-btn" style="background: linear-gradient(135deg, #6c757d 0%, #495057 100%); margin-left: 10px;">
-            ❌ CERRAR
+ CERRAR
         </button>
     </div>
 

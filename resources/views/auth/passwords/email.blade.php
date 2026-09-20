@@ -6,7 +6,7 @@
 
 @section('content')
 
-<div class="min-vh-100 d-flex align-items-center justify-content-center py-5" style="background: linear-gradient(135deg, #1e3a5f 0%, #2d6a9f 50%, #667eea 100%);">
+<div class="min-vh-100 d-flex align-items-center justify-content-center py-5" style="background: linear-gradient(135deg, #002254 0%, #043a82 50%, #0b51ad 100%);">
   <div class="container">
     <div class="row justify-content-center">
       <div class="col-xl-10 col-xxl-8">
@@ -15,7 +15,7 @@
             <div class="col-lg-6 d-flex">
               <div class="p-4 p-md-5 w-100">
                 <div class="text-center mb-4">
-                  <img src="{{ URL::asset('build/images/logo1.png') }}" class="mb-3" width="120" alt="">
+                  <img src="{{ \App\Marca::logo() }}" class="mb-3" width="120" alt="">
                   <h4 class="fw-bold">¿Olvidaste tu contraseña?</h4>
                   <p class="text-muted">Ingresa tu correo electrónico y te enviaremos un enlace para restablecerla</p>
                 </div>
@@ -57,9 +57,9 @@
                 </form>
               </div>
             </div>
-            <div class="col-lg-6 d-none d-lg-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div class="col-lg-6 d-none d-lg-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, #002254 0%, #0b51ad 100%);">
               <div class="text-center p-5">
-                <img src="{{ URL::asset('build/images/auth/forgot-password1.png') }}" class="img-fluid mb-4" style="max-width: 80%;" alt="">
+                <img src="{{ \App\Marca::logo() }}" class="img-fluid mb-4" style="max-width: 80%;" alt="">
                 <h4 class="text-white fw-bold mb-3">Recupera tu acceso</h4>
                 <p class="text-white-50 mb-0">Te enviaremos un enlace seguro para que puedas crear una nueva contraseña.</p>
               </div>

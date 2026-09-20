@@ -14,7 +14,7 @@
            <div class="col-12 col-md-8 col-lg-6 col-xl-5 col-xxl-4 mx-auto">
             <div class="card border-3">
               <div class="card-body p-5">
-                  <img src="{{ URL::asset('build/images/logo1.png') }}" class="mb-4" width="145" alt="">
+                  <img src="{{ \App\Marca::logo() }}" class="mb-4" width="145" alt="">
                   <h4 class="fw-bold">Forgot Password?</h4>
                   <p class="mb-0">Enter your registered email ID to reset the password</p>
 

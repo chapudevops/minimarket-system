@@ -4,7 +4,7 @@
 
 @section('content')
 
-<div class="min-vh-100 d-flex align-items-center justify-content-center py-5" style="background: linear-gradient(135deg, #1e3a5f 0%, #2d6a9f 50%, #667eea 100%);">
+<div class="min-vh-100 d-flex align-items-center justify-content-center py-5" style="background: linear-gradient(135deg, #002254 0%, #043a82 50%, #0b51ad 100%);">
   <div class="container">
     <div class="row justify-content-center">
       <div class="col-xl-10 col-xxl-8">
@@ -15,7 +15,8 @@
               <div class="p-4 p-md-5">
                 <!-- Logo -->
                 <div class="text-center mb-4">
-                  <img src="{{ URL::asset('build/images/infinitydevlogo.png') }}" class="mb-3" width="120" alt="Logo">
+                  <img src="{{ \App\Marca::logo() }}" alt="{{ \App\Marca::nombre() }}"
+                       class="mb-3" style="max-height: 90px; width: auto;">
                   <h3 class="fw-bold mb-2">¡Bienvenido de vuelta!</h3>
                   <p class="text-muted">Ingresa tus credenciales para continuar</p>
                 </div>
@@ -107,10 +108,13 @@
             </div>
 
             <!-- Lado derecho - Hero Image -->
-            <div class="col-lg-6 order-lg-2 order-1 d-none d-lg-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div class="col-lg-6 order-lg-2 order-1 d-none d-lg-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, #002254 0%, #0b51ad 100%);">
               <div class="text-center p-5">
-                <img src="{{ URL::asset('build/images/auth/loginoriginal.png') }}" class="img-fluid mb-4" style="max-width: 80%;" alt="Ilustración">
-                <h4 class="text-white fw-bold mb-3">Sistema de Gestión Minimarket</h4>
+                <div class="bg-white rounded-4 d-inline-flex p-3 mb-4">
+                  <img src="{{ \App\Marca::logo() }}" alt="{{ \App\Marca::nombre() }}"
+                       style="max-height: 120px; width: auto;">
+                </div>
+                <h4 class="text-white fw-bold mb-3">{{ \App\Marca::nombre() }}</h4>
                 <p class="text-white-50 mb-0">Controla tus ventas, inventario y más desde un solo lugar.</p>
               </div>
             </div>

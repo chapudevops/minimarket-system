@@ -4,19 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <!--favicon - Logo de la empresa -->
-    @php
-        $empresa = \App\Models\Empresa::first();
-        $favicon = $empresa && $empresa->logo 
-            ? asset('storage/empresa/' . $empresa->logo) 
-            : URL::asset('build/images/infinitydevlogo.png');
-    @endphp
-    <!--favicon-->
-    <link rel="icon" href="{{ $favicon }}" type="image/png">
-    <link rel="shortcut icon" href="{{ $favicon }}" type="image/png">
+    {{-- Logo y nombre salen de App\Marca, que los resuelve desde la empresa
+         configurada. Antes cada vista hacia su propia consulta y apuntaba a
+         una ruta distinta. --}}
+    <link rel="icon" href="{{ \App\Marca::favicon() }}" type="image/png">
+    <link rel="shortcut icon" href="{{ \App\Marca::favicon() }}" type="image/png">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-    <title>@yield('title') | Minimarket-system</title>
+    <title>@yield('title') | {{ \App\Marca::nombre() }}</title>
 
     @yield('css')
 
@@ -29,7 +24,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #002254 0%, #0b51ad 100%);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -222,7 +217,7 @@
             margin: 0 2px;
         }
         .dataTables_wrapper .dataTables_paginate .paginate_button.current {
-            background: linear-gradient(135deg, #667eea, #764ba2) !important;
+            background: linear-gradient(135deg, #002254 0%, #0b51ad 100%) !important;
             border-color: transparent !important;
             color: #fff !important;
         }
@@ -260,16 +255,12 @@
 
 <body>
 
-@php
-    $empresa = \App\Models\Empresa::first();
-@endphp
-
 <div id="preloader">
     <div class="preloader-container">
         <div class="preloader-logo">
-            <img src="{{ URL::asset('build/images/infinitydevlogo.png') }}" alt="Minimarket">
+            <img src="{{ \App\Marca::logo() }}" alt="{{ \App\Marca::nombre() }}">
         </div>
-        <h5 class="preloader-title">{{ $empresa->razon_social ?? 'Minimarket System' }}</h5>
+        <h5 class="preloader-title">{{ \App\Marca::nombre() }}</h5>
         <p class="preloader-sub">Cargando...</p>
         <div class="preloader-spinner"></div>
     </div>

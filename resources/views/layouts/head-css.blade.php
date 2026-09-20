@@ -16,6 +16,9 @@
   <link href="{{ URL::asset('build/sass/responsive.css') }}" rel="stylesheet">
   {{-- Correcciones de layout de la cabecera. Debe ir despues del tema. --}}
   <link href="{{ URL::asset('build/sass/layout-fixes.css') }}" rel="stylesheet">
+  {{-- Identidad de color: azul y blanco. Va la ultima para poder reescribir
+       los tokens del tema sin pelear con su especificidad. --}}
+  <link href="{{ URL::asset('build/sass/marca.css') }}" rel="stylesheet">
   <!--SweetAlert2-->
   <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
   
