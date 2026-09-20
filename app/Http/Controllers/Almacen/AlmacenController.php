@@ -91,7 +91,7 @@ class AlmacenController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => '✅ Almacén creado exitosamente',
+            'message' => 'Almacén creado exitosamente',
             'data' => $almacen
         ]);
     }
@@ -113,7 +113,7 @@ class AlmacenController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => '✅ Almacén actualizado exitosamente',
+            'message' => 'Almacén actualizado exitosamente',
             'data' => $almacen
         ]);
     }
@@ -125,7 +125,7 @@ class AlmacenController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => '✅ Almacén eliminado exitosamente'
+            'message' => 'Almacén eliminado exitosamente'
         ]);
     }
 }

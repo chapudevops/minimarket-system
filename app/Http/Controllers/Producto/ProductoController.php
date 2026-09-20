@@ -215,7 +215,7 @@ class ProductoController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => '✅ Producto creado exitosamente',
+                'message' => 'Producto creado exitosamente',
                 'data' => $producto
             ]);
         } catch (\Exception $e) {
@@ -315,7 +315,7 @@ class ProductoController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => '✅ Producto actualizado exitosamente',
+                'message' => 'Producto actualizado exitosamente',
                 'data' => $producto
             ]);
         } catch (\Exception $e) {
@@ -375,7 +375,7 @@ class ProductoController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => '✅ Producto eliminado exitosamente'
+            'message' => 'Producto eliminado exitosamente'
         ]);
     }
 

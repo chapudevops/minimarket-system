@@ -129,19 +129,19 @@
                                 <div class="col-md-3">
                                     <div class="form-check">
                                         <input type="radio" name="tipo_pago" class="form-check-input" value="EFECTIVO" checked>
-                                        <label class="form-check-label">💵 Efectivo</label>
+                                        <label class="form-check-label"> Efectivo</label>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="form-check">
                                         <input type="radio" name="tipo_pago" class="form-check-input" value="TRANSFERENCIA">
-                                        <label class="form-check-label">🏦 Transferencia</label>
+                                        <label class="form-check-label"> Transferencia</label>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="form-check">
                                         <input type="radio" name="tipo_pago" class="form-check-input" value="CREDITO">
-                                        <label class="form-check-label">📆 Crédito</label>
+                                        <label class="form-check-label"> Crédito</label>
                                     </div>
                                 </div>
                             </div>

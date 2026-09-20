@@ -115,7 +115,7 @@ class SerieController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => '✅ Serie creada exitosamente',
+                'message' => 'Serie creada exitosamente',
                 'data' => $serie
             ]);
 
@@ -176,7 +176,7 @@ class SerieController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => '✅ Serie actualizada exitosamente',
+                'message' => 'Serie actualizada exitosamente',
                 'data' => $serie
             ]);
 
@@ -197,7 +197,7 @@ class SerieController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => '✅ Serie eliminada exitosamente'
+                'message' => 'Serie eliminada exitosamente'
             ]);
 
         } catch (\Exception $e) {

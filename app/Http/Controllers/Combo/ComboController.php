@@ -137,7 +137,7 @@ class ComboController extends Controller
 
             DB::commit();
 
-            return redirect()->route('combos.index')->with('success', '✅ Combo creado exitosamente');
+            return redirect()->route('combos.index')->with('success', 'Combo creado exitosamente');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->withInput()->with('error', 'Error al crear el combo: ' . $e->getMessage());
@@ -264,7 +264,7 @@ class ComboController extends Controller
 
             DB::commit();
 
-            return redirect()->route('combos.index')->with('success', '✅ Combo actualizado exitosamente');
+            return redirect()->route('combos.index')->with('success', 'Combo actualizado exitosamente');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->withInput()->with('error', 'Error al actualizar el combo: ' . $e->getMessage());
@@ -284,7 +284,7 @@ class ComboController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => '✅ Combo eliminado exitosamente'
+            'message' => 'Combo eliminado exitosamente'
         ]);
     }
 

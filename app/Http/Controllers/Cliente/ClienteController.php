@@ -107,7 +107,7 @@ class ClienteController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => '✅ Cliente creado exitosamente',
+            'message' => 'Cliente creado exitosamente',
             'data' => $cliente
         ]);
     }
@@ -145,7 +145,7 @@ class ClienteController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => '✅ Cliente actualizado exitosamente',
+            'message' => 'Cliente actualizado exitosamente',
             'data' => $cliente
         ]);
     }
@@ -160,7 +160,7 @@ class ClienteController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => '✅ Cliente eliminado exitosamente'
+            'message' => 'Cliente eliminado exitosamente'
         ]);
     }
 }

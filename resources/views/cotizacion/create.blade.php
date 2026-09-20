@@ -120,7 +120,7 @@
                             <i class="bi bi-person"></i> Cliente <span class="text-danger">*</span>
                         </label>
                         <select id="cliente_id" class="form-control" style="width: 100%;">
-                            <option value="">🔍 Buscar cliente por nombre o documento...</option>
+                            <option value=""> Buscar cliente por nombre o documento...</option>
                             @foreach($clientes as $cliente)
                                 <option value="{{ $cliente->id }}" 
                                     data-documento="{{ $cliente->numero_documento }}"
@@ -153,8 +153,8 @@
                             <i class="bi bi-currency-dollar"></i> Tipo Moneda
                         </label>
                         <select id="tipo_moneda" class="form-control">
-                            <option value="PEN">🇵🇪 Soles (S/)</option>
-                            <option value="USD">🇺🇸 Dólares ($)</option>
+                            <option value="PEN"> Soles (S/)</option>
+                            <option value="USD"> Dólares ($)</option>
                         </select>
                     </div>
                     <div class="col-md-3 mb-3">
@@ -303,7 +303,7 @@ $(document).ready(function() {
     $('#cliente_id').select2({
         theme: 'bootstrap-5',
         width: '100%',
-        placeholder: '🔍 Buscar cliente por nombre o documento...',
+        placeholder: 'Buscar cliente por nombre o documento...',
         allowClear: true,
         language: {
             noResults: function() {

@@ -144,7 +144,7 @@ class AperturaCajaController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => '✅ Caja abierta exitosamente',
+                'message' => 'Caja abierta exitosamente',
                 'data' => $apertura
             ]);
 
@@ -201,7 +201,7 @@ class AperturaCajaController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => '✅ Caja cerrada exitosamente',
+                'message' => 'Caja cerrada exitosamente',
                 'data' => $apertura
             ]);
 

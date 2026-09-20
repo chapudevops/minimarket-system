@@ -31,7 +31,7 @@
             box-shadow: 0 0 0 0.25rem rgba(13,110,253,0.25) !important;
         }
         .info-venta-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #002254 0%, #0b51ad 100%);
             color: white;
             border-radius: 12px;
             padding: 15px;
@@ -82,7 +82,7 @@
                             <i class="bi bi-receipt"></i> Seleccionar Venta Original
                         </label>
                         <select id="venta_id" class="form-control" style="width: 100%;">
-                            <option value="">🔍 Buscar venta por documento o cliente...</option>
+                            <option value=""> Buscar venta por documento o cliente...</option>
                             @foreach($ventas as $venta)
                                 <option value="{{ $venta->id }}" 
                                     data-cliente="{{ $venta->cliente->nombre_razon_social ?? 'CLIENTES VARIOS' }}"
@@ -145,10 +145,10 @@
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Tipo de Nota</label>
                         <select id="tipo_nota" class="form-control">
-                            <option value="ANULACION">🚫 Anulación de operación</option>
-                            <option value="DESCUENTO">🏷️ Descuento por volumen</option>
-                            <option value="DEVOLUCION">📦 Devolución de mercadería</option>
-                            <option value="OTRO">📝 Otros conceptos</option>
+                            <option value="ANULACION"> Anulación de operación</option>
+                            <option value="DESCUENTO"> Descuento por volumen</option>
+                            <option value="DEVOLUCION"> Devolución de mercadería</option>
+                            <option value="OTRO"> Otros conceptos</option>
                         </select>
                     </div>
                     <div class="col-md-6 mb-3">
@@ -230,7 +230,7 @@ $(document).ready(function() {
     $('#venta_id').select2({
         theme: 'bootstrap-5',
         width: '100%',
-        placeholder: '🔍 Buscar venta por documento o cliente...',
+        placeholder: 'Buscar venta por documento o cliente...',
         allowClear: true,
         language: {
             noResults: function() {

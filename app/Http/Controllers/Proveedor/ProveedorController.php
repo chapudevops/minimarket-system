@@ -106,7 +106,7 @@ class ProveedorController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => '✅ Proveedor creado exitosamente',
+            'message' => 'Proveedor creado exitosamente',
             'data' => $proveedor
         ]);
     }
@@ -144,7 +144,7 @@ class ProveedorController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => '✅ Proveedor actualizado exitosamente',
+            'message' => 'Proveedor actualizado exitosamente',
             'data' => $proveedor
         ]);
     }
@@ -159,7 +159,7 @@ class ProveedorController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => '✅ Proveedor eliminado exitosamente'
+            'message' => 'Proveedor eliminado exitosamente'
         ]);
     }
 }

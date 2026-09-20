@@ -168,7 +168,7 @@ class UsuarioController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => '✅ Usuario creado exitosamente',
+                'message' => 'Usuario creado exitosamente',
                 'data' => $usuario
             ]);
 
@@ -225,7 +225,7 @@ class UsuarioController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => '✅ Usuario actualizado exitosamente',
+                'message' => 'Usuario actualizado exitosamente',
                 'data' => $usuario
             ]);
 
@@ -254,7 +254,7 @@ class UsuarioController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => '✅ Usuario eliminado exitosamente'
+                'message' => 'Usuario eliminado exitosamente'
             ]);
 
         } catch (\Illuminate\Database\QueryException $e) {
@@ -297,7 +297,7 @@ class UsuarioController extends Controller
             
             return response()->json([
                 'success' => true,
-                'message' => "✅ Usuario {$mensaje} exitosamente",
+                'message' => "Usuario {$mensaje} exitosamente",
                 'estado' => $usuario->estado
             ]);
 

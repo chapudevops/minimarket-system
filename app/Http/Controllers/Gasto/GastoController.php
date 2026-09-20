@@ -88,7 +88,7 @@ class GastoController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => '✅ Gasto registrado exitosamente',
+                'message' => 'Gasto registrado exitosamente',
                 'data' => $gasto
             ]);
 
@@ -109,7 +109,7 @@ class GastoController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => '✅ Gasto eliminado exitosamente'
+                'message' => 'Gasto eliminado exitosamente'
             ]);
 
         } catch (\Exception $e) {

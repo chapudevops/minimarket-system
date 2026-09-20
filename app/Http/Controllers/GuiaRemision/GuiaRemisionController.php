@@ -220,7 +220,7 @@ class GuiaRemisionController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => '✅ Guía de Remisión creada exitosamente',
+                'message' => 'Guía de Remisión creada exitosamente',
                 'data' => $guia
             ]);
 

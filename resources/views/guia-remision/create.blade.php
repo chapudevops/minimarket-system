@@ -164,7 +164,7 @@
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold">Destinatario (Cliente) <span class="text-danger">*</span></label>
                             <select id="cliente_id" class="form-control" style="width: 100%;">
-                                <option value="">🔍 Buscar cliente por nombre o documento...</option>
+                                <option value=""> Buscar cliente por nombre o documento...</option>
                                 @foreach($clientes as $cliente)
                                     <option value="{{ $cliente->id }}" 
                                         data-documento="{{ $cliente->numero_documento }}"
@@ -217,7 +217,7 @@
                     </div>
                     <div class="row">
                         <div class="col-md-6">
-                            <h6 class="fw-bold mb-3 text-primary">📍 PUNTO DE PARTIDA</h6>
+                            <h6 class="fw-bold mb-3 text-primary"> PUNTO DE PARTIDA</h6>
                             <div class="mb-3 position-relative">
                                 <label class="form-label fw-bold">Ubigeo de Partida <span class="text-danger">*</span></label>
                                 <div class="input-group">
@@ -234,7 +234,7 @@
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <h6 class="fw-bold mb-3 text-success">📍 PUNTO DE LLEGADA</h6>
+                            <h6 class="fw-bold mb-3 text-success"> PUNTO DE LLEGADA</h6>
                             <div class="mb-3 position-relative">
                                 <label class="form-label fw-bold">Ubigeo de Llegada <span class="text-danger">*</span></label>
                                 <div class="input-group">
@@ -261,7 +261,7 @@
                             <label class="form-label fw-bold">Conductor / Chofer</label>
                             <div class="input-group">
                                 <select id="conductor_id" class="form-control" style="width: 100%;">
-                                    <option value="">🔍 Seleccionar conductor...</option>
+                                    <option value=""> Seleccionar conductor...</option>
                                     @foreach($conductores as $conductor)
                                         <option value="{{ $conductor->id }}">{{ $conductor->nombre }} - Lic: {{ $conductor->licencia }} - Doc: {{ $conductor->documento }}</option>
                                     @endforeach
@@ -275,7 +275,7 @@
                             <label class="form-label fw-bold">Vehículo</label>
                             <div class="input-group">
                                 <select id="vehiculo_id" class="form-control" style="width: 100%;">
-                                    <option value="">🔍 Seleccionar vehículo...</option>
+                                    <option value=""> Seleccionar vehículo...</option>
                                     @foreach($vehiculos as $vehiculo)
                                         <option value="{{ $vehiculo->id }}">{{ $vehiculo->placa }} - {{ $vehiculo->marca }} {{ $vehiculo->modelo }} ({{ $vehiculo->color }})</option>
                                     @endforeach
@@ -407,7 +407,7 @@ $(document).ready(function() {
     $('#cliente_id').select2({
         theme: 'bootstrap-5',
         width: '100%',
-        placeholder: '🔍 Buscar cliente por nombre o documento...',
+        placeholder: 'Buscar cliente por nombre o documento...',
         allowClear: true,
         language: {
             noResults: function() {
@@ -440,7 +440,7 @@ $(document).ready(function() {
     $('#conductor_id').select2({
         theme: 'bootstrap-5',
         width: '100%',
-        placeholder: '🔍 Buscar conductor...',
+        placeholder: 'Buscar conductor...',
         allowClear: true,
         language: {
             noResults: function() {
@@ -453,7 +453,7 @@ $(document).ready(function() {
     $('#vehiculo_id').select2({
         theme: 'bootstrap-5',
         width: '100%',
-        placeholder: '🔍 Buscar vehículo...',
+        placeholder: 'Buscar vehículo...',
         allowClear: true,
         language: {
             noResults: function() {

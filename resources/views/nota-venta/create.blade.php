@@ -116,7 +116,7 @@
                             <i class="bi bi-person"></i> Cliente <span class="text-danger">*</span>
                         </label>
                         <select id="cliente_id" class="form-control" style="width: 100%;">
-                            <option value="">🔍 Buscar cliente por nombre o documento...</option>
+                            <option value=""> Buscar cliente por nombre o documento...</option>
                             @foreach($clientes as $cliente)
                                 <option value="{{ $cliente->id }}" 
                                     data-documento="{{ $cliente->numero_documento }}"
@@ -141,9 +141,9 @@
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Tipo de Nota</label>
                         <select id="tipo_nota" class="form-control">
-                            <option value="CREDITO_FISCAL">📝 Crédito Fiscal</option>
-                            <option value="DEBITO_FISCAL">💰 Débito Fiscal</option>
-                            <option value="OTRO">📄 Otro concepto</option>
+                            <option value="CREDITO_FISCAL"> Crédito Fiscal</option>
+                            <option value="DEBITO_FISCAL"> Débito Fiscal</option>
+                            <option value="OTRO"> Otro concepto</option>
                         </select>
                     </div>
                     <div class="col-md-6 mb-3">
@@ -276,7 +276,7 @@ $(document).ready(function() {
     $('#cliente_id').select2({
         theme: 'bootstrap-5',
         width: '100%',
-        placeholder: '🔍 Buscar cliente por nombre o documento...',
+        placeholder: 'Buscar cliente por nombre o documento...',
         allowClear: true,
         language: {
             noResults: function() {

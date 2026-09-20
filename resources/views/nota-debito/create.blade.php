@@ -85,7 +85,7 @@
                             <i class="bi bi-person"></i> Cliente <span class="text-danger">*</span>
                         </label>
                         <select id="cliente_id" class="form-control" style="width: 100%;">
-                            <option value="">🔍 Buscar cliente por nombre o documento...</option>
+                            <option value=""> Buscar cliente por nombre o documento...</option>
                             @foreach($clientes as $cliente)
                                 <option value="{{ $cliente->id }}" 
                                     data-documento="{{ $cliente->numero_documento }}"
@@ -102,7 +102,7 @@
                             <i class="bi bi-receipt"></i> Venta Original (opcional)
                         </label>
                         <select id="venta_id" class="form-control" style="width: 100%;">
-                            <option value="">🔍 Buscar venta por documento...</option>
+                            <option value=""> Buscar venta por documento...</option>
                             @foreach($ventas as $venta)
                                 <option value="{{ $venta->id }}" 
                                     data-documento="{{ $venta->documento }}"
@@ -126,9 +126,9 @@
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-bold">Tipo de Nota</label>
                         <select id="tipo_nota" class="form-control">
-                            <option value="INTERESES">💰 Intereses moratorios</option>
-                            <option value="GASTOS">📄 Gastos administrativos</option>
-                            <option value="OTRO">📝 Otros conceptos</option>
+                            <option value="INTERESES"> Intereses moratorios</option>
+                            <option value="GASTOS"> Gastos administrativos</option>
+                            <option value="OTRO"> Otros conceptos</option>
                         </select>
                     </div>
                 </div>
@@ -248,7 +248,7 @@ $(document).ready(function() {
     $('#cliente_id').select2({
         theme: 'bootstrap-5',
         width: '100%',
-        placeholder: '🔍 Buscar cliente por nombre o documento...',
+        placeholder: 'Buscar cliente por nombre o documento...',
         allowClear: true,
         language: {
             noResults: function() {
@@ -261,7 +261,7 @@ $(document).ready(function() {
     $('#venta_id').select2({
         theme: 'bootstrap-5',
         width: '100%',
-        placeholder: '🔍 Buscar venta por documento...',
+        placeholder: 'Buscar venta por documento...',
         allowClear: true,
         language: {
             noResults: function() {

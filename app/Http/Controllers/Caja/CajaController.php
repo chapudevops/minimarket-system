@@ -76,7 +76,7 @@ class CajaController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => '✅ Caja creada exitosamente',
+            'message' => 'Caja creada exitosamente',
             'data' => [
                 'id' => $caja->id,
                 'descripcion' => $caja->descripcion ?? 'Sin descripción',
@@ -103,7 +103,7 @@ class CajaController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => '✅ Caja actualizada exitosamente',
+            'message' => 'Caja actualizada exitosamente',
             'data' => [
                 'id' => $caja->id,
                 'descripcion' => $caja->descripcion ?? 'Sin descripción',
@@ -123,7 +123,7 @@ class CajaController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => '✅ Caja eliminada exitosamente'
+            'message' => 'Caja eliminada exitosamente'
         ]);
     }
 }
