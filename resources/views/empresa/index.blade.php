@@ -233,7 +233,7 @@
                     
                     <!-- Botón Guardar -->
                     <div class="text-end">
-                        <button type="button" class="btn btn-primary btn-lg" id="btnGuardar">
+                        <button type="submit" class="btn btn-primary btn-lg" id="btnGuardar">
                             <i class="bi bi-save"></i> Guardar Cambios
                         </button>
                         <button type="button" class="btn btn-primary btn-lg" id="btnLoading" style="display: none;" disabled>
