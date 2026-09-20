@@ -84,7 +84,11 @@
                         <h2 class="mb-0 text-success fw-bold">S/ {{ number_format($beneficioNeto, 2) }}</h2>
                     </div>
                 </div>
-                <p class="mb-0 fw-semibold">Beneficio Neto</p>
+                {{-- Se llamaba "Beneficio Neto", pero lo que se calcula es
+                     utilidad bruta menos gastos operativos: eso es el
+                     RESULTADO OPERATIVO. El beneficio neto llevaria ademas
+                     impuestos y financieros, que el sistema no maneja. --}}
+                <p class="mb-0 fw-semibold">Resultado Operativo</p>
                 <small class="text-muted">Hoy: S/ {{ number_format($beneficioNetoHoy, 2) }}</small>
             </div>
         </div>

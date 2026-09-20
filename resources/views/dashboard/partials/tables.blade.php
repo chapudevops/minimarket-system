@@ -116,7 +116,7 @@
                     <div class="col-md-3">
                         <div class="card bg-success bg-opacity-10 border-0">
                             <div class="card-body text-center">
-                                <h6 class="text-success">Beneficio Neto</h6>
+                                <h6 class="text-success">Resultado Operativo</h6>
                                 <h3 class="text-success fw-bold">S/ {{ number_format($beneficioNeto, 2) }}</h3>
                             </div>
                         </div>

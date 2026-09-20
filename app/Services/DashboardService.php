@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Estados\EstadoVenta;
 use App\Models\Venta;
 use App\Models\Compra;
 use App\Models\Gasto;
@@ -24,19 +25,19 @@ class DashboardService
         $cacheKey = "dashboard_metrics_{$fechaInicio}_{$fechaFin}";
 
         return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($fechaInicio, $fechaFin) {
-            $totalVentas = Venta::where('estado', 'COMPLETADA')
+            $totalVentas = Venta::where('estado', EstadoVenta::APROBADA)
                 ->whereBetween('fecha_emision', [$fechaInicio, $fechaFin . ' 23:59:59'])
                 ->sum('total');
 
-            $totalVentasHoy = Venta::where('estado', 'COMPLETADA')
+            $totalVentasHoy = Venta::where('estado', EstadoVenta::APROBADA)
                 ->whereDate('fecha_emision', today())
                 ->sum('total');
 
-            $cantidadVentas = Venta::where('estado', 'COMPLETADA')
+            $cantidadVentas = Venta::where('estado', EstadoVenta::APROBADA)
                 ->whereBetween('fecha_emision', [$fechaInicio, $fechaFin . ' 23:59:59'])
                 ->count();
 
-            $cantidadVentasHoy = Venta::where('estado', 'COMPLETADA')
+            $cantidadVentasHoy = Venta::where('estado', EstadoVenta::APROBADA)
                 ->whereDate('fecha_emision', today())
                 ->count();
 
@@ -54,8 +55,32 @@ class DashboardService
             $totalGastosHoy = Gasto::whereDate('fecha_emision', today())
                 ->sum('monto');
 
-            $beneficioNeto = $totalVentas - $totalCompras - $totalGastos;
-            $beneficioNetoHoy = $totalVentasHoy - $totalComprasHoy - $totalGastosHoy;
+            // Costo de la mercaderia VENDIDA, no de la comprada: son cosas
+            // distintas. Antes el beneficio restaba todas las compras del
+            // periodo, asi que reponer stock lo hundia aunque el negocio
+            // ganara dinero — y en una demo, donde se compra por adelantado,
+            // salia siempre en negativo.
+            $costoVendido = $this->costoDeMercaderiaVendida($fechaInicio, $fechaFin);
+            $costoVendidoHoy = $this->costoDeMercaderiaVendida(today()->toDateString(), today()->toDateString());
+
+            // El IGV que se cobra no es ingreso: se recauda para SUNAT. El
+            // costo de compra ya viene neto, asi que si no se desagrega la
+            // venta el margen sale inflado un 18%.
+            $ingresoNeto = Venta::where('estado', EstadoVenta::APROBADA)
+                ->whereBetween('fecha_emision', [$fechaInicio, $fechaFin . ' 23:59:59'])
+                ->sum('subtotal');
+
+            $ingresoNetoHoy = Venta::where('estado', EstadoVenta::APROBADA)
+                ->whereDate('fecha_emision', today())
+                ->sum('subtotal');
+
+            $utilidadBruta = round($ingresoNeto - $costoVendido, 2);
+            $utilidadBrutaHoy = round($ingresoNetoHoy - $costoVendidoHoy, 2);
+
+            $margenBruto = $ingresoNeto > 0 ? round($utilidadBruta / $ingresoNeto * 100, 1) : 0.0;
+
+            $beneficioNeto = round($utilidadBruta - $totalGastos, 2);
+            $beneficioNetoHoy = round($utilidadBrutaHoy - $totalGastosHoy, 2);
 
             // La tarjeta solo muestra el numero, asi que se cuenta en la base
             // en vez de traer una fila por producto para contarlas en PHP.
@@ -69,11 +94,11 @@ class DashboardService
                 ->fromSub($this->productosBajoMinimo(), 'x')
                 ->count();
 
-            $ventasMesAnterior = Venta::where('estado', 'COMPLETADA')
+            $ventasMesAnterior = Venta::where('estado', EstadoVenta::APROBADA)
                 ->whereBetween('fecha_emision', [date('Y-m-01', strtotime('-1 month')), date('Y-m-t', strtotime('-1 month')) . ' 23:59:59'])
                 ->sum('total');
 
-            $ventasMesActual = Venta::where('estado', 'COMPLETADA')
+            $ventasMesActual = Venta::where('estado', EstadoVenta::APROBADA)
                 ->whereBetween('fecha_emision', [date('Y-m-01'), now()])
                 ->sum('total');
 
@@ -97,6 +122,10 @@ class DashboardService
                 'totalGastosHoy' => $totalGastosHoy,
                 'beneficioNeto' => $beneficioNeto,
                 'beneficioNetoHoy' => $beneficioNetoHoy,
+                'ingresoNeto' => round($ingresoNeto, 2),
+                'costoVendido' => $costoVendido,
+                'utilidadBruta' => $utilidadBruta,
+                'margenBruto' => $margenBruto,
                 'productosBajoStock' => $productosBajoStock,
                 'totalProductos' => $totalProductos,
                 'totalClientes' => $totalClientes,
@@ -116,7 +145,7 @@ class DashboardService
 
     public function getVentasMensuales(): array
     {
-        $ventasPorMes = Venta::where('estado', 'COMPLETADA')
+        $ventasPorMes = Venta::where('estado', EstadoVenta::APROBADA)
             ->whereYear('fecha_emision', '>=', date('Y') - 1)
             ->select(
                 DB::raw('DATE_FORMAT(fecha_emision, "%Y-%m") as mes'),
@@ -186,7 +215,7 @@ class DashboardService
     public function getUltimasVentas()
     {
         return Venta::with('cliente')
-            ->where('estado', 'COMPLETADA')
+            ->where('estado', EstadoVenta::APROBADA)
             ->orderBy('id', 'desc')
             ->limit(5)
             ->get();
@@ -201,7 +230,7 @@ class DashboardService
 
     public function getVentasPorDia()
     {
-        return Venta::where('estado', 'COMPLETADA')
+        return Venta::where('estado', EstadoVenta::APROBADA)
             ->whereDate('fecha_emision', '>=', now()->subDays(30))
             ->select(
                 DB::raw('DATE(fecha_emision) as dia'),
@@ -211,6 +240,32 @@ class DashboardService
             ->groupBy('dia')
             ->orderBy('dia', 'asc')
             ->get();
+    }
+
+    /**
+     * Costo de lo vendido en el periodo, valorado al precio de compra del
+     * producto (que se guarda NETO, sin IGV).
+     *
+     * Se descuenta lo devuelto por notas de credito: esa mercaderia volvio al
+     * almacen, asi que su costo no pertenece al periodo.
+     */
+    private function costoDeMercaderiaVendida(string $fechaInicio, string $fechaFin): float
+    {
+        $vendido = (float) DB::table('venta_detalles as d')
+            ->join('ventas as v', 'v.id', '=', 'd.venta_id')
+            ->join('productos as p', 'p.id', '=', 'd.producto_id')
+            ->where('v.estado', EstadoVenta::APROBADA)
+            ->whereBetween('v.fecha_emision', [$fechaInicio, $fechaFin.' 23:59:59'])
+            ->sum(DB::raw('d.cantidad * p.precio_compra'));
+
+        $devuelto = (float) DB::table('nota_credito_detalles as nd')
+            ->join('notas_credito as n', 'n.id', '=', 'nd.nota_credito_id')
+            ->join('productos as p', 'p.id', '=', 'nd.producto_id')
+            ->where('n.estado', \App\Estados\EstadoDocumento::REGISTRADA)
+            ->whereBetween('n.fecha_emision', [$fechaInicio, $fechaFin.' 23:59:59'])
+            ->sum(DB::raw('nd.cantidad * p.precio_compra'));
+
+        return round(max(0, $vendido - $devuelto), 2);
     }
 
     public function getEmpresa()
@@ -485,7 +540,7 @@ class DashboardService
 
     public function getVentasPorTipoComprobante()
     {
-        return Venta::where('estado', 'COMPLETADA')
+        return Venta::where('estado', EstadoVenta::APROBADA)
             ->whereYear('fecha_emision', date('Y'))
             ->select('tipo_comprobante', DB::raw('COUNT(*) as cantidad'), DB::raw('SUM(total) as total'))
             ->groupBy('tipo_comprobante')
