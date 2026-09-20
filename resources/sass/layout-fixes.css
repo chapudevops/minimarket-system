@@ -1,0 +1,229 @@
+/*
+   Correcciones de layout de la cabecera.
+
+   Va DESPUES de main.css y responsive.css: son ajustes sobre el tema, no un
+   tema nuevo. Se mantiene aparte para que se vea de un vistazo que se cambio
+   respecto de la plantilla original y por que.
+
+   Las medidas del layout (ancho del sidebar, alto del topbar) estan repetidas
+   como literales por todo main.css y responsive.css. Aca se declaran una vez
+   como variables y se usan en estas reglas, para no sumar duplicados nuevos.
+   El tema no se reescribe: seria un cambio grande y arriesgado para lo que se
+   esta corrigiendo.
+*/
+:root {
+    --mm-sidebar-w: 260px;
+    --mm-topbar-h: 70px;
+
+    /*
+       Jerarquia de apilado. El problema original era que estaba invertida:
+       .sidebar-wrapper tenia z-index 12 y .top-header .navbar solo 10. Como el
+       navbar es `position: fixed` con z-index propio, crea un contexto de
+       apilado y ATRAPA a sus hijos: el dropdown de notificaciones pedia
+       z-index 1000 pero seguia compitiendo como si fuera un 10, asi que el
+       sidebar lo tapaba.
+    */
+    --mm-z-sidebar: 12;
+    --mm-z-topbar: 15;
+}
+
+/*
+   Solo de 1200px para arriba. Ahi el sidebar es fijo y el topbar arranca
+   justo donde el sidebar termina, asi que no se solapan y el topbar puede ir
+   por encima sin ocultar nada.
+
+   Por debajo de 1200px el sidebar es un cajon que se desliza SOBRE el
+   contenido y debe tapar el topbar: ahi se deja el z-index del tema.
+*/
+@media only screen and (min-width: 1200px) {
+    .top-header .navbar {
+        z-index: var(--mm-z-topbar);
+    }
+}
+
+/* ---------- Topbar ---------- */
+
+/*
+   Las acciones (atajos, campana, usuario) quedaban pegadas a la izquierda:
+   el <ul> arrancaba en x=353 dejando 590px muertos a la derecha. Con la
+   campana tan a la izquierda, un menu de 380px alineado a la derecha del
+   boton se extendia hacia atras hasta meterse debajo del sidebar.
+
+   Empujar el grupo a la derecha es lo que corrige el desborde de raiz: el
+   dropdown ya no tiene por que invadir la columna del sidebar.
+*/
+.top-header .navbar .nav-right-links {
+    margin-left: auto;
+}
+
+/* Todo el contenido del topbar centrado verticalmente y sin quedar pegado. */
+.top-header .navbar .nav-right-links > .nav-item > .nav-link,
+.top-header .navbar .nav-right-links > .nav-item > a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+}
+
+.top-header .navbar .user-avatar {
+    flex: 0 0 auto;
+}
+
+/* El correo largo no debe estirar el topbar ni empujar la campana. */
+.top-header .navbar .nav-right-links .dropdown-toggle small {
+    display: block;
+    max-width: 190px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.25;
+}
+
+/* ---------- Badge de la campana ---------- */
+
+/*
+   Ancho minimo en vez de ancho fijo: con "99+" el badge crece a lo ancho en
+   lugar de deformarse, y al ser `position:absolute` no mueve el icono.
+*/
+.top-header .navbar .badge-notify {
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    font-size: 11px;
+    line-height: 1;
+    box-sizing: border-box;
+}
+
+/* ---------- Dropdown de notificaciones ---------- */
+
+/*
+   El ancho (360px) lo define el tema en
+   `.top-header .navbar .nav-item .dropdown-notify`, con mas especificidad que
+   esta regla. Se respeta: es su valor de diseño y esta dentro de lo razonable
+   para desktop. Aca solo se agrega el tope que al tema le faltaba, con la
+   misma especificidad para que aplique de verdad.
+*/
+.top-header .navbar .nav-item .dropdown-notify {
+    max-width: calc(100vw - 1.5rem);
+    padding: 0;
+    overflow: hidden;      /* respeta las esquinas redondeadas del tema */
+}
+
+/*
+   Cabecera del dropdown. El titulo se veia cortado porque el menu entero caia
+   debajo del sidebar; una vez corregido eso, aca solo se protege el caso de
+   que el texto secundario apriete al titulo.
+*/
+.top-header .navbar .dropdown-notify .notiy-title {
+    flex: 0 1 auto;
+    min-width: 0;
+    font-size: 1rem;
+    white-space: nowrap;
+}
+
+.top-header .navbar .dropdown-notify #marcarTodasLeidas {
+    flex: 0 1 auto;
+    min-width: 0;
+    padding: 0;
+    font-size: 0.78rem;
+    text-align: right;
+    line-height: 1.2;
+}
+
+/*
+   Cuerpo con scroll propio: la cabecera y el pie quedan fijos y solo se
+   desplaza la lista.
+
+   Se usa overflow nativo en vez de perfect-scrollbar porque los items entran
+   por AJAX despues de que la libreria calcula su geometria, y sin un
+   .update() posterior el rail se quedaba en display:none: se podia scrollear
+   con la rueda pero no habia ninguna barra visible ni thumb que arrastrar.
+
+   El tope combina px y vh para que en pantallas bajas el menu no se salga por
+   abajo.
+*/
+.top-header .navbar .nav-item .dropdown-notify .notify-list {
+    max-height: min(400px, calc(100vh - var(--mm-topbar-h) - 120px));
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    /*
+       El tema fija `height: 390px` porque perfect-scrollbar necesitaba una
+       altura concreta. Con overflow nativo esa altura solo dejaba un hueco
+       vacio bajo los items cuando hay pocas notificaciones: ahora la altura la
+       marca el contenido y el tope de arriba corta cuando sobra.
+    */
+    height: auto;
+    position: relative;
+}
+
+/* Misma barra fina de 6px que ya usan el POS y el panel de alertas. */
+.top-header .navbar .nav-item .dropdown-notify .notify-list::-webkit-scrollbar { width: 6px; }
+.top-header .navbar .nav-item .dropdown-notify .notify-list::-webkit-scrollbar-track { background: rgba(0, 0, 0, .05); border-radius: 10px; }
+.top-header .navbar .nav-item .dropdown-notify .notify-list::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, .2); border-radius: 10px; }
+.top-header .navbar .nav-item .dropdown-notify .notify-list::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, .35); }
+.top-header .navbar .nav-item .dropdown-notify .notify-list { scrollbar-width: thin; }
+
+/* ---------- Items ---------- */
+
+.top-header .navbar .dropdown-notify .notify-item {
+    padding: .75rem 1rem;
+    transition: background-color .15s ease-in-out;
+}
+
+.top-header .navbar .dropdown-notify .notify-item:last-child {
+    border-bottom: 0 !important;
+}
+
+.top-header .navbar .dropdown-notify .notify-item:hover {
+    background-color: rgba(0, 0, 0, .035);
+}
+
+/*
+   min-width:0 sobre el hijo flexible es lo que permite que el texto se parta.
+   Sin esto el item crece a lo ancho y saca scroll horizontal en vez de
+   pasar a dos lineas.
+*/
+.top-header .navbar .dropdown-notify .notify-item > .flex-grow-1 {
+    min-width: 0;
+}
+
+.top-header .navbar .dropdown-notify .notify-item p {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.35;
+}
+
+.top-header .navbar .dropdown-notify .dropdown-footer {
+    background-color: rgba(0, 0, 0, .015);
+}
+
+/* ---------- Responsive ---------- */
+
+/*
+   Hasta 1199px el tema pone .dropdown en position:static y el menu al 100%
+   del navbar; el ancho fijo de arriba lo estorbaba. Se devuelve el control al
+   tema y solo se acota para que nunca se salga de pantalla.
+*/
+@media only screen and (max-width: 1199px) {
+    .top-header .navbar .nav-item .dropdown-notify {
+        width: auto;
+        max-width: none;
+    }
+}
+
+@media only screen and (max-width: 575.98px) {
+    .top-header .navbar .nav-item .dropdown-notify .notify-list {
+        max-height: min(320px, calc(100vh - var(--mm-topbar-h) - 100px));
+    }
+
+    /* En movil el correo del usuario ya esta oculto por d-none d-md-block;
+       el avatar solo no necesita el ancho reservado para el texto. */
+    .top-header .navbar .nav-right-links .dropdown-toggle small {
+        max-width: 140px;
+    }
+}

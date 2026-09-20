@@ -13,7 +13,10 @@ $(function () {
     });
   }
 
-  scrollbarSiExiste(".notify-list");
+  // .notify-list quedo fuera: sus items entran por AJAX despues de este init,
+  // y sin un .update() posterior PerfectScrollbar deja el rail en display:none.
+  // Se podia scrollear con la rueda pero no habia barra visible ni thumb que
+  // arrastrar. Ahora esa lista usa overflow nativo (ver layout-fixes.css).
   scrollbarSiExiste(".search-content");
 
   // new PerfectScrollbar(".mega-menu-widgets")

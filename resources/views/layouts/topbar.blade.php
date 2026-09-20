@@ -5,7 +5,7 @@
       </div>
 
       <!-- Atajos rápidos -->
-      <ul class="navbar-nav gap-1 nav-right-links align-items-center">
+      <ul class="navbar-nav gap-1 nav-right-links align-items-center ms-auto">
         <li class="nav-item">
           <a href="{{ route('terminal.index') }}" target="_blank" class="nav-link shortcut-icon" title="Nueva Venta (POS)">
             <i class="material-icons-outlined">point_of_sale</i>
@@ -99,12 +99,12 @@
             <i class="material-icons-outlined">notifications</i>
             <span class="badge-notify" id="notificaciones-count">0</span>
           </a>
-          <div class="dropdown-menu dropdown-notify dropdown-menu-end shadow" style="width: 380px;">
-            <div class="px-3 py-2 d-flex align-items-center justify-content-between border-bottom">
+          <div class="dropdown-menu dropdown-notify dropdown-menu-end shadow">
+            <div class="px-3 py-2 d-flex align-items-center justify-content-between gap-2 border-bottom">
               <h5 class="notiy-title mb-0">Notificaciones</h5>
               <button class="btn btn-sm btn-link text-decoration-none" id="marcarTodasLeidas" style="display:none;">Marcar todas como leídas</button>
             </div>
-            <div class="notify-list" id="lista-notificaciones" style="max-height: 350px; overflow-y: auto;">
+            <div class="notify-list" id="lista-notificaciones">
               <div class="text-center py-4" id="notificaciones-vacio">
                 <i class="material-icons-outlined fs-1 text-muted">notifications_none</i>
                 <p class="mb-0 text-muted mt-2">No hay notificaciones</p>
@@ -161,6 +161,12 @@
 
 <script>
 $(document).ready(function() {
+    // Los mensajes se arman con datos de la base y se insertan con .append(),
+    // asi que se escapan antes de concatenarlos en el HTML.
+    function textoPlano(valor) {
+        return $('<div>').text(valor == null ? '' : valor).html();
+    }
+
     function cargarNotificaciones() {
         $.ajax({
             url: '{{ route("home") }}',
@@ -178,12 +184,12 @@ $(document).ready(function() {
                     $('#notificaciones-vacio').hide();
                     $.each(response.alertas, function(i, alerta) {
                         $('#notificaciones-items').append(
-                            '<a href="' + alerta.ruta + '" class="notify-item d-flex align-items-center gap-3 px-3 py-2 text-decoration-none text-dark border-bottom">' +
+                            '<a href="' + alerta.ruta + '" class="notify-item d-flex align-items-center gap-3 text-decoration-none border-bottom">' +
                             '  <div class="wh-36 rounded-circle bg-' + alerta.color + ' bg-opacity-10 d-flex align-items-center justify-content-center">' +
                             '    <span class="material-icons-outlined fs-6 text-' + alerta.color + '">' + alerta.icono + '</span>' +
                             '  </div>' +
                             '  <div class="flex-grow-1">' +
-                            '    <p class="mb-0 small">' + alerta.mensaje + '</p>' +
+                            '    <p class="mb-0 small">' + textoPlano(alerta.mensaje) + '</p>' +
                             '  </div>' +
                             '</a>'
                         );
@@ -191,7 +197,8 @@ $(document).ready(function() {
                     $('#notificaciones-items').show();
                     $('#marcarTodasLeidas').show();
                 }
-                $('#notificaciones-count').text(count).toggle(count > 0);
+                // Mas de 99 no cabe sin deformar el badge.
+                $('#notificaciones-count').text(count > 99 ? '99+' : count).toggle(count > 0);
             }
         });
     }
