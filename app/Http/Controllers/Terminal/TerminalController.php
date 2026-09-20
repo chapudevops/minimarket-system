@@ -38,7 +38,7 @@ class TerminalController extends Controller
             $almacenId = $primerAlmacen ? $primerAlmacen->id : null;
         }
         
-        // ✅ SOLO TRAER LOS PRIMEROS 20 PRODUCTOS
+        // SOLO TRAER LOS PRIMEROS 20 PRODUCTOS
         $productos = Producto::where('estado', 1)
                             ->orderBy('descripcion', 'asc')
                             ->paginate(20);
@@ -56,7 +56,7 @@ class TerminalController extends Controller
         return view('terminal.index', compact('productos', 'cajaAbierta', 'empresa', 'almacenId'));
     }
 
-    // ✅ NUEVO MÉTODO PARA PAGINACIÓN INFINITA
+    // NUEVO MÉTODO PARA PAGINACIÓN INFINITA
     public function getProductos(Request $request)
     {
         $search = $request->get('search', '');
@@ -406,7 +406,15 @@ class TerminalController extends Controller
                 'codigo_qr' => $qrData,
                 'caja_id' => $cajaAbierta->caja_id,
                 'usuario_id' => Auth::id(),
-                'estado' => $request->tipo_venta == 'CREDITO' ? 'PENDIENTE' : 'COMPLETADA'
+                // La venta nace APROBADA siempre. Antes una venta a credito
+                // nacia PENDIENTE, que se confundia con "pendiente de SUNAT":
+                // eso ahora vive en estado_pago, que es lo que realmente falta.
+                'estado' => \App\Estados\EstadoVenta::APROBADA,
+                'estado_pago' => $request->tipo_venta == 'CREDITO'
+                    ? \App\Estados\EstadoPago::PENDIENTE
+                    : \App\Estados\EstadoPago::PAGADA,
+                'estado_devolucion' => \App\Estados\EstadoDevolucion::SIN_DEVOLUCION,
+                'estado_sunat' => \App\Estados\EstadoSunat::NO_ENVIADO
             ]);
 
             $serie->correlativo = $numero;

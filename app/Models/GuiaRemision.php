@@ -28,6 +28,7 @@ class GuiaRemision extends Model
         'conductor_id',
         'vehiculo_id',
         'observaciones',
+        'estado',
         'estado_sunat',
         'xml',
         'cdr',
@@ -78,13 +79,7 @@ class GuiaRemision extends Model
 
     public function getEstadoSunatBadgeAttribute()
     {
-        $badges = [
-            'PENDIENTE' => '<span class="badge bg-warning">Pendiente</span>',
-            'ENVIADO' => '<span class="badge bg-info">Enviado</span>',
-            'ACEPTADO' => '<span class="badge bg-success">Aceptado</span>',
-            'RECHAZADO' => '<span class="badge bg-danger">Rechazado</span>'
-        ];
-        return $badges[$this->estado_sunat] ?? '<span class="badge bg-secondary">' . $this->estado_sunat . '</span>';
+        return \App\Estados\EstadoSunat::badge($this->estado_sunat);
     }
 
     public function getMotivoTrasladoTextoAttribute()
@@ -107,5 +102,15 @@ class GuiaRemision extends Model
             '02' => 'TRANSPORTE PRIVADO'
         ];
         return $modalidades[$this->modalidad_traslado] ?? $this->modalidad_traslado;
+    }
+
+    /**
+     * Estado OPERATIVO de la guia. Es nuevo: antes la guia solo tenia
+     * estado_sunat y se usaba como si fuera su estado interno, asi que una
+     * guia emitida figuraba como "Pendiente" solo por no haberse declarado.
+     */
+    public function getEstadoBadgeAttribute(): string
+    {
+        return \App\Estados\EstadoDocumento::badge($this->estado);
     }
 }

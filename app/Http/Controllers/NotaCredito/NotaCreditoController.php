@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers\NotaCredito;
 
+use App\Estados\EstadoVenta;
 use App\Http\Controllers\Controller;
+use App\Estados\EstadoDocumento;
+use App\Estados\EstadoSunat;
 use App\Models\NotaCredito;
 use App\Models\NotaCreditoDetalle;
 use App\Models\Venta;
 use App\Models\Serie;
 use App\Models\AperturaCaja;
+use App\Ventas\RegistroDevolucion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -38,9 +42,15 @@ class NotaCreditoController extends Controller
                     'ruc_dni' => $nota->cliente->numero_documento ?? '00000000',
                     'cliente' => $nota->cliente->nombre_razon_social ?? 'CLIENTES VARIOS',
                     'total' => 'S/ ' . number_format($nota->total, 2),
-                    'xml' => '<span class="badge bg-secondary">Pendiente</span>',
-                    'cdr' => '<span class="badge bg-secondary">Pendiente</span>',
-                    'sunat' => '<span class="badge bg-warning">Pendiente</span>',
+                    // Estaban escritos a mano como "Pendiente": una nota ya
+                    // aceptada por SUNAT seguia mostrandose como pendiente.
+                    'xml' => $nota->ruta_xml
+                        ? '<span class="badge bg-success">Generado</span>'
+                        : '<span class="badge bg-secondary">Pendiente</span>',
+                    'cdr' => $nota->ruta_cdr
+                        ? '<span class="badge bg-success">Recibido</span>'
+                        : '<span class="badge bg-secondary">Pendiente</span>',
+                    'sunat' => EstadoSunat::badge($nota->estado_sunat),
                     'tipo_comprobante' => $nota->tipo_comprobante,
                     'estado' => $nota->estado,
                     'estado_badge' => $nota->estado_badge,
@@ -68,7 +78,7 @@ class NotaCreditoController extends Controller
 
     public function create()
     {
-        $ventas = Venta::where('estado', 'COMPLETADA')
+        $ventas = Venta::where('estado', EstadoVenta::APROBADA)
                        ->orderBy('id', 'desc')
                        ->get();
         
@@ -181,9 +191,27 @@ class NotaCreditoController extends Controller
                 ], 422);
             }
 
+            // Reglas de la devolucion ANTES de crear nada: que los productos
+            // esten en la venta, que no se devuelva mas de lo vendido y que
+            // cuenten las notas anteriores.
+            $ventaOriginal = \App\Models\Venta::with('detalles')->findOrFail($request->venta_id);
+            $devolucion = new RegistroDevolucion();
+            $devolucion->validar($ventaOriginal, $request->detalles);
+
             $numero = $serie->correlativo + 1;
             
             // Calcular totales
+            //
+            // agregarIgv es correcto AQUI: el detalle de una nota guarda el
+            // precio NETO y tanto esta cabecera como ConstructorComprobante le
+            // suman el IGV encima. Desagregarlo hacia que SUNAT rechazara la
+            // nota con el codigo 3280 (ver NotasElectronicasTest).
+            //
+            // Lo que si esta mal es el precio que llega: la UI lo copia del
+            // detalle de la venta, donde YA incluye IGV, y aqui se guarda como
+            // si fuera neto. Eso infla la nota un 18%. Se documenta en vez de
+            // corregirlo a ciegas: tocar el precio unitario cambia el XML que
+            // ya esta validado contra SUNAT.
             $subtotal = 0;
             foreach ($request->detalles as $item) {
                 $subtotal += $item['cantidad'] * $item['precio_unitario'];
@@ -210,7 +238,8 @@ class NotaCreditoController extends Controller
                 'observaciones' => $request->observaciones,
                 'caja_id' => $cajaAbierta->caja_id,
                 'usuario_id' => Auth::id(),
-                'estado' => 'REGISTRADA'
+                'estado' => EstadoDocumento::REGISTRADA,
+                'estado_sunat' => EstadoSunat::NO_ENVIADO,
             ]);
 
             // Actualizar correlativo
@@ -228,16 +257,25 @@ class NotaCreditoController extends Controller
                     'almacen_id' => $item['almacen_id']
                 ]);
 
-                // Devolver stock al almacén
-                $stock = \App\Models\ProductoAlmacen::where('producto_id', $item['producto_id'])
-                                                    ->where('almacen_id', $item['almacen_id'])
-                                                    ->lockForUpdate()
-                                                    ->first();
-                if ($stock) {
-                    $stock->stock += $item['cantidad'];
-                    $stock->save();
-                }
             }
+
+            // El stock vuelve una sola vez, por el servicio, y despues se
+            // recalcula el estado de devolucion de la venta desde las notas
+            // vigentes (no se incrementa a mano: asi sigue siendo correcto si
+            // mas adelante se anula una nota).
+            $devolucion->restaurarStock($request->detalles);
+            $devolucion->recalcular($ventaOriginal->refresh());
+
+            \App\Models\Auditoria::registrar(
+                'NOTA_CREDITO_CREADA',
+                'NotaCredito',
+                $nota->id,
+                sprintf(
+                    'Emitió la nota de crédito %s-%08d por S/ %s sobre la venta %s (%s)',
+                    $nota->serie, $nota->numero, number_format($total, 2),
+                    $ventaOriginal->documento, $request->tipo_nota
+                )
+            );
 
             DB::commit();
 
@@ -253,10 +291,18 @@ class NotaCreditoController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => '✅ Nota de Crédito creada exitosamente',
+                'message' => 'Nota de Crédito creada exitosamente',
                 'data' => $nota
             ]);
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Devolver de mas es un error del usuario, no del servidor.
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo emitir la nota de crédito',
+                'errors' => $e->errors(),
+            ], 422);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([

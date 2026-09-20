@@ -47,7 +47,10 @@ class AuditoriaTest extends TestCase
             ->postJson("/ventas/{$venta->id}/anular")
             ->assertOk();
 
-        $registro = Auditoria::where('accion', 'ANULO')->latest('id')->first();
+        // La accion paso de 'ANULO' a 'VENTA_ANULADA': la bitacora ahora
+        // distingue los eventos comerciales (VENTA_ANULADA, DEVOLUCION_*) de
+        // los de SUNAT, y 'ANULO' no decia que se anulo.
+        $registro = Auditoria::where('accion', 'VENTA_ANULADA')->latest('id')->first();
 
         $this->assertNotNull($registro, 'anular una venta debe dejar rastro');
         $this->assertSame('Venta', $registro->entidad);

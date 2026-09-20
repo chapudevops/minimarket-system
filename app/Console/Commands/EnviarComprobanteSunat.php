@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Estados\EstadoVenta;
+use App\Estados\EstadoSunat;
 use App\Models\NotaCredito;
 use App\Models\NotaDebito;
 use App\Models\Venta;
@@ -30,11 +32,13 @@ class EnviarComprobanteSunat extends Command
 
         $ventas = $this->argument('venta')
             ? $clase::where('id', $this->argument('venta'))->get()
-            : $clase::where('estado_sunat', 'PENDIENTE')
+            // Reintentables: lo que todavia no se envio o fallo de forma
+            // recuperable. Un RECHAZADO definitivo no vuelve a la cola.
+            : $clase::whereIn('estado_sunat', [EstadoSunat::NO_ENVIADO, EstadoSunat::EN_COLA, EstadoSunat::ERROR])
                 // Un comprobante que ya fallo muchas veces necesita revision
                 // manual: seguir reintentando solo tapa el problema.
                 ->where('intentos_envio', '<', (int) $this->option('reintentos'))
-                ->when($clase === Venta::class, fn ($q) => $q->where('estado', 'COMPLETADA'))
+                ->when($clase === Venta::class, fn ($q) => $q->where('estado', EstadoVenta::APROBADA))
                 ->orderBy('id')
                 ->limit((int) $this->option('limite'))
                 ->get();

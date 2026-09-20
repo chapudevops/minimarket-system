@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Jobs\EnviarComprobanteASunat;
+use App\Estados\EstadoSunat;
+use App\Estados\EstadoVenta;
 use App\Models\Venta;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Queue;
@@ -50,8 +52,13 @@ class EnvioSunatEnColaTest extends TestCase
 
         // Lo que le importa al mostrador ya pasó: comprobante emitido y stock
         // descontado, sin depender de que SUNAT conteste.
-        $this->assertSame('COMPLETADA', $venta->estado);
-        $this->assertSame('PENDIENTE', $venta->estado_sunat);
+        //
+        // Los dos estados son independientes: la venta nace APROBADA y el
+        // envio arranca en NO_ENVIADO. Antes la venta nacia 'COMPLETADA' y el
+        // envio 'PENDIENTE', y ese 'PENDIENTE' se leia como si la venta
+        // estuviera pendiente de algo.
+        $this->assertSame(EstadoVenta::APROBADA, $venta->estado);
+        $this->assertSame(EstadoSunat::NO_ENVIADO, $venta->estado_sunat);
         $this->assertSame(8, $this->stockDe($producto));
     }
 
@@ -92,8 +99,10 @@ class EnvioSunatEnColaTest extends TestCase
         $venta = Venta::where('caja_id', $this->caja->id)->firstOrFail();
 
         $enviador = \Mockery::mock(\App\Sunat\EnviadorSunat::class);
+        // Un timeout ya no devuelve 'PENDIENTE' sino ERROR: es un envio que se
+        // intento y fallo, distinto de uno que nunca se intento (NO_ENVIADO).
         $enviador->shouldReceive('enviar')->once()->andReturn([
-            'estado' => 'PENDIENTE', 'codigo' => null,
+            'estado' => EstadoSunat::ERROR, 'codigo' => null,
             'mensaje' => 'Connection timed out', 'cdr' => null,
         ]);
 

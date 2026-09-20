@@ -97,7 +97,7 @@ class OrdenTrasladoController extends Controller
             DB::commit();
 
             return redirect()->route('traslados.index')
-                ->with('success', '✅ Orden de traslado creada exitosamente');
+                ->with('success', 'Orden de traslado creada exitosamente');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -182,7 +182,7 @@ class OrdenTrasladoController extends Controller
             DB::commit();
 
             return redirect()->route('traslados.index')
-                ->with('success', '✅ Orden de traslado aprobada y stock actualizado');
+                ->with('success', 'Orden de traslado aprobada y stock actualizado');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -222,7 +222,7 @@ class OrdenTrasladoController extends Controller
             );
 
             return redirect()->route('traslados.index')
-                ->with('success', '✅ Orden de traslado anulada exitosamente');
+                ->with('success', 'Orden de traslado anulada exitosamente');
 
         } catch (\Exception $e) {
             return redirect()->back()

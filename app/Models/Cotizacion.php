@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Estados\EstadoCotizacion;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -64,15 +65,9 @@ class Cotizacion extends Model
         return $this->serie . '-' . str_pad($this->numero, 8, '0', STR_PAD_LEFT);
     }
 
-    public function getEstadoBadgeAttribute()
+    public function getEstadoBadgeAttribute(): string
     {
-        $badges = [
-            'PENDIENTE' => '<span class="badge bg-warning">Pendiente</span>',
-            'APROBADA' => '<span class="badge bg-success">Aprobada</span>',
-            'RECHAZADA' => '<span class="badge bg-danger">Rechazada</span>',
-            'VENCIDA' => '<span class="badge bg-secondary">Vencida</span>'
-        ];
-        return $badges[$this->estado] ?? '<span class="badge bg-secondary">' . $this->estado . '</span>';
+        return EstadoCotizacion::badge($this->estado);
     }
 
     public function getTipoMonedaTextoAttribute()

@@ -232,7 +232,7 @@ class NotaVentaController extends Controller
                 'observaciones' => $request->observaciones,
                 'caja_id' => $cajaAbierta->caja_id,
                 'usuario_id' => Auth::id(),
-                'estado' => 'REGISTRADA'
+                'estado' => \App\Estados\EstadoDocumento::REGISTRADA
             ]);
 
             // Actualizar correlativo
@@ -263,7 +263,7 @@ class NotaVentaController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => '✅ Nota de Venta creada exitosamente',
+                'message' => 'Nota de Venta creada exitosamente',
                 'data' => $nota
             ]);
 

@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Estados\EstadoSunat;
+use App\Estados\EstadoVenta;
 use App\Models\Venta;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;
@@ -147,14 +149,20 @@ class VentaEnTerminalTest extends TestCase
     }
 
     #[Test]
-    public function el_comprobante_nace_pendiente_ante_sunat(): void
+    public function el_comprobante_nace_sin_enviar_a_sunat_pero_la_venta_nace_aprobada(): void
     {
         $producto = $this->montarEscenario();
         $this->vender([['id' => $producto->id, 'cantidad' => 1, 'precio' => 10.00]], total: 10.00)->assertOk();
 
         $venta = Venta::where('caja_id', $this->caja->id)->firstOrFail();
 
-        $this->assertSame('PENDIENTE', $venta->estado_sunat);
+        // El estado comercial no espera a SUNAT: la venta ya ocurrio.
+        $this->assertSame(EstadoVenta::APROBADA, $venta->estado);
+
+        // Y el envio electronico arranca en NO_ENVIADO. Antes este campo valia
+        // 'PENDIENTE', el mismo texto que usaba el estado comercial de una
+        // venta a credito: por eso se confundian.
+        $this->assertSame(EstadoSunat::NO_ENVIADO, $venta->estado_sunat);
         $this->assertNull($venta->ruta_xml);
         $this->assertNull($venta->hash_xml);
     }

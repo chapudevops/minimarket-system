@@ -2,6 +2,8 @@
 
 namespace App\Sunat;
 
+use App\Estados\EstadoSunat;
+
 use App\Models\Empresa;
 use App\Models\Venta;
 use Greenter\Model\Response\BillResult;
@@ -82,8 +84,8 @@ class EnviadorSunat
         // impiden la aceptacion pero conviene registrar.
         $codigo = (string) $cdr->getCode();
         $estado = $codigo === '0'
-            ? ($cdr->getNotes() ? 'OBSERVADO' : 'ACEPTADO')
-            : 'RECHAZADO';
+            ? ($cdr->getNotes() ? EstadoSunat::OBSERVADO : EstadoSunat::ACEPTADO)
+            : EstadoSunat::RECHAZADO;
 
         $documento->update([
             'estado_sunat'          => $estado,
@@ -112,15 +114,18 @@ class EnviadorSunat
         // reintentable, asi que el comprobante vuelve a PENDIENTE.
         $definitivo = $codigo !== null && preg_match('/^[23]\d{3}$/', $codigo);
 
+        // Ni el rechazo ni el error tocan el estado comercial del documento:
+        // aqui solo se escribe estado_sunat. Una venta rechazada por SUNAT
+        // sigue siendo una venta valida que hay que regularizar.
         $documento->update([
-            'estado_sunat'          => $definitivo ? 'RECHAZADO' : 'PENDIENTE',
+            'estado_sunat'          => $definitivo ? EstadoSunat::RECHAZADO : EstadoSunat::ERROR,
             'codigo_respuesta'      => $codigo,
             'descripcion_respuesta' => $mensaje,
             'enviado_sunat_at'      => now(),
         ]);
 
         return [
-            'estado'  => $definitivo ? 'RECHAZADO' : 'PENDIENTE',
+            'estado'  => $definitivo ? EstadoSunat::RECHAZADO : EstadoSunat::ERROR,
             'codigo'  => $codigo,
             'mensaje' => $mensaje,
             'cdr'     => null,

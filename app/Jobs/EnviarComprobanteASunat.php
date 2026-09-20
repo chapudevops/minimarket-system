@@ -67,7 +67,7 @@ class EnviarComprobanteASunat implements ShouldQueue
         }
 
         // Otro intento pudo haberlo resuelto mientras esperaba en la cola.
-        if (in_array($documento->estado_sunat, ['ACEPTADO', 'OBSERVADO', 'RECHAZADO'], true)) {
+        if (! \App\Estados\EstadoSunat::esReintentable($documento->estado_sunat)) {
             return;
         }
 
@@ -75,7 +75,7 @@ class EnviarComprobanteASunat implements ShouldQueue
 
         // Un rechazo de SUNAT no es un fallo del job: el comprobante ya quedó
         // marcado y reintentarlo daría exactamente lo mismo.
-        if ($resultado['estado'] === 'PENDIENTE') {
+        if ($resultado['estado'] === \App\Estados\EstadoSunat::ERROR) {
             throw new \RuntimeException(
                 "SUNAT no aceptó {$documento->documento}: {$resultado['mensaje']}"
             );

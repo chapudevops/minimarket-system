@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Estados\EstadoDocumento;
+use App\Estados\EstadoSunat;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -78,13 +80,15 @@ class NotaDebito extends Model
         return $this->serie . '-' . str_pad($this->numero, 8, '0', STR_PAD_LEFT);
     }
 
-    public function getEstadoBadgeAttribute()
+    public function getEstadoBadgeAttribute(): string
     {
-        $badges = [
-            'REGISTRADA' => '<span class="badge bg-success">Registrada</span>',
-            'ANULADA' => '<span class="badge bg-danger">Anulada</span>'
-        ];
-        return $badges[$this->estado] ?? '<span class="badge bg-secondary">' . $this->estado . '</span>';
+        return EstadoDocumento::badge($this->estado);
+    }
+
+    /** Estado del envio electronico. Independiente del estado comercial. */
+    public function getEstadoSunatBadgeAttribute(): string
+    {
+        return EstadoSunat::badge($this->estado_sunat);
     }
 
     public function getTipoNotaTextoAttribute()

@@ -42,6 +42,10 @@ class VentaController extends Controller
                     'tipo_comprobante' => $venta->tipo_comprobante,
                     'estado' => $venta->estado,
                     'estado_badge' => $venta->estado_badge,
+                    'devolucion_badge' => $venta->estado_devolucion !== \App\Estados\EstadoDevolucion::SIN_DEVOLUCION
+                        ? $venta->estado_devolucion_badge
+                        : '',
+                    'pago_badge' => $venta->estado_pago_badge,
                     'acciones' => $this->generateActions($venta)
                 ];
             })
@@ -67,13 +71,13 @@ class VentaController extends Controller
         // El codigo del CDR precisa el motivo cuando SUNAT rechaza u observa.
         $detalle = $venta->codigo_respuesta ? " ({$venta->codigo_respuesta})" : '';
 
-        return match ($venta->estado_sunat) {
-            'ACEPTADO'  => '<span class="badge bg-success">Aceptado</span>',
-            'RECHAZADO' => '<span class="badge bg-danger">Rechazado' . $detalle . '</span>',
-            'OBSERVADO' => '<span class="badge bg-warning">Observado' . $detalle . '</span>',
-            'ANULADO'   => '<span class="badge bg-dark">Anulado</span>',
-            default     => '<span class="badge bg-secondary">Pendiente</span>',
-        };
+        // El badge sale de EstadoSunat para no mantener dos vocabularios; aqui
+        // solo se le pega el codigo de respuesta cuando aporta el motivo.
+        $badge = \App\Estados\EstadoSunat::badge($venta->estado_sunat);
+
+        return $detalle && \App\Estados\EstadoSunat::necesitaAtencion($venta->estado_sunat)
+            ? str_replace('</span>', $detalle.'</span>', $badge)
+            : $badge;
     }
 
     private function generateActions($venta)
@@ -128,11 +132,21 @@ class VentaController extends Controller
                 'usuario' => $venta->usuario->name ?? '-',
                 'estado' => $venta->estado,
                 'estado_badge' => $venta->estado_badge,
-                'detalles' => $venta->detalles->map(function($detalle) {
+                // Los dos estados van separados tambien en el detalle: el
+                // comercial responde "¿esta venta cuenta?" y el de SUNAT
+                // "¿esta declarada?". Son preguntas distintas.
+                'estado_sunat' => $venta->estado_sunat,
+                'estado_sunat_badge' => $this->getSunatBadge($venta),
+                'estado_devolucion' => $venta->estado_devolucion,
+                'estado_devolucion_badge' => $venta->estado_devolucion_badge,
+                'estado_pago_badge' => $venta->estado_pago_badge,
+                'devolucion' => $this->resumenDevolucion($venta),
+                'detalles' => $venta->detalles->map(function($detalle) use ($venta) {
                     return [
                         'producto' => $detalle->producto->descripcion ?? '-',
                         'codigo' => $detalle->producto->codigo_interno ?? '-',
                         'cantidad' => $detalle->cantidad,
+                        'devueltas' => $venta->unidadesDevueltasDe($detalle->producto_id),
                         'precio_unitario' => number_format($detalle->precio_unitario, 2),
                         'total' => number_format($detalle->total, 2)
                     ];
@@ -141,6 +155,34 @@ class VentaController extends Controller
                 'updated_at' => $venta->updated_at->format('d/m/Y H:i:s')
             ]
         ]);
+    }
+
+    /**
+     * Importes de la devolucion. Se calculan aqui una vez y no en la vista,
+     * para no repetir la misma suma en la tabla, el modal y el PDF.
+     */
+    private function resumenDevolucion(\App\Models\Venta $venta): array
+    {
+        $notas = $venta->notasCredito()
+            ->where('estado', \App\Estados\EstadoDocumento::REGISTRADA)
+            ->get();
+
+        return [
+            'tiene' => $notas->isNotEmpty(),
+            'monto_original' => number_format((float) $venta->total, 2),
+            'monto_devuelto' => number_format($venta->montoDevuelto(), 2),
+            'monto_neto' => number_format($venta->montoNeto(), 2),
+            'unidades_vendidas' => $venta->unidadesVendidas(),
+            'unidades_devueltas' => $venta->unidadesDevueltas(),
+            'notas' => $notas->map(fn ($n) => [
+                'id' => $n->id,
+                'documento' => sprintf('%s-%08d', $n->serie, $n->numero),
+                'fecha' => $n->fecha_emision?->format('d/m/Y'),
+                'motivo' => $n->tipo_nota,
+                'total' => number_format((float) $n->total, 2),
+                'estado_sunat' => \App\Estados\EstadoSunat::badge($n->estado_sunat),
+            ])->values(),
+        ];
     }
 
     public function generarPdf($id)
@@ -185,10 +227,21 @@ class VentaController extends Controller
 
             $venta = Venta::findOrFail($id);
             
-            if ($venta->estado != 'COMPLETADA') {
+            if (! \App\Estados\EstadoVenta::puedeTransicionar($venta->estado, \App\Estados\EstadoVenta::ANULADA)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Solo se pueden anular ventas completadas'
+                    'message' => 'Solo se pueden anular ventas aprobadas'
+                ], 422);
+            }
+
+            // Anular no es devolver. Si la venta ya tiene notas de credito, la
+            // via correcta es seguir emitiendolas: anularla dejaria el stock
+            // sumado dos veces (una por la nota, otra por la anulacion) y
+            // borraria el rastro de la devolucion.
+            if ($venta->notasCredito()->where('estado', \App\Estados\EstadoDocumento::REGISTRADA)->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Esta venta tiene notas de crédito: para revertirla usa una nota de crédito, no la anulación.'
                 ], 422);
             }
 
@@ -205,12 +258,12 @@ class VentaController extends Controller
             }
 
             $venta->update([
-                'estado' => 'ANULADA'
+                'estado' => \App\Estados\EstadoVenta::ANULADA,
             ]);
 
 
             \App\Models\Auditoria::registrar(
-                'ANULO',
+                'VENTA_ANULADA',
                 'Venta',
                 $venta->id,
                 "Anuló la venta {$venta->documento} por S/ " . number_format($venta->total, 2)
@@ -219,7 +272,7 @@ class VentaController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => '✅ Venta anulada exitosamente'
+                'message' => 'Venta anulada exitosamente'
             ]);
 
         } catch (\Exception $e) {

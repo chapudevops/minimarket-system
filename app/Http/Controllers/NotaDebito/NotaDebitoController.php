@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\NotaDebito;
 
+use App\Estados\EstadoVenta;
 use App\Http\Controllers\Controller;
 use App\Models\NotaDebito;
 use App\Models\NotaDebitoDetalle;
@@ -36,9 +37,12 @@ class NotaDebitoController extends Controller
                     'documento' => $nota->documento,
                     'fecha_emision' => $nota->fecha_emision ? $nota->fecha_emision->format('d/m/Y H:i') : '-',
                     'cliente' => $nota->cliente->nombre_razon_social ?? 'CLIENTES VARIOS',
-                    'estado_sunat' => $nota->estado_sunat === 'ACEPTADO'
-                        ? '<span class="badge bg-success">Aceptado</span>'
-                        : '<span class="badge bg-secondary">' . ucfirst(strtolower($nota->estado_sunat ?? 'Pendiente')) . '</span>',
+                    // El badge sale del enum: antes cualquier estado que no
+                    // fuera ACEPTADO se pintaba gris con el nombre en crudo,
+                    // asi que un RECHAZADO no se distinguia de un no enviado.
+                    'estado' => $nota->estado,
+                    'estado_badge' => $nota->estado_badge,
+                    'estado_sunat' => \App\Estados\EstadoSunat::badge($nota->estado_sunat),
                     'xml' => $nota->ruta_xml
                         ? '<span class="badge bg-success">Generado</span>'
                         : '<span class="badge bg-secondary">Pendiente</span>',
@@ -69,7 +73,7 @@ class NotaDebitoController extends Controller
 
     public function create()
     {
-        $ventas = Venta::where('estado', 'COMPLETADA')
+        $ventas = Venta::where('estado', EstadoVenta::APROBADA)
                        ->orderBy('id', 'desc')
                        ->get();
         
@@ -193,7 +197,8 @@ class NotaDebitoController extends Controller
                 'observaciones' => $request->observaciones,
                 'caja_id' => $cajaAbierta->caja_id,
                 'usuario_id' => Auth::id(),
-                'estado' => 'REGISTRADA'
+                'estado' => \App\Estados\EstadoDocumento::REGISTRADA,
+                'estado_sunat' => \App\Estados\EstadoSunat::NO_ENVIADO,
             ]);
 
             // Actualizar correlativo
@@ -225,7 +230,7 @@ class NotaDebitoController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => '✅ Nota de Débito creada exitosamente',
+                'message' => 'Nota de Débito creada exitosamente',
                 'data' => $nota
             ]);
 

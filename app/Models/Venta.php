@@ -2,6 +2,11 @@
 
 namespace App\Models;
 
+use App\Estados\EstadoDevolucion;
+use App\Estados\EstadoDocumento;
+use App\Estados\EstadoPago;
+use App\Estados\EstadoSunat;
+use App\Estados\EstadoVenta;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -30,6 +35,8 @@ class Venta extends Model
         'caja_id',
         'usuario_id',
         'estado',
+        'estado_devolucion',
+        'estado_pago',
         'estado_sunat',
         'hash_xml',
         'ruta_xml',
@@ -51,6 +58,95 @@ class Venta extends Model
         'detraccion' => 'boolean',
         'enviado_sunat_at' => 'datetime',
     ];
+
+    public function notasCredito()
+    {
+        return $this->hasMany(NotaCredito::class, 'venta_id');
+    }
+
+    /* ---------- Estado comercial ---------- */
+
+    /**
+     * Venta valida a efectos de negocio.
+     *
+     * Deliberadamente NO mira estado_sunat: una venta rechazada por SUNAT
+     * sigue siendo una venta que ocurrio y que hay que regularizar, no una
+     * venta que nunca existio.
+     */
+    public function esValida(): bool
+    {
+        return $this->estado === EstadoVenta::APROBADA;
+    }
+
+    public function estaAnulada(): bool
+    {
+        return $this->estado === EstadoVenta::ANULADA;
+    }
+
+    /* ---------- Devoluciones ---------- */
+
+    /** Unidades vendidas en total. */
+    public function unidadesVendidas(): int
+    {
+        return (int) $this->detalles()->sum('cantidad');
+    }
+
+    /** Unidades ya devueltas por notas de credito vigentes. */
+    public function unidadesDevueltas(): int
+    {
+        return (int) NotaCreditoDetalle::query()
+            ->join('notas_credito', 'notas_credito.id', '=', 'nota_credito_detalles.nota_credito_id')
+            ->where('notas_credito.venta_id', $this->id)
+            ->where('notas_credito.estado', EstadoDocumento::REGISTRADA)
+            ->sum('nota_credito_detalles.cantidad');
+    }
+
+    /** Unidades ya devueltas de UN producto concreto. */
+    public function unidadesDevueltasDe(int $productoId): int
+    {
+        return (int) NotaCreditoDetalle::query()
+            ->join('notas_credito', 'notas_credito.id', '=', 'nota_credito_detalles.nota_credito_id')
+            ->where('notas_credito.venta_id', $this->id)
+            ->where('notas_credito.estado', EstadoDocumento::REGISTRADA)
+            ->where('nota_credito_detalles.producto_id', $productoId)
+            ->sum('nota_credito_detalles.cantidad');
+    }
+
+    /** Importe total devuelto por notas de credito vigentes. */
+    public function montoDevuelto(): float
+    {
+        return (float) $this->notasCredito()
+            ->where('estado', EstadoDocumento::REGISTRADA)
+            ->sum('total');
+    }
+
+    /** Lo que la venta dejo realmente en caja despues de devoluciones. */
+    public function montoNeto(): float
+    {
+        return round((float) $this->total - $this->montoDevuelto(), 2);
+    }
+
+    /* ---------- Badges ---------- */
+
+    public function getEstadoBadgeAttribute(): string
+    {
+        return EstadoVenta::badge($this->estado);
+    }
+
+    public function getEstadoSunatBadgeAttribute(): string
+    {
+        return EstadoSunat::badge($this->estado_sunat);
+    }
+
+    public function getEstadoDevolucionBadgeAttribute(): string
+    {
+        return EstadoDevolucion::badge($this->estado_devolucion);
+    }
+
+    public function getEstadoPagoBadgeAttribute(): string
+    {
+        return EstadoPago::badge($this->estado_pago);
+    }
 
     public function cliente()
     {

@@ -84,7 +84,7 @@ class CompraController extends Controller
                 'subtotal' => $subtotal,
                 'igv' => $igv,
                 'total' => $total,
-                'estado' => 'REGISTRADA',
+                'estado' => \App\Estados\EstadoDocumento::REGISTRADA,
                 'usuario_id' => Auth::id(),
                 'observaciones' => $request->observaciones
             ]);
@@ -120,7 +120,7 @@ class CompraController extends Controller
             DB::commit();
 
             return redirect()->route('compras.index')
-                ->with('success', '✅ Compra registrada exitosamente');
+                ->with('success', 'Compra registrada exitosamente');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -162,7 +162,7 @@ class CompraController extends Controller
             }
 
             $compra->update([
-                'estado' => 'ANULADA'
+                'estado' => \App\Estados\EstadoDocumento::ANULADA
             ]);
             \App\Models\Auditoria::registrar('ANULO', 'Compra', $compra->id, "Anuló la compra {$compra->serie}-{$compra->numero} por S/ " . number_format($compra->total, 2));
 
@@ -170,7 +170,7 @@ class CompraController extends Controller
             DB::commit();
 
             return redirect()->route('compras.index')
-                ->with('success', '✅ Compra anulada exitosamente');
+                ->with('success', 'Compra anulada exitosamente');
 
         } catch (\Exception $e) {
             DB::rollBack();

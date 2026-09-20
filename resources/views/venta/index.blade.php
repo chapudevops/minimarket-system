@@ -31,6 +31,7 @@
                                 <th width="8%">RUC/DNI</th>
                                 <th width="20%">Cliente</th>
                                 <th width="8%">Total</th>
+                                <th width="10%">Estado</th>
                                 <th width="8%">XML</th>
                                 <th width="8%">CDR</th>
                                 <th width="8%">SUNAT</th>

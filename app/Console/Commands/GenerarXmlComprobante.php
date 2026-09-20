@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Estados\EstadoSunat;
+use App\Estados\EstadoVenta;
 use App\Models\Venta;
 use App\Sunat\GeneradorXml;
 use Illuminate\Console\Command;
@@ -19,8 +21,8 @@ class GenerarXmlComprobante extends Command
     {
         $ventas = $this->argument('venta')
             ? Venta::where('id', $this->argument('venta'))->get()
-            : Venta::where('estado', 'COMPLETADA')
-                ->where('estado_sunat', 'PENDIENTE')
+            : Venta::where('estado', EstadoVenta::APROBADA)
+                ->where('estado_sunat', EstadoSunat::NO_ENVIADO)
                 ->whereNull('ruta_xml')
                 ->orderBy('id')
                 ->limit((int) $this->option('limite'))

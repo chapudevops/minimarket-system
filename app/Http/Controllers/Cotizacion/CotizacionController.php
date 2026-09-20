@@ -247,7 +247,7 @@ class CotizacionController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => '✅ Cotización creada exitosamente',
+                'message' => 'Cotización creada exitosamente',
                 'data' => $cotizacion
             ]);
 
@@ -320,7 +320,7 @@ class CotizacionController extends Controller
             
             return response()->json([
                 'success' => true,
-                'message' => '✅ Cotización aprobada exitosamente'
+                'message' => 'Cotización aprobada exitosamente'
             ]);
             
         } catch (\Exception $e) {
@@ -351,7 +351,7 @@ class CotizacionController extends Controller
             
             return response()->json([
                 'success' => true,
-                'message' => '✅ Cotización rechazada exitosamente'
+                'message' => 'Cotización rechazada exitosamente'
             ]);
             
         } catch (\Exception $e) {
