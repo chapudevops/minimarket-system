@@ -15,9 +15,15 @@ class RouteServiceProvider extends ServiceProvider
      *
      * Typically, users are redirected here after authentication.
      *
+     * Apunta a la ruta `home` (el dashboard). Antes valia '/index', que servia
+     * la ruta comodin `/{view}` de la plantilla; esa ruta se elimino porque
+     * permitia saltarse las restricciones de rol, y desde entonces HOME
+     * devolvia 404. Eso rompia el final de varios flujos: tras restablecer la
+     * contraseña, y al entrar a /login ya estando logueado (RedirectIfAuthenticated).
+     *
      * @var string
      */
-    public const HOME = '/index';
+    public const HOME = '/';
 
     /**
      * Define your route model bindings, pattern filters, and other route configuration.
